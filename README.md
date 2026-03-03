@@ -5,3 +5,7 @@ https://planner.cloud.microsoft/webui/plan/VM5OeMC6dESQ-2hAaOgs22QAF-zg/view/boa
 # Figma - WERE-FRAME
 
 https://www.figma.com/make/hyElbmJ6okJ8YCoOIn1B5j/Wireframe-FISASA%C3%9ADE-Mobile?t=AD9WDNC5E277JEvH-1
+
+# Canva - WERE-FRAME
+
+https://www.canva.com/design/DAHCwdi9mqU/qNlhwkUelXcCvqRweEj_Ow/edit?utm_content=DAHCwdi9mqU&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton
