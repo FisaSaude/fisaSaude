@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
+  <link href="https://fonts.googleapis.com/css2?family=UnifrakturCook:wght@700&display=swap" rel="stylesheet">
+  <title>Projeto Individual</title>
+</head>
+
+<body>
+  <div class="container">
+
+    <span class="titulo">
+      <h1>Spring Notícias</h1>
+      <img src="https://hermes.dio.me/skills/0bedd1a3-09b4-4bb0-b918-9e25e474e26f.png" alt="logo_spring">
+    </span>
+
+    <h3>Cadastro para Receber Notícias</h3>
+
+    <form id="formCadastro">
+
+      <label>Nome</label>
+      <input type="text" name="nome" required>
+
+      <label>Email</label>
+      <input type="email" name="email" required>
+
+      <label>Telefone</label>
+      <input type="number" name="telefone" required>
+
+      <label>Data de Nascimento</label>
+      <input type="date" name="dataNascimento" required>
+
+      <label>Frequência de recebimento</label>
+      <div class="group">
+        <input class="inline" type="radio" name="frequencia" value="diaria" required> Diária
+        <input class="inline" type="radio" name="frequencia" value="semanal"> Semanal
+        <input class="inline" type="radio" name="frequencia" value="mensal"> Mensal
+      </div>
+
+      <label>Preferências</label>
+      <div class="group">
+        <input class="inline" type="checkbox" name="whatsapp"> Aceita receber notícias via WhatsApp<br>
+        <input class="inline" type="checkbox" name="publicidade"> Aceita receber publicidade
+      </div>
+
+      <label>Tipo Favorito de Notícia</label>
+      <select id="tipoFavorito" name="tipoFavorito" required>
+        <option value="">Carregando...</option>
+      </select>
+
+      <button type="submit">Cadastrar Interesse</button>
+
+    </form>
+  </div>
+</body>
+<script>
+  const API_URL = "http://localhost:8080/tiposNoticia";
+
+  async function carregarTiposNoticia() {
+    try {
+      const response = await fetch(API_URL);
+      const dados = await response.json();
+
+      const select = document.getElementById("tipoFavorito");
+
+      select.innerHTML = '<option value="">Selecione...</option>';
+
+      dados.forEach(tipo => {
+        const option = document.createElement("option");
+        option.value = tipo.id;
+        option.textContent = tipo.tipoNoticia;
+        select.appendChild(option);
+      });
+
+    } catch (erro) {
+      console.error("Erro ao carregar tipos:", erro);
+    }
+  }
+
+  carregarTiposNoticia();
+
+
+  const API_POST = "http://localhost:8080/usuarios";
+
+  document.getElementById("formCadastro")
+    .addEventListener("submit", async function (event) {
+
+      event.preventDefault();
+
+      const formData = new FormData(this);
+
+      if (!(/^\d{11}$/.test(formData.get("telefone")))) {
+        alert("Telefone deve ter 11 dígitos");
+        return;
+      }
+
+      const dados = {
+        nome: formData.get("nome"),
+        email: formData.get("email"),
+        telefone: formData.get("telefone"),
+        dtNascimento: formData.get("dataNascimento"),
+        frequenciaRecebimento: formData.get("frequencia"),
+        aceitaWhatsapp: formData.get("whatsapp") !== null,
+        aceitaPublicidade: formData.get("publicidade") !== null,
+        tipoFavoritoId: Number(formData.get("tipoFavorito"))
+      };
+
+      
+      try {
+
+        const response = await fetch(API_POST, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(dados)
+        });
+
+        if (!response.ok) {
+          throw new Error("Erro ao salvar cadastro");
+        }
+
+        alert("Cadastro realizado com sucesso!");
+        this.reset();
+
+      } catch (erro) {
+        console.error(erro);
+        alert("Erro ao enviar cadastro");
+      }
+    });
+
+
+</script>
+
+</html>
