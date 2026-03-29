@@ -46,7 +46,7 @@ CREATE TABLE IF NOT EXISTS usuario (
 CREATE TABLE IF NOT EXISTS cliente (
     id INT PRIMARY KEY AUTO_INCREMENT,
     nome VARCHAR(100) NOT NULL,
-    telefone VARCHAR(20) NOT NULL,
+    telefone VARCHAR(20) NOT NULL UNIQUE,
     data_nascimento DATE NOT NULL,
     sexo ENUM('M', 'F', 'OUTRO') NOT NULL,
     foto_link VARCHAR(255)
@@ -70,9 +70,9 @@ CREATE TABLE IF NOT EXISTS agendamento (
     data DATE NOT NULL,
     hora_inicio TIME NOT NULL,
     hora_fim TIME NOT NULL,
-    `status` ENUM('AGENDADO', 'CANCELADO', 'CONCLUIDO') NOT NULL,
-    criado_em DATETIME NOT NULL,
-    atualizado_em DATETIME NOT NULL,
+    `status` ENUM('AGENDADO', 'CANCELADO', 'REMARCADO', 'CONFIRMADO', 'CONCLUIDO') NOT NULL DEFAULT 'AGENDADO',
+    criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    atualizado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     cliente_id INT NOT NULL,
     servico_id INT NOT NULL,
@@ -98,7 +98,7 @@ CREATE TABLE IF NOT EXISTS notificacao (
     id INT PRIMARY KEY AUTO_INCREMENT,
     tipo ENUM('LEMBRETE', 'CONFIRMACAO', 'CANCELAMENTO') NOT NULL,
     `status` ENUM('PENDENTE', 'ENVIADO', 'FALHOU') NOT NULL,
-    enviado_em DATETIME,
+    enviado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
     agendamento_id INT NOT NULL,
 
     CONSTRAINT fk_notificacao_agendamento

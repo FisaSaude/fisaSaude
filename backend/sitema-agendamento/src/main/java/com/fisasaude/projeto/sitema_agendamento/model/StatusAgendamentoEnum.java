@@ -10,6 +10,8 @@ import lombok.Getter;
 public enum StatusAgendamentoEnum {
     AGENDADO("Agendado"),
     CANCELADO("Cancelado"),
+    REMARCADO("Remarcado"),
+    CONFIRMADO("Confirmado"),
     CONCLUIDO("Concluído");
 
     private final String descricao;
