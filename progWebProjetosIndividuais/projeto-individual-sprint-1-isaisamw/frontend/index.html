@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Prontuário | FisaSaúde</title>
+  <link rel="stylesheet" href="teste.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+  <header class="cabecalho">
+    <div class="cabecalho-conteudo">
+      <div class="logo-clinica">
+        <span class="logo-icone">✦</span>
+        <div>
+          <span class="logo-nome">FisaSaúde</span>
+          <span class="logo-subtitulo">Prontuário Clínico</span>
+        </div>
+      </div>
+      <span class="cabecalho-data" id="data-hoje"></span>
+    </div>
+  </header>
+
+  <nav class="navegacao-abas">
+    <div class="abas-conteudo">
+      <button class="aba aba-ativa" id="aba-novo" data-aba="pagina-novo-prontuario">
+        + Novo Prontuário
+      </button>
+      <button class="aba" id="aba-historico" data-aba="pagina-historico">
+        Histórico de Prontuários
+        <span class="aba-contador" id="aba-contador-historico">0</span>
+      </button>
+    </div>
+  </nav>
+
+  <main class="conteudo-principal" id="pagina-novo-prontuario">
+
+    <div class="titulo-pagina">
+      <h1>Novo Prontuário</h1>
+      <p>Preencha as informações abaixo para registrar o atendimento</p>
+    </div>
+
+    <form class="formulario-prontuario" id="formulario-prontuario" novalidate>
+
+      <section class="secao-formulario">
+        <h2 class="titulo-secao">
+          <span class="numero-secao">01</span>
+          Identificação do Paciente
+        </h2>
+
+        <div class="grupo-campo">
+          <label class="rotulo" for="select-paciente">Selecionar Paciente <span class="obrigatorio">*</span></label>
+          <div class="select-wrapper">
+            <select class="campo-select" id="select-paciente" name="paciente_id">
+              <option value="">— Carregando pacientes... —</option>
+            </select>
+            <span class="select-seta">&#8964;</span>
+          </div>
+          <span class="mensagem-erro" id="erro-paciente"></span>
+        </div>
+
+        <div class="cartao-paciente" id="cartao-paciente" style="display: none;">
+          <div class="grade-dados-paciente">
+            <div class="dado-paciente">
+              <span class="dado-rotulo">Nome</span>
+              <span class="dado-valor" id="paciente-nome">—</span>
+            </div>
+            <div class="dado-paciente">
+              <span class="dado-rotulo">Telefone</span>
+              <span class="dado-valor" id="paciente-telefone">—</span>
+            </div>
+            <div class="dado-paciente">
+              <span class="dado-rotulo">Sexo</span>
+              <span class="dado-valor" id="paciente-sexo">—</span>
+            </div>
+            <div class="dado-paciente">
+              <span class="dado-rotulo">Idade</span>
+              <span class="dado-valor" id="paciente-idade">—</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="secao-formulario">
+        <h2 class="titulo-secao">
+          <span class="numero-secao">02</span>
+          Status e Diagnóstico
+        </h2>
+
+        <div class="grade-dois-colunas">
+          <div class="grupo-campo">
+            <span class="rotulo">Status do Paciente <span class="obrigatorio">*</span></span>
+            <div class="grupo-radio">
+              <label class="opcao-radio">
+                <input type="radio" name="status_paciente" value="ativo" />
+                <span class="radio-visual"></span>
+                <span class="radio-texto">Ativo</span>
+              </label>
+              <label class="opcao-radio">
+                <input type="radio" name="status_paciente" value="inativo" />
+                <span class="radio-visual"></span>
+                <span class="radio-texto">Inativo</span>
+              </label>
+            </div>
+            <span class="mensagem-erro" id="erro-status"></span>
+          </div>
+
+          <div class="grupo-campo">
+            <span class="rotulo">Diagnóstico <span class="obrigatorio">*</span></span>
+            <div class="grupo-radio">
+              <label class="opcao-radio">
+                <input type="radio" name="diagnostico" value="ok" />
+                <span class="radio-visual radio-ok"></span>
+                <span class="radio-texto">Ok</span>
+              </label>
+              <label class="opcao-radio">
+                <input type="radio" name="diagnostico" value="moderado" />
+                <span class="radio-visual radio-moderado"></span>
+                <span class="radio-texto">Moderado</span>
+              </label>
+              <label class="opcao-radio">
+                <input type="radio" name="diagnostico" value="critico" />
+                <span class="radio-visual radio-critico"></span>
+                <span class="radio-texto">Crítico</span>
+              </label>
+            </div>
+            <span class="mensagem-erro" id="erro-diagnostico"></span>
+          </div>
+        </div>
+      </section>
+
+      <section class="secao-formulario">
+        <h2 class="titulo-secao">
+          <span class="numero-secao">03</span>
+          Queixas Relatadas
+        </h2>
+
+        <div class="grupo-campo">
+  <span class="rotulo">Selecione as queixas do paciente <span class="obrigatorio">*</span></span>
+  <div class="grade-checkboxes">
+    <label class="opcao-checkbox">
+      <input type="checkbox" name="queixas" value="1" />
+      <span class="checkbox-visual"></span>
+      <span class="checkbox-texto">Dor Cervical</span>
+    </label>
+    <label class="opcao-checkbox">
+      <input type="checkbox" name="queixas" value="2" />
+      <span class="checkbox-visual"></span>
+      <span class="checkbox-texto">Dor Lombar</span>
+    </label>
+    <label class="opcao-checkbox">
+      <input type="checkbox" name="queixas" value="3" />
+      <span class="checkbox-visual"></span>
+      <span class="checkbox-texto">Má Postura</span>
+    </label>
+    <label class="opcao-checkbox">
+      <input type="checkbox" name="queixas" value="4" />
+      <span class="checkbox-visual"></span>
+      <span class="checkbox-texto">Dor nos Joelhos</span>
+    </label>
+    <label class="opcao-checkbox">
+      <input type="checkbox" name="queixas" value="5" />
+      <span class="checkbox-visual"></span>
+      <span class="checkbox-texto">Rigidez Muscular</span>
+    </label>
+    <label class="opcao-checkbox">
+      <input type="checkbox" name="queixas" value="6" />
+      <span class="checkbox-visual"></span>
+      <span class="checkbox-texto">Dor nos Ombros</span>
+    </label>
+  </div>
+  <span class="mensagem-erro" id="erro-queixas"></span>
+</div>
+      </section>
+
+      <section class="secao-formulario">
+        <h2 class="titulo-secao">
+          <span class="numero-secao">04</span>
+          Datas e Avaliação
+        </h2>
+
+        <div class="grade-tres-colunas">
+          <div class="grupo-campo">
+            <label class="rotulo" for="data-cadastro">Data de Cadastro</label>
+            <input type="text" class="campo-texto desabilitado" id="data-cadastro" name="data_cadastro" readonly />
+            <span class="campo-dica">Preenchida automaticamente</span>
+          </div>
+
+          <div class="grupo-campo">
+            <label class="rotulo" for="proximo-atendimento">Próximo Atendimento <span class="obrigatorio">*</span></label>
+            <input type="date" class="campo-texto" id="proximo-atendimento" name="proximo_atendimento" />
+            <span class="mensagem-erro" id="erro-data"></span>
+          </div>
+
+          <div class="grupo-campo">
+            <label class="rotulo" for="escala-dor">Escala de Dor <span class="obrigatorio">*</span></label>
+            <div class="campo-numero-wrapper">
+              <input type="number" class="campo-texto campo-numero" id="escala-dor" name="escala_dor" min="0" max="10" placeholder="0 a 10" />
+              <div class="escala-visual">
+                <div class="escala-barra" id="escala-barra"></div>
+              </div>
+            </div>
+            <span class="mensagem-erro" id="erro-escala"></span>
+          </div>
+        </div>
+      </section>
+
+      <section class="secao-formulario">
+        <h2 class="titulo-secao">
+          <span class="numero-secao">05</span>
+          Observações
+        </h2>
+
+        <div class="grupo-campo">
+          <label class="rotulo" for="observacoes">Anotações do Atendimento</label>
+          <textarea class="campo-textarea" id="observacoes" name="observacoes"
+            placeholder="Descreva observações relevantes sobre o atendimento, evolução do paciente ou intercorrências..."
+            rows="4"></textarea>
+          <span class="contador-caracteres" id="contador-caracteres">0 / 500 caracteres</span>
+        </div>
+      </section>
+
+      <div class="rodape-formulario">
+        <div class="info-registro">
+          <span class="info-icone">ℹ</span>
+          Todos os campos marcados com <span class="obrigatorio">*</span> são obrigatórios
+        </div>
+        <div class="botoes-formulario">
+          <button type="button" class="botao-secundario" id="botao-limpar">Limpar</button>
+          <button type="submit" class="botao-principal" id="botao-gravar">
+            <span>Gravar Informações</span>
+          </button>
+        </div>
+      </div>
+
+    </form>
+  </main>
+
+  <main class="conteudo-principal" id="pagina-historico" style="display: none;">
+
+    <div class="titulo-pagina">
+      <h1>Histórico de Prontuários</h1>
+      <p>Consulte e visualize todos os atendimentos registrados</p>
+    </div>
+
+    <div class="barra-filtros">
+      <div class="filtro-grupo">
+        <label class="rotulo" for="filtro-paciente">Filtrar por paciente</label>
+        <div class="select-wrapper">
+          <select class="campo-select" id="filtro-paciente">
+            <option value="">Todos os pacientes</option>
+          </select>
+          <span class="select-seta">&#8964;</span>
+        </div>
+      </div>
+      <div class="filtro-grupo">
+        <label class="rotulo" for="filtro-diagnostico">Diagnóstico</label>
+        <div class="select-wrapper">
+          <select class="campo-select" id="filtro-diagnostico">
+            <option value="">Todos</option>
+            <option value="ok">Ok</option>
+            <option value="moderado">Moderado</option>
+            <option value="critico">Crítico</option>
+          </select>
+          <span class="select-seta">&#8964;</span>
+        </div>
+      </div>
+      <div class="filtro-contagem">
+        <span class="texto-contagem" id="texto-contagem-registros">0 registros</span>
+      </div>
+    </div>
+
+    <div class="lista-prontuarios" id="lista-prontuarios">
+      <div class="historico-vazio" id="historico-vazio">
+        <span class="historico-vazio-icone">📋</span>
+        <p>Nenhum prontuário gravado ainda.</p>
+        <p>Use a aba <strong>Novo Prontuário</strong> para registrar o primeiro atendimento.</p>
+      </div>
+    </div>
+
+  </main>
+
+  <div class="overlay-modal" id="overlay-modal" style="display: none;">
+    <div class="modal-cadastrado-sucesso">
+      <div class="modal-icone-sucesso">✓</div>
+      <h3 class="modal-titulo">Prontuário Gravado!</h3>
+      <p class="modal-mensagem">As informações do atendimento foram registradas com sucesso no sistema.</p>
+      <div class="modal-detalhe" id="modal-detalhe-paciente"></div>
+      <div class="modal-botoes">
+        <button class="botao-secundario" id="botao-modal-fechar">Fechar</button>
+        <button class="botao-principal" id="botao-modal-ver-historico">Ver Histórico</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay-modal" id="overlay-detalhes" style="display: none;">
+    <div class="modal-detalhes-prontuario">
+      <div class="modal-detalhes-cabecalho">
+        <h3 class="modal-titulo">Detalhes do Prontuário</h3>
+        <button class="botao-fechar-x" id="botao-fechar-detalhes">✕</button>
+      </div>
+      <div class="modal-detalhes-corpo" id="modal-detalhes-corpo"></div>
+    </div>
+  </div>
+
+  <script src="prontuario.js"></script>
+</body>
+</html>
