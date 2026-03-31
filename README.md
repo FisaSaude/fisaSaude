@@ -45,7 +45,7 @@ Gestão completa de agenda para o profissional
 ## 📊 Caso Real
 Atualmente, o estabelecimento FisaSaúde realiza o controle de agendamentos de forma manual ou por meio de ferramentas pouco acessíveis, o que resulta em falhas como esquecimentos, conflitos de horários e dificuldade na organização da agenda. Com a implementação do sistema proposto, esses problemas são reduzidos significativamente, garantindo maior controle, eficiência e uma melhor experiência tanto para o profissional quanto para os clientes.
 
-##🗂️ Estrutura da Organização
+## 🗂️ Estrutura da Organização
 
 Este projeto está dividido em múltiplos repositórios:
 
@@ -88,7 +88,8 @@ Este projeto está dividido em múltiplos repositórios:
 
 # Requisitos
 ...
-✒️ Equipe
+
+# ✒️ Equipe
 <table >
  <td align="center" width="125px"><b>Dandara Ramos</b><br /><sub> Front-End <br>&<br> Front-End </sub>
  </td>
