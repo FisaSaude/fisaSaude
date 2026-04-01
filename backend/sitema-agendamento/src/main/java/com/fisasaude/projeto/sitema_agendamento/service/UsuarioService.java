@@ -13,17 +13,21 @@ import com.fisasaude.projeto.sitema_agendamento.model.Usuario;
 import com.fisasaude.projeto.sitema_agendamento.repository.EstabelecimentoRepository;
 import com.fisasaude.projeto.sitema_agendamento.repository.UsuarioRepository;
 import java.util.List;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-@RequiredArgsConstructor
 public class UsuarioService {
 
     private final UsuarioRepository usuarioRepository;
     private final EstabelecimentoRepository estabelecimentoRepository;
     private final UsuarioMapper usuarioMapper;
+
+    public UsuarioService(UsuarioRepository usuarioRepository, EstabelecimentoRepository estabelecimentoRepository, UsuarioMapper usuarioMapper) {
+        this.usuarioRepository = usuarioRepository;
+        this.estabelecimentoRepository = estabelecimentoRepository;
+        this.usuarioMapper = usuarioMapper;
+    }
 
     @Transactional
     public UsuarioResponseDto criar(UsuarioCreateRequestDto dto) {

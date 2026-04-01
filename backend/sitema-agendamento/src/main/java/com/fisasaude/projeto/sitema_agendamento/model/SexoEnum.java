@@ -1,12 +1,10 @@
 package com.fisasaude.projeto.sitema_agendamento.model;
 
-import lombok.Getter;
 
 /**
  * Enum que representa o sexo de um cliente.
  * Valores: M (Masculino), F (Feminino), OUTRO
  */
-@Getter
 public enum SexoEnum {
     M("Masculino"),
     F("Feminino"),
@@ -16,6 +14,10 @@ public enum SexoEnum {
 
     SexoEnum(String descricao) {
         this.descricao = descricao;
+    }
+
+    public String getDescricao() {
+        return descricao;
     }
 }
 

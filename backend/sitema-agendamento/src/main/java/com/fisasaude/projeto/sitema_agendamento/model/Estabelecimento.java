@@ -5,11 +5,6 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-import lombok.ToString;
 
 /**
  * Entidade que representa um estabelecimento (clínica/consultório).
@@ -17,11 +12,6 @@ import lombok.ToString;
  */
 @Entity
 @Table(name = "estabelecimento")
-@Getter
-@Setter
-@ToString(exclude = {"usuarios", "despesas"})
-@NoArgsConstructor
-@AllArgsConstructor
 public class Estabelecimento {
 
     @Id
@@ -46,6 +36,59 @@ public class Estabelecimento {
     private LocalTime fimFuncionamento;
 
     // ...existing code...
+
+    // Construtor padrão
+    public Estabelecimento() {}
+
+    // Construtor completo
+    public Estabelecimento(Integer id, String nome, String endereco, String parametros, LocalTime inicioFuncionamento, LocalTime fimFuncionamento, List<Usuario> usuarios, List<Despesas> despesas) {
+        this.id = id;
+        this.nome = nome;
+        this.endereco = endereco;
+        this.parametros = parametros;
+        this.inicioFuncionamento = inicioFuncionamento;
+        this.fimFuncionamento = fimFuncionamento;
+        this.usuarios = usuarios != null ? usuarios : new ArrayList<>();
+        this.despesas = despesas != null ? despesas : new ArrayList<>();
+    }
+
+    // Getters e Setters
+    public Integer getId() { return id; }
+    public void setId(Integer id) { this.id = id; }
+
+    public String getNome() { return nome; }
+    public void setNome(String nome) { this.nome = nome; }
+
+    public String getEndereco() { return endereco; }
+    public void setEndereco(String endereco) { this.endereco = endereco; }
+
+    public String getParametros() { return parametros; }
+    public void setParametros(String parametros) { this.parametros = parametros; }
+
+    public LocalTime getInicioFuncionamento() { return inicioFuncionamento; }
+    public void setInicioFuncionamento(LocalTime inicioFuncionamento) { this.inicioFuncionamento = inicioFuncionamento; }
+
+    public LocalTime getFimFuncionamento() { return fimFuncionamento; }
+    public void setFimFuncionamento(LocalTime fimFuncionamento) { this.fimFuncionamento = fimFuncionamento; }
+
+    public List<Usuario> getUsuarios() { return usuarios; }
+    public void setUsuarios(List<Usuario> usuarios) { this.usuarios = usuarios; }
+
+    public List<Despesas> getDespesas() { return despesas; }
+    public void setDespesas(List<Despesas> despesas) { this.despesas = despesas; }
+
+    // toString sem usuarios e despesas
+    @Override
+    public String toString() {
+        return "Estabelecimento{" +
+                "id=" + id +
+                ", nome='" + nome + '\'' +
+                ", endereco='" + endereco + '\'' +
+                ", parametros='" + parametros + '\'' +
+                ", inicioFuncionamento=" + inicioFuncionamento +
+                ", fimFuncionamento=" + fimFuncionamento +
+                '}';
+    }
     @OneToMany(mappedBy = "estabelecimento", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore
     private List<Usuario> usuarios = new ArrayList<>();

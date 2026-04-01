@@ -14,7 +14,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import com.fisasaude.projeto.sitema_agendamento.service.UsuarioService;
 import jakarta.validation.Valid;
 import java.util.List;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -28,11 +27,15 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/usuarios")
-@RequiredArgsConstructor
 @Tag(name = "Usuarios", description = "Operacoes CRUD para usuarios")
+
 public class UsuarioController {
 
     private final UsuarioService usuarioService;
+
+    public UsuarioController(UsuarioService usuarioService) {
+        this.usuarioService = usuarioService;
+    }
 
     @PostMapping
     @Operation(summary = "Criar usuario", description = "Cria um novo usuario no sistema")

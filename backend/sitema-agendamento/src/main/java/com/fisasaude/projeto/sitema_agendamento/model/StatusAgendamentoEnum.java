@@ -1,12 +1,10 @@
 package com.fisasaude.projeto.sitema_agendamento.model;
 
-import lombok.Getter;
 
 /**
  * Enum que representa os possíveis status de um agendamento.
  * Valores: AGENDADO, CANCELADO, CONCLUIDO
  */
-@Getter
 public enum StatusAgendamentoEnum {
     AGENDADO("Agendado"),
     CANCELADO("Cancelado"),
@@ -18,6 +16,10 @@ public enum StatusAgendamentoEnum {
 
     StatusAgendamentoEnum(String descricao) {
         this.descricao = descricao;
+    }
+
+    public String getDescricao() {
+        return descricao;
     }
 }
 

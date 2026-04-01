@@ -14,7 +14,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import com.fisasaude.projeto.sitema_agendamento.service.ClienteService;
 import jakarta.validation.Valid;
 import java.util.List;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -28,11 +27,15 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/clientes")
-@RequiredArgsConstructor
 @Tag(name = "Clientes", description = "Operacoes CRUD para clientes")
+
 public class ClienteController {
 
     private final ClienteService clienteService;
+
+    public ClienteController(ClienteService clienteService) {
+        this.clienteService = clienteService;
+    }
 
     @PostMapping
     @Operation(summary = "Criar cliente", description = "Cria um novo cliente no sistema")

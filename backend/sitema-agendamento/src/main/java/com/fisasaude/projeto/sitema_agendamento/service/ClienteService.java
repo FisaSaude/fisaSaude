@@ -12,16 +12,19 @@ import com.fisasaude.projeto.sitema_agendamento.model.Cliente;
 import com.fisasaude.projeto.sitema_agendamento.repository.ClienteRepository;
 import java.time.LocalDate;
 import java.util.List;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-@RequiredArgsConstructor
 public class ClienteService {
 
     private final ClienteRepository clienteRepository;
     private final ClienteMapper clienteMapper;
+
+    public ClienteService(ClienteRepository clienteRepository, ClienteMapper clienteMapper) {
+        this.clienteRepository = clienteRepository;
+        this.clienteMapper = clienteMapper;
+    }
 
     @Transactional
     public ClienteResponseDto criar(ClienteCreateRequestDto dto) {
