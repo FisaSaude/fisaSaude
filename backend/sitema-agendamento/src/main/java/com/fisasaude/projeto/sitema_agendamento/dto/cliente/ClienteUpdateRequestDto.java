@@ -1,4 +1,4 @@
-package com.fisasaude.projeto.sitema_agendamento.dto;
+package com.fisasaude.projeto.sitema_agendamento.dto.cliente;
 
 import com.fisasaude.projeto.sitema_agendamento.model.SexoEnum;
 import jakarta.validation.constraints.NotBlank;
@@ -7,7 +7,7 @@ import jakarta.validation.constraints.PastOrPresent;
 import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
 
-public record ClienteCreateRequestDto(
+public record ClienteUpdateRequestDto(
         @NotBlank(message = "Nome e obrigatorio")
         @Size(max = 100, message = "Nome deve ter no maximo 100 caracteres")
         String nome,

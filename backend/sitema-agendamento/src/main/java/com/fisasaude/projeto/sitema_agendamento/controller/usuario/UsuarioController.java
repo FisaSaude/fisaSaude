@@ -1,8 +1,8 @@
-package com.fisasaude.projeto.sitema_agendamento.controller;
+package com.fisasaude.projeto.sitema_agendamento.controller.usuario;
 
-import com.fisasaude.projeto.sitema_agendamento.dto.UsuarioCreateRequestDto;
-import com.fisasaude.projeto.sitema_agendamento.dto.UsuarioResponseDto;
-import com.fisasaude.projeto.sitema_agendamento.dto.UsuarioUpdateRequestDto;
+import com.fisasaude.projeto.sitema_agendamento.dto.usuario.UsuarioCreateRequestDto;
+import com.fisasaude.projeto.sitema_agendamento.dto.usuario.UsuarioResponseDto;
+import com.fisasaude.projeto.sitema_agendamento.dto.usuario.UsuarioUpdateRequestDto;
 import com.fisasaude.projeto.sitema_agendamento.exception.ErrorResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;

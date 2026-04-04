@@ -1,8 +1,8 @@
 package com.fisasaude.projeto.sitema_agendamento.service;
 
-import com.fisasaude.projeto.sitema_agendamento.dto.ClienteCreateRequestDto;
-import com.fisasaude.projeto.sitema_agendamento.dto.ClienteResponseDto;
-import com.fisasaude.projeto.sitema_agendamento.dto.ClienteUpdateRequestDto;
+import com.fisasaude.projeto.sitema_agendamento.dto.cliente.ClienteCreateRequestDto;
+import com.fisasaude.projeto.sitema_agendamento.dto.cliente.ClienteResponseDto;
+import com.fisasaude.projeto.sitema_agendamento.dto.cliente.ClienteUpdateRequestDto;
 import com.fisasaude.projeto.sitema_agendamento.exception.BadRequestException;
 import com.fisasaude.projeto.sitema_agendamento.exception.ConflictException;
 import com.fisasaude.projeto.sitema_agendamento.exception.NotFoundException;
