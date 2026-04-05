@@ -24,7 +24,6 @@ public class Notificacao {
     private StatusNotificacaoEnum status;
 
     @Column(name = "enviado_em")
-    @Temporal(TemporalType.TIMESTAMP)
     private LocalDateTime enviadoEm;
 
     // ...existing code...

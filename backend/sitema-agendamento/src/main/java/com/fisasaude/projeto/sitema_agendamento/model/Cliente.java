@@ -26,7 +26,6 @@ public class Cliente {
     private String telefone;
 
     @Column(nullable = false)
-    @Temporal(TemporalType.DATE)
     private LocalDate dataNascimento;
 
     @Column(nullable = false)

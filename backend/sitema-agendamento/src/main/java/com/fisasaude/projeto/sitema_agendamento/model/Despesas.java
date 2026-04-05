@@ -20,7 +20,6 @@ public class Despesas {
     private String nome;
 
     @Column(nullable = false)
-    @Temporal(TemporalType.DATE)
     private LocalDate dataDespesa;
 
     @Column(nullable = false, length = 45)

@@ -19,7 +19,6 @@ public class Prontuario {
     private String observacoes;
 
     @Column(nullable = false, name = "criado_em")
-    @Temporal(TemporalType.TIMESTAMP)
     private LocalDateTime criadoEm;
 
     @ManyToOne(fetch = FetchType.LAZY)

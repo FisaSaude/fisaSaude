@@ -26,15 +26,12 @@ public class Agendamento {
     private Integer id;
 
     @Column(nullable = false)
-    @Temporal(TemporalType.DATE)
     private LocalDate data;
 
     @Column(nullable = false)
-    @Temporal(TemporalType.TIME)
     private LocalTime horaInicio;
 
     @Column(nullable = false)
-    @Temporal(TemporalType.TIME)
     private LocalTime horaFim;
 
     @Column(nullable = false, name = "status")
@@ -42,11 +39,9 @@ public class Agendamento {
     private StatusAgendamentoEnum status;
 
     @Column(nullable = false)
-    @Temporal(TemporalType.TIMESTAMP)
     private LocalDateTime criadoEm;
 
     @Column(nullable = false)
-    @Temporal(TemporalType.TIMESTAMP)
     private LocalDateTime atualizadoEm;
 
     // ...existing code...

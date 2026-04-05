@@ -28,11 +28,9 @@ public class Estabelecimento {
     private String parametros;
 
     @Column(nullable = false)
-    @Temporal(TemporalType.TIME)
     private LocalTime inicioFuncionamento;
 
     @Column(nullable = false)
-    @Temporal(TemporalType.TIME)
     private LocalTime fimFuncionamento;
 
     // ...existing code...

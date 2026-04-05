@@ -27,6 +27,10 @@ public class Servico {
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal preco;
 
+    @OneToMany(mappedBy = "servico", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    private List<Agendamento> agendamentos = new ArrayList<>();
+
     // ...existing code...
 
     // Construtor padrão
@@ -67,8 +71,5 @@ public class Servico {
                 ", preco=" + preco +
                 '}';
     }
-    @OneToMany(mappedBy = "servico", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonIgnore
-    private List<Agendamento> agendamentos = new ArrayList<>();
 }
 
