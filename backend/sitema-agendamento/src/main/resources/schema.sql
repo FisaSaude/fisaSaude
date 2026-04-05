@@ -34,6 +34,7 @@ CREATE TABLE IF NOT EXISTS usuario (
     nome VARCHAR(100) NOT NULL,
     email VARCHAR(100) NOT NULL UNIQUE,
     senha VARCHAR(100) NOT NULL,
+    role ENUM('ADMIN', 'USUARIO') NOT NULL,
 	estabelecimento_id INT NOT NULL,
 
     CONSTRAINT fk_usuario_estabelecimento

@@ -8,6 +8,7 @@ import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -29,7 +30,15 @@ public class UsuarioController implements SwaggerUsuarioController {
 
     @PostMapping
     public ResponseEntity<UsuarioResponseDto> criar(@Valid @RequestBody UsuarioCreateRequestDto dto) {
-        UsuarioResponseDto response = usuarioService.criar(dto);
+        String senhaCriptografada = new BCryptPasswordEncoder().encode(dto.senha());
+        UsuarioCreateRequestDto novoUsuario = new UsuarioCreateRequestDto(
+                dto.nome(),
+                dto.email(),
+                senhaCriptografada,
+                dto.role(),
+                dto.estabelecimentoId());
+
+        UsuarioResponseDto response = usuarioService.criar(novoUsuario);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 

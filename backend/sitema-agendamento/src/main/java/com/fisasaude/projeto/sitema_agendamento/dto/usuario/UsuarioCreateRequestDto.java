@@ -1,5 +1,6 @@
 package com.fisasaude.projeto.sitema_agendamento.dto.usuario;
 
+import com.fisasaude.projeto.sitema_agendamento.model.RoleEnum;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -19,8 +20,10 @@ public record UsuarioCreateRequestDto(
         @Size(min = 8, max = 100, message = "Senha deve ter entre 8 e 100 caracteres")
         String senha,
 
+        @NotNull(message = "Role e obrigatoria")
+        RoleEnum role,
+
         @NotNull(message = "estabelecimentoId e obrigatorio")
         Integer estabelecimentoId
 ) {
 }
-

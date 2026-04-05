@@ -26,9 +26,16 @@ server:
 
 springdoc:
   api-docs:
-    path: /api-docs
+    path: /v3/api-docs
   swagger-ui:
-    path: /swagger
+    path: /swagger-ui.html
     operationsSorter: method
     tagsSorter: alpha
     display-request-duration: true
+    persist-authorization: true
+  show-login-endpoint: true
+
+api:
+  security:
+    token:
+      secret: ${JWT_SECRET:my-secret-key}
