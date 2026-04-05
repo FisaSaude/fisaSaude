@@ -8,7 +8,7 @@ import com.fisasaude.projeto.sitema_agendamento.exception.ConflictException;
 import com.fisasaude.projeto.sitema_agendamento.exception.NotFoundException;
 import com.fisasaude.projeto.sitema_agendamento.exception.UnprocessableEntityException;
 import com.fisasaude.projeto.sitema_agendamento.mapper.ClienteMapper;
-import com.fisasaude.projeto.sitema_agendamento.model.Cliente;
+import com.fisasaude.projeto.sitema_agendamento.model.entity.Cliente;
 import com.fisasaude.projeto.sitema_agendamento.repository.ClienteRepository;
 import java.time.LocalDate;
 import java.util.List;

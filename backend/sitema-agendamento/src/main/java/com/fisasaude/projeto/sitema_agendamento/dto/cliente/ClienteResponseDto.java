@@ -1,6 +1,6 @@
 package com.fisasaude.projeto.sitema_agendamento.dto.cliente;
 
-import com.fisasaude.projeto.sitema_agendamento.model.SexoEnum;
+import com.fisasaude.projeto.sitema_agendamento.model.enums.SexoEnum;
 import java.time.LocalDate;
 
 public record ClienteResponseDto(

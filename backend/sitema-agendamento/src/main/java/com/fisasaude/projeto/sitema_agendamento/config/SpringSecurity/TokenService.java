@@ -3,7 +3,7 @@ package com.fisasaude.projeto.sitema_agendamento.config.SpringSecurity;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTCreationException;
-import com.fisasaude.projeto.sitema_agendamento.model.Usuario;
+import com.fisasaude.projeto.sitema_agendamento.model.entity.Usuario;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 

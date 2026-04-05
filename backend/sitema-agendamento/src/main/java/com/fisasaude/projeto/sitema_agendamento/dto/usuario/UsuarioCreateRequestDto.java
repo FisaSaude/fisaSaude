@@ -1,6 +1,6 @@
 package com.fisasaude.projeto.sitema_agendamento.dto.usuario;
 
-import com.fisasaude.projeto.sitema_agendamento.model.RoleEnum;
+import com.fisasaude.projeto.sitema_agendamento.model.enums.RoleEnum;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;

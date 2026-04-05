@@ -3,7 +3,7 @@ package com.fisasaude.projeto.sitema_agendamento.controller.authentication;
 import com.fisasaude.projeto.sitema_agendamento.config.SpringSecurity.TokenService;
 import com.fisasaude.projeto.sitema_agendamento.dto.authentication.AuthenticationDto;
 import com.fisasaude.projeto.sitema_agendamento.dto.authentication.LoginResponseDto;
-import com.fisasaude.projeto.sitema_agendamento.model.Usuario;
+import com.fisasaude.projeto.sitema_agendamento.model.entity.Usuario;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;

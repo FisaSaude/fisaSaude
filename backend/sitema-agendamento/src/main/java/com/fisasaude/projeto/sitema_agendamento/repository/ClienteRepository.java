@@ -1,6 +1,6 @@
 package com.fisasaude.projeto.sitema_agendamento.repository;
 
-import com.fisasaude.projeto.sitema_agendamento.model.Cliente;
+import com.fisasaude.projeto.sitema_agendamento.model.entity.Cliente;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface ClienteRepository extends JpaRepository<Cliente, Integer> {

@@ -1,6 +1,6 @@
 package com.fisasaude.projeto.sitema_agendamento.dto.usuario;
 
-import com.fisasaude.projeto.sitema_agendamento.model.RoleEnum;
+import com.fisasaude.projeto.sitema_agendamento.model.enums.RoleEnum;
 
 public record UsuarioResponseDto(
         Integer id,

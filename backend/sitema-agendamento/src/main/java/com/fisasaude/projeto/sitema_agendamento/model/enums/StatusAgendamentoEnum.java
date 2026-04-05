@@ -1,4 +1,4 @@
-package com.fisasaude.projeto.sitema_agendamento.model;
+package com.fisasaude.projeto.sitema_agendamento.model.enums;
 
 
 /**

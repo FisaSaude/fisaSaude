@@ -1,5 +1,6 @@
-package com.fisasaude.projeto.sitema_agendamento.model;
+package com.fisasaude.projeto.sitema_agendamento.model.entity;
 
+import com.fisasaude.projeto.sitema_agendamento.model.enums.RoleEnum;
 import jakarta.persistence.*;
 import java.util.ArrayList;
 import java.util.Collection;

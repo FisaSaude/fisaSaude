@@ -1,5 +1,7 @@
-package com.fisasaude.projeto.sitema_agendamento.model;
+package com.fisasaude.projeto.sitema_agendamento.model.entity;
 
+import com.fisasaude.projeto.sitema_agendamento.model.enums.StatusNotificacaoEnum;
+import com.fisasaude.projeto.sitema_agendamento.model.enums.TipoNotificacaoEnum;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
