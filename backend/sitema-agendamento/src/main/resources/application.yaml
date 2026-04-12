@@ -39,3 +39,5 @@ api:
   security:
     token:
       secret: ${JWT_SECRET:my-secret-key}
+  feriados:
+    url: ${URL_FERIADOS:https://brasilapi.com.br/api/feriados/v1}
