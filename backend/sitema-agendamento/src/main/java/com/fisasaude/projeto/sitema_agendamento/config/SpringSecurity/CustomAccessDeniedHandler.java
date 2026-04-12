@@ -1,0 +1,48 @@
+package com.fisasaude.projeto.sitema_agendamento.config.SpringSecurity;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.fisasaude.projeto.sitema_agendamento.exception.ErrorResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.web.access.AccessDeniedHandler;
+import org.springframework.stereotype.Component;
+
+import java.io.IOException;
+import java.time.LocalDateTime;
+
+/**
+ * Chamado pelo Spring Security quando um usuário autenticado tenta acessar
+ * um recurso para o qual não possui permissão. Retorna HTTP 403 com corpo JSON padronizado.
+ */
+@Component
+public class CustomAccessDeniedHandler implements AccessDeniedHandler {
+
+    private final ObjectMapper objectMapper = new ObjectMapper()
+            .registerModule(new JavaTimeModule());
+
+    @Override
+    public void handle(HttpServletRequest request,
+                       HttpServletResponse response,
+                       AccessDeniedException accessDeniedException) throws IOException {
+
+        HttpStatus status = HttpStatus.FORBIDDEN;
+
+        ErrorResponse body = new ErrorResponse(
+                LocalDateTime.now(),
+                status.value(),
+                status.getReasonPhrase(),
+                "Acesso negado: você não tem permissão para acessar este recurso.",
+                request.getRequestURI()
+        );
+
+        response.setStatus(status.value());
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        response.setCharacterEncoding("UTF-8");
+        objectMapper.writeValue(response.getWriter(), body);
+    }
+}
+
