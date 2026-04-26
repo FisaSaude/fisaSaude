@@ -18,7 +18,7 @@ import java.util.List;
 // TESTE DA API DOS FERIADOS
 @RestController
 @RequestMapping("/agendamentos")
-public class AgendamentoController {
+public class AgendamentoController implements SwaggerAgendamentoController {
 
     private final ApiFeriados apiFeriados;
     private final AgendamentoService agendamentoService;
