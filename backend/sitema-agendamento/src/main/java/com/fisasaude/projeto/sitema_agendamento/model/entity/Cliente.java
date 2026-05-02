@@ -23,7 +23,7 @@ public class Cliente {
     private String telefone;
 
     @Column(name = "whatsapp_ativo")
-    private Boolean whatsappAtivo = Boolean.FALSE;
+    private Boolean whatsappAtivo = Boolean.TRUE;
 
     @Column(nullable = false)
     private LocalDate dataNascimento;
@@ -41,7 +41,7 @@ public class Cliente {
         this.id = id;
         this.nome = nome;
         this.telefone = telefone;
-        this.whatsappAtivo = whatsappAtivo != null ? whatsappAtivo : Boolean.FALSE;
+        this.whatsappAtivo = whatsappAtivo != null ? whatsappAtivo : Boolean.TRUE;
         this.dataNascimento = dataNascimento;
         this.sexo = sexo;
         this.fotoLink = fotoLink;
@@ -60,7 +60,7 @@ public class Cliente {
 
     public Boolean getWhatsappAtivo() { return whatsappAtivo; }
     public void setWhatsappAtivo(Boolean whatsappAtivo) {
-        this.whatsappAtivo = whatsappAtivo != null ? whatsappAtivo : Boolean.FALSE;
+        this.whatsappAtivo = whatsappAtivo != null ? whatsappAtivo : Boolean.TRUE;
     }
 
     public LocalDate getDataNascimento() { return dataNascimento; }

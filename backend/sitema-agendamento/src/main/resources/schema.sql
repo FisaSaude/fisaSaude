@@ -48,7 +48,7 @@ CREATE TABLE IF NOT EXISTS cliente (
     id INT PRIMARY KEY AUTO_INCREMENT,
     nome VARCHAR(100) NOT NULL,
     telefone_whatsapp VARCHAR(20) NOT NULL UNIQUE,
-    whatsapp_ativo BOOLEAN DEFAULT FALSE,
+    whatsapp_ativo BOOLEAN DEFAULT TRUE,
     data_nascimento DATE NOT NULL,
     sexo ENUM('M', 'F', 'OUTRO') NOT NULL,
     foto_link VARCHAR(255)
@@ -115,6 +115,27 @@ CREATE TABLE IF NOT EXISTS notificacao (
     INDEX idx_status (`status`),
     INDEX idx_tentativas (tentativas, proxima_retentativa),
     INDEX idx_agendamento (agendamento_id)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS mensagem_resposta_whatsapp (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    agendamento_id INT NOT NULL,
+    cliente_id INT NOT NULL,
+    telefone VARCHAR(20) NOT NULL,
+    conteudo_resposta TEXT NOT NULL,
+    resposta_tipo ENUM('SIM', 'NAO', 'REAGENDAR', 'OUTRO') NOT NULL DEFAULT 'OUTRO',
+    twilio_message_sid VARCHAR(100),
+    data_recebida DATETIME NOT NULL,
+    criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_mr_agendamento
+        FOREIGN KEY (agendamento_id) REFERENCES agendamento(id),
+
+    CONSTRAINT fk_mr_cliente
+        FOREIGN KEY (cliente_id) REFERENCES cliente(id),
+
+    INDEX idx_mr_agenda (agendamento_id),
+    INDEX idx_mr_data (data_recebida)
 ) ENGINE=InnoDB;
 
 -- ========================================
