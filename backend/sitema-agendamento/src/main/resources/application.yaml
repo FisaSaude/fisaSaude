@@ -35,6 +35,18 @@ springdoc:
     persist-authorization: true
   show-login-endpoint: true
 
+app:
+  notifications:
+    timezone: America/Sao_Paulo
+    lembrete-cron: "0 0 15 * * ?"
+    retry-fixed-rate-ms: 3600000
+    max-send-attempts: 3
+    twilio-enabled: ${TWILIO_ENABLED:false}
+    account-sid: ${TWILIO_ACCOUNT_SID:}
+    auth-token: ${TWILIO_AUTH_TOKEN:}
+    whatsapp-from: ${TWILIO_WHATSAPP_FROM:}
+    establishment-alert-to: ${TWILIO_ALERT_RECEPCAO:}
+
 api:
   security:
     token:
