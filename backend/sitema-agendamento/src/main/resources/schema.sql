@@ -99,13 +99,22 @@ CREATE TABLE IF NOT EXISTS agendamento (
 -- ========================================
 CREATE TABLE IF NOT EXISTS notificacao (
     id INT PRIMARY KEY AUTO_INCREMENT,
-    tipo ENUM('LEMBRETE', 'CONFIRMACAO', 'CANCELAMENTO') NOT NULL,
-    `status` ENUM('PENDENTE', 'ENVIADO', 'FALHOU') NOT NULL,
-    enviado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
+    tipo ENUM('LEMBRETE', 'CONFIRMACAO', 'CANCELAMENTO', 'REAGENDAMENTO') NOT NULL,
+    `status` ENUM('PENDENTE', 'ENVIADO', 'FALHOU', 'DESCARTADA') NOT NULL DEFAULT 'PENDENTE',
+    twilio_message_sid VARCHAR(100) UNIQUE,
+    tentativas INT NOT NULL DEFAULT 0,
+    mensagem TEXT,
+    proxima_retentativa DATETIME,
+    enviado_em DATETIME,
+    criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     agendamento_id INT NOT NULL,
 
     CONSTRAINT fk_notificacao_agendamento
-        FOREIGN KEY (agendamento_id) REFERENCES agendamento(id)
+        FOREIGN KEY (agendamento_id) REFERENCES agendamento(id),
+
+    INDEX idx_status (`status`),
+    INDEX idx_tentativas (tentativas, proxima_retentativa),
+    INDEX idx_agendamento (agendamento_id)
 ) ENGINE=InnoDB;
 
 -- ========================================
