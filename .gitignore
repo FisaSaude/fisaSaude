@@ -7,7 +7,5 @@ node_modules/
 # Logs
 *.log
 
-# Documentation (local development only)
+# Markdown: apenas local (não versionar documentação .md)
 *.md
-!README.md
-!AJUSTES_DER_REDIS.md
