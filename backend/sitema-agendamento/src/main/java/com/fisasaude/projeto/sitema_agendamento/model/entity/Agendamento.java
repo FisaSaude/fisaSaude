@@ -45,13 +45,16 @@ public class Agendamento {
     @Column(nullable = false)
     private LocalDateTime atualizadoEm;
 
+    @Column(columnDefinition = "TEXT")
+    private String observacoes;
+
     // ...existing code...
 
     // Construtor padrão
     public Agendamento() {}
 
     // Construtor completo
-    public Agendamento(Integer id, LocalDate data, LocalTime horaInicio, LocalTime horaFim, StatusAgendamentoEnum status, LocalDateTime criadoEm, LocalDateTime atualizadoEm, Cliente cliente, Servico servico, Usuario usuario, List<Notificacao> notificacoes, List<Prontuario> prontuarios) {
+    public Agendamento(Integer id, LocalDate data, LocalTime horaInicio, LocalTime horaFim, StatusAgendamentoEnum status, LocalDateTime criadoEm, LocalDateTime atualizadoEm, String observacoes, Cliente cliente, Servico servico, Usuario usuario, List<Notificacao> notificacoes, List<Prontuario> prontuarios) {
         this.id = id;
         this.data = data;
         this.horaInicio = horaInicio;
@@ -59,6 +62,7 @@ public class Agendamento {
         this.status = status;
         this.criadoEm = criadoEm;
         this.atualizadoEm = atualizadoEm;
+        this.observacoes = observacoes;
         this.cliente = cliente;
         this.servico = servico;
         this.usuario = usuario;
@@ -88,6 +92,9 @@ public class Agendamento {
     public LocalDateTime getAtualizadoEm() { return atualizadoEm; }
     public void setAtualizadoEm(LocalDateTime atualizadoEm) { this.atualizadoEm = atualizadoEm; }
 
+    public String getObservacoes() { return observacoes; }
+    public void setObservacoes(String observacoes) { this.observacoes = observacoes; }
+
     public Cliente getCliente() { return cliente; }
     public void setCliente(Cliente cliente) { this.cliente = cliente; }
 
@@ -114,6 +121,7 @@ public class Agendamento {
                 ", status=" + status +
                 ", criadoEm=" + criadoEm +
                 ", atualizadoEm=" + atualizadoEm +
+                ", observacoes=" + observacoes +
                 ", cliente=" + (cliente != null ? cliente.getId() : null) +
                 ", servico=" + (servico != null ? servico.getId() : null) +
                 ", usuario=" + (usuario != null ? usuario.getId() : null) +
