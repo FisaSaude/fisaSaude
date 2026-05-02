@@ -1,7 +1,9 @@
 package com.fisasaude.projeto.sitema_agendamento.controller.agendamento;
 
 import com.fisasaude.projeto.sitema_agendamento.dto.agendamento.AgendamentoCreateRequestDto;
+import com.fisasaude.projeto.sitema_agendamento.dto.agendamento.AgendamentoRemarcarRequestDto;
 import com.fisasaude.projeto.sitema_agendamento.dto.agendamento.AgendamentoResponseDto;
+import com.fisasaude.projeto.sitema_agendamento.dto.agendamento.HorarioSlotResponseDto;
 import com.fisasaude.projeto.sitema_agendamento.dto.agendamento.AgendamentoResumoPeriodoResponseDto;
 import com.fisasaude.projeto.sitema_agendamento.dto.agendamento.VerificacaoConflitoAgendamentoResponseDto;
 import com.fisasaude.projeto.sitema_agendamento.exception.ErrorResponse;
@@ -89,6 +91,28 @@ public interface SwaggerAgendamentoController {
     );
 
     @Operation(
+            summary = "Remarcar agendamento",
+            description = "Mantem status AGENDADO e atualiza data/horario e, opcionalmente, usuario (mesmo estabelecimento) e servico. Valida intervalo, inicio futuro e conflitos excluindo o proprio agendamento."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Remarcado",
+                    content = @Content(schema = @Schema(implementation = AgendamentoResponseDto.class))),
+            @ApiResponse(responseCode = "400", description = "Validacao", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "401", description = "Token ausente ou invalido"),
+            @ApiResponse(responseCode = "403", description = "Sem permissao"),
+            @ApiResponse(responseCode = "404", description = "Agendamento, usuario ou servico nao encontrado",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "409", description = "Conflito de horario",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "422", description = "Regra semantica violada",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    ResponseEntity<AgendamentoResponseDto> remarcar(
+            @Parameter(description = "ID do agendamento", required = true, example = "1") @PathVariable Integer id,
+            @Valid @RequestBody AgendamentoRemarcarRequestDto dto
+    );
+
+    @Operation(
             summary = "Listar agendamentos por status e periodo",
             description = "Retorna agendamentos filtrados por status e intervalo de datas (inclusivo), com cliente, servico e usuario carregados."
     )
@@ -157,7 +181,28 @@ public interface SwaggerAgendamentoController {
             @Parameter(required = true) @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate data,
             @Parameter(required = true) @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.TIME) LocalTime horaInicio,
             @Parameter(required = true) @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.TIME) LocalTime horaFim,
-            @Parameter(description = "Exclui um agendamento na checagem (ex.: edição)") @RequestParam(required = false) Integer excludeAgendamentoId
+            @Parameter(description = "Exclui um agendamento na checagem (ex.: edicao)") @RequestParam(required = false) Integer excludeAgendamentoId
+    );
+
+    @Operation(
+            summary = "Listar slots de disponibilidade por usuario",
+            description = "Gera candidatos em passos fixos dentro do expediente do estabelecimento do usuario, exclui intervalos com agendamentos nao cancelados e apenas inicios no futuro (America/Sao_Paulo)."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Lista de intervalos disponiveis",
+                    content = @Content(array = @ArraySchema(schema = @Schema(implementation = HorarioSlotResponseDto.class)))),
+            @ApiResponse(responseCode = "400", description = "Parametros invalidos", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "401", description = "Token ausente ou invalido"),
+            @ApiResponse(responseCode = "403", description = "Sem permissao"),
+            @ApiResponse(responseCode = "404", description = "Usuario nao encontrado", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "422", description = "Duracao ou expediente invalido", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    ResponseEntity<List<HorarioSlotResponseDto>> slotsDisponiveis(
+            @Parameter(description = "Usuario (profissional)", required = true) @RequestParam Integer usuarioId,
+            @Parameter(description = "Data alvo", required = true, example = "2026-05-03") @RequestParam
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate data,
+            @Parameter(description = "Duracao em minutos; padrao 60; entre 15 e 480")
+            @RequestParam(required = false, defaultValue = "60") Integer duracaoMinutos
     );
 
     @Operation(summary = "Listar feriados por ano", description = "Integracao Brasil API / configuracao configurada pela aplicacao.")

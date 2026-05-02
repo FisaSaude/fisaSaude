@@ -1,8 +1,10 @@
 package com.fisasaude.projeto.sitema_agendamento.service;
 
 import com.fisasaude.projeto.sitema_agendamento.dto.agendamento.AgendamentoCreateRequestDto;
+import com.fisasaude.projeto.sitema_agendamento.dto.agendamento.AgendamentoRemarcarRequestDto;
 import com.fisasaude.projeto.sitema_agendamento.dto.agendamento.AgendamentoResumoPeriodoResponseDto;
 import com.fisasaude.projeto.sitema_agendamento.dto.agendamento.AgendamentoResponseDto;
+import com.fisasaude.projeto.sitema_agendamento.dto.agendamento.HorarioSlotResponseDto;
 import com.fisasaude.projeto.sitema_agendamento.dto.agendamento.VerificacaoConflitoAgendamentoResponseDto;
 import com.fisasaude.projeto.sitema_agendamento.exception.BadRequestException;
 import com.fisasaude.projeto.sitema_agendamento.exception.ConflictException;
@@ -23,6 +25,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,6 +34,9 @@ import org.springframework.transaction.annotation.Transactional;
 public class AgendamentoService {
 
     private static final ZoneId ZONA_APP = ZoneId.of("America/Sao_Paulo");
+    private static final int SLOT_STEP_MINUTES = 15;
+    private static final int DURACAO_SLOT_MIN = 15;
+    private static final int DURACAO_SLOT_MAX = 480;
 
     private final AgendamentoRepository agendamentoRepository;
     private final ClienteRepository clienteRepository;
@@ -163,6 +169,65 @@ public class AgendamentoService {
         return agendamentoMapper.toDto(agendamentoRepository.save(a));
     }
 
+    @Transactional
+    public AgendamentoResponseDto remarcar(Integer id, AgendamentoRemarcarRequestDto dto) {
+        validarIdAgendamento(id);
+        if (dto == null) {
+            throw new BadRequestException("Corpo da requisicao nao pode ser nulo");
+        }
+
+        Agendamento a = agendamentoRepository
+                .findByIdWithRelations(id)
+                .orElseThrow(() -> new NotFoundException("Agendamento nao encontrado"));
+        exigeStatusAgendado(a);
+
+        LocalDate data = dto.data();
+        LocalTime horaInicio = dto.horaInicio();
+        LocalTime horaFim = dto.horaFim();
+
+        validarIntervaloHorario(horaInicio, horaFim);
+        validarInicioFuturo(data, horaInicio);
+
+        Usuario usuarioAlvo = a.getUsuario();
+        if (dto.usuarioId() != null) {
+            Usuario candidato = usuarioRepository
+                    .findById(dto.usuarioId())
+                    .orElseThrow(() -> new NotFoundException("Usuario nao encontrado"));
+            if (!mesmoEstabelecimento(a.getUsuario(), candidato)) {
+                throw new UnprocessableEntityException(
+                        "O novo usuario deve pertencer ao mesmo estabelecimento do agendamento atual"
+                );
+            }
+            usuarioAlvo = candidato;
+        }
+
+        Servico servicoAlvo = a.getServico();
+        if (dto.servicoId() != null) {
+            servicoAlvo = servicoRepository.findById(dto.servicoId()).orElseThrow(() -> new NotFoundException("Servico nao encontrado"));
+        }
+
+        long conflitos = agendamentoRepository.countAgendamentosConflitantes(
+                usuarioAlvo.getId(),
+                data,
+                horaInicio,
+                horaFim,
+                id,
+                StatusAgendamentoEnum.CANCELADO
+        );
+        if (conflitos > 0) {
+            throw new ConflictException("Ja existe agendamento nao cancelado neste intervalo para o profissional");
+        }
+
+        a.setData(data);
+        a.setHoraInicio(horaInicio);
+        a.setHoraFim(horaFim);
+        a.setUsuario(usuarioAlvo);
+        a.setServico(servicoAlvo);
+        a.setAtualizadoEm(LocalDateTime.now(ZONA_APP));
+
+        return agendamentoMapper.toDto(agendamentoRepository.save(a));
+    }
+
     private void validarIdAgendamento(Integer id) {
         if (id == null || id <= 0) {
             throw new BadRequestException("Id do agendamento invalido");
@@ -172,7 +237,7 @@ public class AgendamentoService {
     private void exigeStatusAgendado(Agendamento a) {
         if (a.getStatus() != StatusAgendamentoEnum.AGENDADO) {
             throw new UnprocessableEntityException(
-                    "Somente agendamentos com status AGENDADO podem ser cancelados ou concluidos nesta operacao."
+                    "Somente agendamentos com status AGENDADO podem ser alterados nesta operacao."
             );
         }
     }
@@ -240,6 +305,60 @@ public class AgendamentoService {
                 StatusAgendamentoEnum.CANCELADO
         );
         return new VerificacaoConflitoAgendamentoResponseDto(n);
+    }
+
+    @Transactional(readOnly = true)
+    public List<HorarioSlotResponseDto> listarSlotsDisponiveis(Integer usuarioId, LocalDate data, Integer duracaoMinutos) {
+        if (usuarioId == null) {
+            throw new BadRequestException("usuarioId e obrigatorio");
+        }
+        if (data == null) {
+            throw new BadRequestException("data e obrigatoria");
+        }
+        int dur = duracaoMinutos != null ? duracaoMinutos : 60;
+        if (dur < DURACAO_SLOT_MIN || dur > DURACAO_SLOT_MAX) {
+            throw new UnprocessableEntityException(
+                    "duracaoMinutos deve estar entre " + DURACAO_SLOT_MIN + " e " + DURACAO_SLOT_MAX
+            );
+        }
+
+        Usuario u = usuarioRepository.findById(usuarioId).orElseThrow(() -> new NotFoundException("Usuario nao encontrado"));
+        LocalTime diaInicio = u.getEstabelecimento().getInicioFuncionamento();
+        LocalTime diaFim = u.getEstabelecimento().getFimFuncionamento();
+
+        if (!diaInicio.isBefore(diaFim)) {
+            throw new UnprocessableEntityException("Horario de funcionamento do estabelecimento invalido");
+        }
+
+        List<HorarioSlotResponseDto> resultado = new ArrayList<>();
+        for (LocalTime candidato = diaInicio; !candidato.plusMinutes(dur).isAfter(diaFim); candidato = candidato.plusMinutes(SLOT_STEP_MINUTES)) {
+            LocalTime hi = candidato;
+            LocalTime hf = candidato.plusMinutes(dur);
+            if (!inicioSlotNoFuturo(data, hi)) {
+                continue;
+            }
+            long c = agendamentoRepository.countAgendamentosConflitantes(
+                    usuarioId,
+                    data,
+                    hi,
+                    hf,
+                    null,
+                    StatusAgendamentoEnum.CANCELADO
+            );
+            if (c == 0) {
+                resultado.add(new HorarioSlotResponseDto(hi, hf));
+            }
+        }
+        return resultado;
+    }
+
+    private boolean mesmoEstabelecimento(Usuario atual, Usuario outro) {
+        return atual.getEstabelecimento().getId().equals(outro.getEstabelecimento().getId());
+    }
+
+    private boolean inicioSlotNoFuturo(LocalDate data, LocalTime horaInicio) {
+        ZonedDateTime inicio = ZonedDateTime.of(data, horaInicio, ZONA_APP);
+        return inicio.isAfter(ZonedDateTime.now(ZONA_APP));
     }
 
     private void validarInicioFuturo(LocalDate data, LocalTime horaInicio) {

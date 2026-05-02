@@ -1,7 +1,9 @@
 package com.fisasaude.projeto.sitema_agendamento.controller.agendamento;
 
 import com.fisasaude.projeto.sitema_agendamento.dto.agendamento.AgendamentoCreateRequestDto;
+import com.fisasaude.projeto.sitema_agendamento.dto.agendamento.AgendamentoRemarcarRequestDto;
 import com.fisasaude.projeto.sitema_agendamento.dto.agendamento.AgendamentoResponseDto;
+import com.fisasaude.projeto.sitema_agendamento.dto.agendamento.HorarioSlotResponseDto;
 import com.fisasaude.projeto.sitema_agendamento.dto.agendamento.AgendamentoResumoPeriodoResponseDto;
 import com.fisasaude.projeto.sitema_agendamento.dto.agendamento.VerificacaoConflitoAgendamentoResponseDto;
 import com.fisasaude.projeto.sitema_agendamento.feignclient.ApiFeriados;
@@ -56,6 +58,14 @@ public class AgendamentoController implements SwaggerAgendamentoController {
         return ResponseEntity.ok(agendamentoService.concluir(id));
     }
 
+    @PostMapping("/{id}/remarcar")
+    public ResponseEntity<AgendamentoResponseDto> remarcar(
+            @PathVariable Integer id,
+            @Valid @RequestBody AgendamentoRemarcarRequestDto dto
+    ) {
+        return ResponseEntity.ok(agendamentoService.remarcar(id, dto));
+    }
+
     @GetMapping(params = {"status", "dataInicio", "dataFim"})
     public ResponseEntity<List<AgendamentoResponseDto>> listarPorStatusEPeriodo(
             @RequestParam StatusAgendamentoEnum status,
@@ -89,6 +99,15 @@ public class AgendamentoController implements SwaggerAgendamentoController {
         return ResponseEntity.ok(
                 agendamentoService.verificarConflitoHorario(usuarioId, data, horaInicio, horaFim, excludeAgendamentoId)
         );
+    }
+
+    @GetMapping("/slots-disponiveis")
+    public ResponseEntity<List<HorarioSlotResponseDto>> slotsDisponiveis(
+            @RequestParam Integer usuarioId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate data,
+            @RequestParam(required = false, defaultValue = "60") Integer duracaoMinutos
+    ) {
+        return ResponseEntity.ok(agendamentoService.listarSlotsDisponiveis(usuarioId, data, duracaoMinutos));
     }
 
     @GetMapping("/feriados/{ano}")
