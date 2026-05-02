@@ -14,10 +14,6 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 import java.time.LocalDateTime;
 
-/**
- * Chamado pelo Spring Security quando uma requisição chega sem autenticação
- * em um endpoint protegido. Retorna HTTP 401 com corpo JSON padronizado.
- */
 @Component
 public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint {
 

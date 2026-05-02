@@ -1,10 +1,5 @@
 package com.fisasaude.projeto.sitema_agendamento.model.enums;
 
-
-/**
- * Enum que representa os tipos de notificação.
- * Valores: LEMBRETE, CONFIRMACAO, CANCELAMENTO, REAGENDAMENTO
- */
 public enum TipoNotificacaoEnum {
     LEMBRETE("Lembrete"),
     CONFIRMACAO("Confirmação"),

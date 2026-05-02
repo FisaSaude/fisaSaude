@@ -7,10 +7,6 @@ import java.util.ArrayList;
 import java.util.List;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-/**
- * Entidade que representa um cliente (paciente).
- * Um cliente pode ter múltiplos agendamentos e prontuários.
- */
 @Entity
 @Table(name = "cliente")
 
@@ -39,12 +35,8 @@ public class Cliente {
     @Column(length = 255)
     private String fotoLink;
 
-    // ...existing code...
-
-    // Construtor padrão
     public Cliente() {}
 
-    // Construtor completo
     public Cliente(Integer id, String nome, String telefone, Boolean whatsappAtivo, LocalDate dataNascimento, SexoEnum sexo, String fotoLink, List<Agendamento> agendamentos, List<Prontuario> prontuarios) {
         this.id = id;
         this.nome = nome;
@@ -57,7 +49,6 @@ public class Cliente {
         this.prontuarios = prontuarios != null ? prontuarios : new ArrayList<>();
     }
 
-    // Getters e Setters
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }
 
@@ -87,7 +78,6 @@ public class Cliente {
     public List<Prontuario> getProntuarios() { return prontuarios; }
     public void setProntuarios(List<Prontuario> prontuarios) { this.prontuarios = prontuarios; }
 
-    // toString sem agendamentos e prontuarios
     @Override
     public String toString() {
         return "Cliente{" +

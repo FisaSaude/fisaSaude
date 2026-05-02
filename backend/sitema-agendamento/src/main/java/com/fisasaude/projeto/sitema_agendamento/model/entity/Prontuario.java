@@ -3,10 +3,6 @@ package com.fisasaude.projeto.sitema_agendamento.model.entity;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
-/**
- * Entidade que representa um prontuário médico de um cliente.
- * Um prontuário está associado a um cliente e a um agendamento.
- */
 @Entity
 @Table(name = "prontuario")
 public class Prontuario {
@@ -29,10 +25,8 @@ public class Prontuario {
     @JoinColumn(name = "agendamento_id", nullable = false)
     private Agendamento agendamento;
 
-    // Construtor padrão
     public Prontuario() {}
 
-    // Construtor completo
     public Prontuario(Integer id, String observacoes, LocalDateTime criadoEm, Cliente cliente, Agendamento agendamento) {
         this.id = id;
         this.observacoes = observacoes;
@@ -41,7 +35,6 @@ public class Prontuario {
         this.agendamento = agendamento;
     }
 
-    // Getters e Setters
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }
 
@@ -57,7 +50,6 @@ public class Prontuario {
     public Agendamento getAgendamento() { return agendamento; }
     public void setAgendamento(Agendamento agendamento) { this.agendamento = agendamento; }
 
-    // toString
     @Override
     public String toString() {
         return "Prontuario{" +

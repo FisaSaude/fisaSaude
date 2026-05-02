@@ -11,10 +11,6 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-/**
- * Entidade que representa um usuário (profissional de saúde).
- * Um usuário pertence a um estabelecimento e pode ter múltiplos agendamentos.
- */
 @Entity
 @Table(name = "usuario")
 public class Usuario implements UserDetails {
@@ -44,10 +40,8 @@ public class Usuario implements UserDetails {
     @JsonIgnore
     private List<Agendamento> agendamentos = new ArrayList<>();
 
-    // Construtor padrão
     public Usuario() {}
 
-    // Construtor completo
     public Usuario(Integer id, String nome, String email, String senha, RoleEnum role, Estabelecimento estabelecimento, List<Agendamento> agendamentos) {
         this.id = id;
         this.nome = nome;
@@ -58,7 +52,6 @@ public class Usuario implements UserDetails {
         this.agendamentos = agendamentos != null ? agendamentos : new ArrayList<>();
     }
 
-    // Getters e Setters
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }
 
@@ -80,7 +73,6 @@ public class Usuario implements UserDetails {
     public List<Agendamento> getAgendamentos() { return agendamentos; }
     public void setAgendamentos(List<Agendamento> agendamentos) { this.agendamentos = agendamentos; }
 
-    // toString sem agendamentos
     @Override
     public String toString() {
         return "Usuario{" +

@@ -6,10 +6,6 @@ import java.util.ArrayList;
 import java.util.List;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-/**
- * Entidade que representa um estabelecimento (clínica/consultório).
- * Um estabelecimento pode ter múltiplos usuários e despesas.
- */
 @Entity
 @Table(name = "estabelecimento")
 public class Estabelecimento {
@@ -33,12 +29,8 @@ public class Estabelecimento {
     @Column(nullable = false)
     private LocalTime fimFuncionamento;
 
-    // ...existing code...
-
-    // Construtor padrão
     public Estabelecimento() {}
 
-    // Construtor completo
     public Estabelecimento(Integer id, String nome, String endereco, String parametros, LocalTime inicioFuncionamento, LocalTime fimFuncionamento, List<Usuario> usuarios, List<Despesas> despesas) {
         this.id = id;
         this.nome = nome;
@@ -50,7 +42,6 @@ public class Estabelecimento {
         this.despesas = despesas != null ? despesas : new ArrayList<>();
     }
 
-    // Getters e Setters
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }
 
@@ -75,7 +66,6 @@ public class Estabelecimento {
     public List<Despesas> getDespesas() { return despesas; }
     public void setDespesas(List<Despesas> despesas) { this.despesas = despesas; }
 
-    // toString sem usuarios e despesas
     @Override
     public String toString() {
         return "Estabelecimento{" +

@@ -5,10 +5,6 @@ import com.fisasaude.projeto.sitema_agendamento.model.enums.TipoNotificacaoEnum;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
-/**
- * Entidade que representa uma notificação enviada ao cliente.
- * Uma notificação está associada a um agendamento.
- */
 @Entity
 @Table(name = "notificacao")
 public class Notificacao {

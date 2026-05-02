@@ -6,10 +6,6 @@ import java.util.ArrayList;
 import java.util.List;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-/**
- * Entidade que representa um serviço oferecido pelo estabelecimento.
- * Um serviço pode estar associado a múltiplos agendamentos.
- */
 @Entity
 @Table(name = "servico")
 public class Servico {
@@ -31,12 +27,8 @@ public class Servico {
     @JsonIgnore
     private List<Agendamento> agendamentos = new ArrayList<>();
 
-    // ...existing code...
-
-    // Construtor padrão
     public Servico() {}
 
-    // Construtor completo
     public Servico(Integer id, String nome, String tipo, BigDecimal preco, List<Agendamento> agendamentos) {
         this.id = id;
         this.nome = nome;
@@ -45,7 +37,6 @@ public class Servico {
         this.agendamentos = agendamentos != null ? agendamentos : new ArrayList<>();
     }
 
-    // Getters e Setters
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }
 
@@ -61,7 +52,6 @@ public class Servico {
     public List<Agendamento> getAgendamentos() { return agendamentos; }
     public void setAgendamentos(List<Agendamento> agendamentos) { this.agendamentos = agendamentos; }
 
-    // toString sem agendamentos
     @Override
     public String toString() {
         return "Servico{" +

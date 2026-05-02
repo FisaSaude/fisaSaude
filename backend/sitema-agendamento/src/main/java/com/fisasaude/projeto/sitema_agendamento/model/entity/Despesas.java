@@ -4,10 +4,6 @@ import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-/**
- * Entidade que representa uma despesa de um estabelecimento.
- * Uma despesa pertence a um estabelecimento.
- */
 @Entity
 @Table(name = "despesas")
 public class Despesas {
@@ -28,12 +24,8 @@ public class Despesas {
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal valor;
 
-    // ...existing code...
-
-    // Construtor padrão
     public Despesas() {}
 
-    // Construtor completo
     public Despesas(Integer id, String nome, LocalDate dataDespesa, String tipo, BigDecimal valor, Estabelecimento estabelecimento) {
         this.id = id;
         this.nome = nome;
@@ -43,7 +35,6 @@ public class Despesas {
         this.estabelecimento = estabelecimento;
     }
 
-    // Getters e Setters
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }
 
@@ -62,7 +53,6 @@ public class Despesas {
     public Estabelecimento getEstabelecimento() { return estabelecimento; }
     public void setEstabelecimento(Estabelecimento estabelecimento) { this.estabelecimento = estabelecimento; }
 
-    // toString
     @Override
     public String toString() {
         return "Despesas{" +

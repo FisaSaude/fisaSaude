@@ -14,10 +14,6 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 import java.time.LocalDateTime;
 
-/**
- * Chamado pelo Spring Security quando um usuário autenticado tenta acessar
- * um recurso para o qual não possui permissão. Retorna HTTP 403 com corpo JSON padronizado.
- */
 @Component
 public class CustomAccessDeniedHandler implements AccessDeniedHandler {
 

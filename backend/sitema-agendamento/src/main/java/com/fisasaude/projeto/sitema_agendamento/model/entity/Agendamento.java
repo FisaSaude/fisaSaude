@@ -9,11 +9,6 @@ import java.util.ArrayList;
 import java.util.List;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-/**
- * Entidade que representa um agendamento de cliente com um serviço.
- * Um agendamento é criado por um usuário para um cliente em um horário específico.
- * UNIQUE: (data, hora_inicio, usuario_id) - Evita conflitos de agenda
- */
 @Entity
 @Table(name = "agendamento", 
        uniqueConstraints = {
@@ -48,12 +43,8 @@ public class Agendamento {
     @Column(columnDefinition = "TEXT")
     private String observacoes;
 
-    // ...existing code...
-
-    // Construtor padrão
     public Agendamento() {}
 
-    // Construtor completo
     public Agendamento(Integer id, LocalDate data, LocalTime horaInicio, LocalTime horaFim, StatusAgendamentoEnum status, LocalDateTime criadoEm, LocalDateTime atualizadoEm, String observacoes, Cliente cliente, Servico servico, Usuario usuario, List<Notificacao> notificacoes, List<Prontuario> prontuarios) {
         this.id = id;
         this.data = data;
@@ -70,7 +61,6 @@ public class Agendamento {
         this.prontuarios = prontuarios != null ? prontuarios : new ArrayList<>();
     }
 
-    // Getters e Setters
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }
 
@@ -110,7 +100,6 @@ public class Agendamento {
     public List<Prontuario> getProntuarios() { return prontuarios; }
     public void setProntuarios(List<Prontuario> prontuarios) { this.prontuarios = prontuarios; }
 
-    // toString sem notificacoes e prontuarios
     @Override
     public String toString() {
         return "Agendamento{" +

@@ -1,10 +1,5 @@
 package com.fisasaude.projeto.sitema_agendamento.model.enums;
 
-
-/**
- * Enum que representa os possíveis status de um agendamento.
- * Valores: AGENDADO, CANCELADO, CONCLUIDO
- */
 public enum StatusAgendamentoEnum {
     AGENDADO("Agendado"),
     CANCELADO("Cancelado"),
