@@ -5,6 +5,8 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -12,6 +14,8 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/webhook")
 @Tag(name = "Webhook", description = "Endpoints para recebimento de webhooks de notificações")
 public class WebhookController {
+
+    private static final Logger log = LoggerFactory.getLogger(WebhookController.class);
 
     @PostMapping("/whatsapp")
     @Operation(summary = "Receber mensagem WhatsApp", description = "Webhook para receber mensagens de entrada via WhatsApp")
@@ -24,9 +28,6 @@ public class WebhookController {
             @Parameter(description = "Corpo da mensagem") @RequestParam("Body") String body,
             @Parameter(description = "Número de telefone do remetente") @RequestParam("From") String from
     ) {
-
-        System.out.println("Mensagem recebida: " + body);
-        System.out.println("Telefone: " + from);
-
+        log.info("Webhook WhatsApp From={} BodyLength={}", from, body != null ? body.length() : 0);
     }
 }
