@@ -4,6 +4,7 @@ import com.fisasaude.projeto.sitema_agendamento.config.NotificacaoAppProperties;
 import com.fisasaude.projeto.sitema_agendamento.model.entity.Agendamento;
 import com.fisasaude.projeto.sitema_agendamento.model.entity.Cliente;
 import com.fisasaude.projeto.sitema_agendamento.model.entity.MensagemRespostaWhatsapp;
+import com.fisasaude.projeto.sitema_agendamento.service.support.RespostaWhatsappTexto;
 import com.fisasaude.projeto.sitema_agendamento.model.enums.RespostaWhatsappTipoEnum;
 import com.fisasaude.projeto.sitema_agendamento.model.enums.StatusAgendamentoEnum;
 import com.fisasaude.projeto.sitema_agendamento.repository.AgendamentoRepository;
@@ -13,9 +14,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.text.Normalizer;
 import java.util.List;
-import java.util.Locale;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -79,7 +78,7 @@ public class WhatsAppInboundService {
         }
         Agendamento agenda = candidatos.getFirst();
 
-        RespostaWhatsappTipoEnum tipo = classificarTipoResposta(normalizeText(body));
+        RespostaWhatsappTipoEnum tipo = RespostaWhatsappTexto.classificarRespostaPaciente(body);
 
         MensagemRespostaWhatsapp mr = new MensagemRespostaWhatsapp();
         mr.setAgendamento(agendamentoRepository.getReferenceById(agenda.getId()));
@@ -124,22 +123,6 @@ public class WhatsAppInboundService {
         return Optional.empty();
     }
 
-    private static RespostaWhatsappTipoEnum classificarTipoResposta(String t) {
-        if (t == null || t.isBlank()) {
-            return RespostaWhatsappTipoEnum.OUTRO;
-        }
-        if (t.contains("SIM") || t.contains("CONFIRM") || t.contains("CORRETO") || "OK".equals(t)) {
-            return RespostaWhatsappTipoEnum.SIM;
-        }
-        if (t.contains("REMARC")) {
-            return RespostaWhatsappTipoEnum.REAGENDAR;
-        }
-        if (t.contains("NAO")) {
-            return RespostaWhatsappTipoEnum.NAO;
-        }
-        return RespostaWhatsappTipoEnum.OUTRO;
-    }
-
     private static String apenasDigitos(String s) {
         if (s == null) {
             return "";
@@ -149,14 +132,6 @@ public class WhatsAppInboundService {
                         .replace("WhatsApp:", "")
                         .trim();
         return limpo.replaceAll("\\D+", "");
-    }
-
-    private static String normalizeText(String raw) {
-        if (raw == null || raw.isBlank()) {
-            return "";
-        }
-        String upper = raw.trim().toUpperCase(Locale.ROOT);
-        return Normalizer.normalize(upper, Normalizer.Form.NFD).replaceAll("\\p{M}+", "");
     }
 
     @Transactional
