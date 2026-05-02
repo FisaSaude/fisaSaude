@@ -6,6 +6,7 @@ import com.fisasaude.projeto.sitema_agendamento.dto.agendamento.AgendamentoResum
 import com.fisasaude.projeto.sitema_agendamento.dto.agendamento.AgendamentoResponseDto;
 import com.fisasaude.projeto.sitema_agendamento.dto.agendamento.HorarioSlotResponseDto;
 import com.fisasaude.projeto.sitema_agendamento.dto.agendamento.VerificacaoConflitoAgendamentoResponseDto;
+import com.fisasaude.projeto.sitema_agendamento.event.AgendamentoNotificacaoConfirmacaoEvent;
 import com.fisasaude.projeto.sitema_agendamento.exception.BadRequestException;
 import com.fisasaude.projeto.sitema_agendamento.exception.ConflictException;
 import com.fisasaude.projeto.sitema_agendamento.exception.NotFoundException;
@@ -27,6 +28,7 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -43,19 +45,25 @@ public class AgendamentoService {
     private final ServicoRepository servicoRepository;
     private final UsuarioRepository usuarioRepository;
     private final AgendamentoMapper agendamentoMapper;
+    private final ApplicationEventPublisher eventPublisher;
+    private final NotificacaoDispatchService notificacaoDispatchService;
 
     public AgendamentoService(
             AgendamentoRepository agendamentoRepository,
             ClienteRepository clienteRepository,
             ServicoRepository servicoRepository,
             UsuarioRepository usuarioRepository,
-            AgendamentoMapper agendamentoMapper
+            AgendamentoMapper agendamentoMapper,
+            ApplicationEventPublisher eventPublisher,
+            NotificacaoDispatchService notificacaoDispatchService
     ) {
         this.agendamentoRepository = agendamentoRepository;
         this.clienteRepository = clienteRepository;
         this.servicoRepository = servicoRepository;
         this.usuarioRepository = usuarioRepository;
         this.agendamentoMapper = agendamentoMapper;
+        this.eventPublisher = eventPublisher;
+        this.notificacaoDispatchService = notificacaoDispatchService;
     }
 
     @Transactional(readOnly = true)
@@ -133,6 +141,7 @@ public class AgendamentoService {
         a.setUsuario(usuario);
 
         Agendamento salvo = agendamentoRepository.save(a);
+        eventPublisher.publishEvent(new AgendamentoNotificacaoConfirmacaoEvent(salvo.getId()));
         return agendamentoMapper.toDto(salvo);
     }
 
@@ -152,6 +161,7 @@ public class AgendamentoService {
                 .findByIdWithRelations(id)
                 .orElseThrow(() -> new NotFoundException("Agendamento nao encontrado"));
         exigeStatusAgendado(a);
+        notificacaoDispatchService.descartarConfirmacaoElembreteParaAgendamento(id);
         a.setStatus(StatusAgendamentoEnum.CANCELADO);
         a.setAtualizadoEm(LocalDateTime.now(ZONA_APP));
         return agendamentoMapper.toDto(agendamentoRepository.save(a));
@@ -164,6 +174,7 @@ public class AgendamentoService {
                 .findByIdWithRelations(id)
                 .orElseThrow(() -> new NotFoundException("Agendamento nao encontrado"));
         exigeStatusAgendado(a);
+        notificacaoDispatchService.descartarConfirmacaoElembreteParaAgendamento(id);
         a.setStatus(StatusAgendamentoEnum.CONCLUIDO);
         a.setAtualizadoEm(LocalDateTime.now(ZONA_APP));
         return agendamentoMapper.toDto(agendamentoRepository.save(a));
@@ -180,6 +191,8 @@ public class AgendamentoService {
                 .findByIdWithRelations(id)
                 .orElseThrow(() -> new NotFoundException("Agendamento nao encontrado"));
         exigeStatusAgendado(a);
+
+        notificacaoDispatchService.descartarConfirmacaoElembreteParaAgendamento(id);
 
         LocalDate data = dto.data();
         LocalTime horaInicio = dto.horaInicio();
@@ -225,7 +238,9 @@ public class AgendamentoService {
         a.setServico(servicoAlvo);
         a.setAtualizadoEm(LocalDateTime.now(ZONA_APP));
 
-        return agendamentoMapper.toDto(agendamentoRepository.save(a));
+        Agendamento salvoRemarcacao = agendamentoRepository.save(a);
+        eventPublisher.publishEvent(new AgendamentoNotificacaoConfirmacaoEvent(salvoRemarcacao.getId()));
+        return agendamentoMapper.toDto(salvoRemarcacao);
     }
 
     private void validarIdAgendamento(Integer id) {
