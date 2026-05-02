@@ -3,6 +3,7 @@ package com.fisasaude.projeto.sitema_agendamento.exception;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDateTime;
+import org.springframework.http.HttpStatus;
 
 @Schema(description = "Formato padrao de erro da API")
 public record ErrorResponse(
@@ -18,5 +19,8 @@ public record ErrorResponse(
         @Schema(description = "Endpoint onde ocorreu o erro", example = "/clientes/99")
         String path
 ) {
+    public static ErrorResponse of(HttpStatus status, String message, String path) {
+        return new ErrorResponse(LocalDateTime.now(), status.value(), status.getReasonPhrase(), message, path);
+    }
 }
 

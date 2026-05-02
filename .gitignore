@@ -10,3 +10,7 @@ node_modules/
 # Markdown só no repositório: README oficial da equipe
 *.md
 !README.md
+
+# Planejamento / notas locais (nunca commitar; não usar git add -f)
+CHECKLIST_EXECUTIVO.md
+AJUSTES_DER_REDIS.md

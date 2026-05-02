@@ -5,6 +5,7 @@ import com.fisasaude.projeto.sitema_agendamento.model.enums.StatusAgendamentoEnu
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -13,10 +14,18 @@ public interface AgendamentoRepository extends JpaRepository<Agendamento, Intege
 
     long countByDataBetweenAndStatus(LocalDate dataInicio, LocalDate dataFim, StatusAgendamentoEnum status);
 
+    @Query("""
+            SELECT DISTINCT a FROM Agendamento a
+            JOIN FETCH a.cliente
+            JOIN FETCH a.servico
+            JOIN FETCH a.usuario
+            WHERE a.status = :status AND a.data BETWEEN :inicio AND :fim
+            ORDER BY a.data ASC, a.horaInicio ASC
+            """)
     List<Agendamento> findByStatusAndDataBetweenOrderByDataAscHoraInicioAsc(
-            StatusAgendamentoEnum status,
-            LocalDate inicio,
-            LocalDate fim
+            @Param("status") StatusAgendamentoEnum status,
+            @Param("inicio") LocalDate inicio,
+            @Param("fim") LocalDate fim
     );
 
     @Query("""
@@ -58,4 +67,13 @@ public interface AgendamentoRepository extends JpaRepository<Agendamento, Intege
             @Param("data") LocalDate data,
             @Param("status") StatusAgendamentoEnum status
     );
+
+    @Query("""
+            SELECT DISTINCT a FROM Agendamento a
+            JOIN FETCH a.cliente
+            JOIN FETCH a.servico
+            JOIN FETCH a.usuario
+            WHERE a.id = :id
+            """)
+    Optional<Agendamento> findByIdWithRelations(@Param("id") Integer id);
 }
