@@ -76,4 +76,16 @@ public interface AgendamentoRepository extends JpaRepository<Agendamento, Intege
             WHERE a.id = :id
             """)
     Optional<Agendamento> findByIdWithRelations(@Param("id") Integer id);
+
+    @Query("""
+            SELECT DISTINCT a FROM Agendamento a
+            JOIN FETCH a.cliente c
+            JOIN FETCH a.servico s
+            JOIN FETCH a.usuario u
+            WHERE c.id = :clienteId AND a.status = :status AND a.data >= :hojeMinimal
+            ORDER BY a.data ASC, a.horaInicio ASC
+            """)
+    List<Agendamento> findByClienteFuturoOuHojeMesmoEstado(@Param("clienteId") Integer clienteId,
+            @Param("status") StatusAgendamentoEnum status,
+            @Param("hojeMinimal") LocalDate hojeMinimal);
 }
