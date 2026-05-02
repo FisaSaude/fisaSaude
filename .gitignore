@@ -6,3 +6,8 @@ node_modules/
 
 # Logs
 *.log
+
+# Documentation (local development only)
+*.md
+!README.md
+!AJUSTES_DER_REDIS.md

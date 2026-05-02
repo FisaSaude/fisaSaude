@@ -7,6 +7,7 @@ public record ClienteResponseDto(
         Integer id,
         String nome,
         String telefone,
+        Boolean whatsappAtivo,
         LocalDate dataNascimento,
         SexoEnum sexo,
         String fotoLink

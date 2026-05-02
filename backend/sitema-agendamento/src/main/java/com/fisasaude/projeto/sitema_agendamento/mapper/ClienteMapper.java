@@ -13,6 +13,7 @@ public class ClienteMapper {
         Cliente cliente = new Cliente();
         cliente.setNome(dto.nome());
         cliente.setTelefone(dto.telefone());
+        cliente.setWhatsappAtivo(dto.whatsappAtivo() != null ? dto.whatsappAtivo() : Boolean.FALSE);
         cliente.setDataNascimento(dto.dataNascimento());
         cliente.setSexo(dto.sexo());
         cliente.setFotoLink(dto.fotoLink());
@@ -22,6 +23,7 @@ public class ClienteMapper {
     public void updateEntity(Cliente cliente, ClienteUpdateRequestDto dto) {
         cliente.setNome(dto.nome());
         cliente.setTelefone(dto.telefone());
+        cliente.setWhatsappAtivo(dto.whatsappAtivo() != null ? dto.whatsappAtivo() : Boolean.FALSE);
         cliente.setDataNascimento(dto.dataNascimento());
         cliente.setSexo(dto.sexo());
         cliente.setFotoLink(dto.fotoLink());
@@ -32,6 +34,7 @@ public class ClienteMapper {
                 cliente.getId(),
                 cliente.getNome(),
                 cliente.getTelefone(),
+                cliente.getWhatsappAtivo(),
                 cliente.getDataNascimento(),
                 cliente.getSexo(),
                 cliente.getFotoLink()

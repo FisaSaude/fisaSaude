@@ -8,8 +8,6 @@ package com.fisasaude.projeto.sitema_agendamento.model.enums;
 public enum StatusAgendamentoEnum {
     AGENDADO("Agendado"),
     CANCELADO("Cancelado"),
-    REMARCADO("Remarcado"),
-    CONFIRMADO("Confirmado"),
     CONCLUIDO("Concluído");
 
     private final String descricao;

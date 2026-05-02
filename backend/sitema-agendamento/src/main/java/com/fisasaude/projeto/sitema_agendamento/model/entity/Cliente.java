@@ -23,8 +23,11 @@ public class Cliente {
     @Column(nullable = false, length = 100)
     private String nome;
 
-    @Column(nullable = false, unique = true, length = 20)
+    @Column(name = "telefone_whatsapp", nullable = false, unique = true, length = 20)
     private String telefone;
+
+    @Column(name = "whatsapp_ativo")
+    private Boolean whatsappAtivo = Boolean.FALSE;
 
     @Column(nullable = false)
     private LocalDate dataNascimento;
@@ -42,10 +45,11 @@ public class Cliente {
     public Cliente() {}
 
     // Construtor completo
-    public Cliente(Integer id, String nome, String telefone, LocalDate dataNascimento, SexoEnum sexo, String fotoLink, List<Agendamento> agendamentos, List<Prontuario> prontuarios) {
+    public Cliente(Integer id, String nome, String telefone, Boolean whatsappAtivo, LocalDate dataNascimento, SexoEnum sexo, String fotoLink, List<Agendamento> agendamentos, List<Prontuario> prontuarios) {
         this.id = id;
         this.nome = nome;
         this.telefone = telefone;
+        this.whatsappAtivo = whatsappAtivo != null ? whatsappAtivo : Boolean.FALSE;
         this.dataNascimento = dataNascimento;
         this.sexo = sexo;
         this.fotoLink = fotoLink;
@@ -62,6 +66,11 @@ public class Cliente {
 
     public String getTelefone() { return telefone; }
     public void setTelefone(String telefone) { this.telefone = telefone; }
+
+    public Boolean getWhatsappAtivo() { return whatsappAtivo; }
+    public void setWhatsappAtivo(Boolean whatsappAtivo) {
+        this.whatsappAtivo = whatsappAtivo != null ? whatsappAtivo : Boolean.FALSE;
+    }
 
     public LocalDate getDataNascimento() { return dataNascimento; }
     public void setDataNascimento(LocalDate dataNascimento) { this.dataNascimento = dataNascimento; }
@@ -85,6 +94,7 @@ public class Cliente {
                 "id=" + id +
                 ", nome='" + nome + '\'' +
                 ", telefone='" + telefone + '\'' +
+                ", whatsappAtivo=" + whatsappAtivo +
                 ", dataNascimento=" + dataNascimento +
                 ", sexo=" + sexo +
                 ", fotoLink='" + fotoLink + '\'' +

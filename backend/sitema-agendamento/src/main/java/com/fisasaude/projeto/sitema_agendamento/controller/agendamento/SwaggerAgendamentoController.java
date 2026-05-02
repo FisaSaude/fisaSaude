@@ -28,7 +28,7 @@ public interface SwaggerAgendamentoController {
             @Parameter(description = "Ano para consulta dos feriados", example = "2026") @PathVariable Integer ano
     );
 
-    @Operation(summary = "Resumir agendamentos por status no periodo", description = "Retorna a quantidade de agendamentos concluidos, remarcados e cancelados entre dataInicio e dataFim, alem do total somado desses tres status")
+    @Operation(summary = "Resumir agendamentos por status no periodo", description = "Retorna concluidos, ainda agendados (AGENDADO), cancelados e o total entre dataInicio e dataFim")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Resumo de agendamentos retornado com sucesso", content = @Content(schema = @Schema(implementation = AgendamentoResumoPeriodoResponseDto.class))),
             @ApiResponse(responseCode = "400", description = "Periodo invalido ou parametros ausentes", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),

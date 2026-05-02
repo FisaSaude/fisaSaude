@@ -1,8 +1,13 @@
+-- ==============================================================
+-- BANCO DE DADOS: FISASAÚDE - Sistema de Agendamento Pilates
+-- Versão: 3.0
+-- Data: 01/05/2026
+-- ==============================================================
+
 CREATE DATABASE IF NOT EXISTS pilates;
 USE pilates;
 
-SHOW DATABASES;
-
+-- Dados do estúdio/estabelecimento de pilates
 CREATE TABLE IF NOT EXISTS estabelecimento (
     id INT PRIMARY KEY AUTO_INCREMENT,
     nome VARCHAR(150) NOT NULL,
@@ -13,28 +18,28 @@ CREATE TABLE IF NOT EXISTS estabelecimento (
     criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Usuários com acesso ao sistema (Admin, Recepcionista, Instrutor)
 CREATE TABLE IF NOT EXISTS usuario (
     id INT PRIMARY KEY AUTO_INCREMENT,
     nome VARCHAR(100) NOT NULL,
     email VARCHAR(100) NOT NULL UNIQUE,
     senha VARCHAR(255) NOT NULL,
-    role ENUM('ADMIN','RECEPCIONISTA','INSTRUTOR') DEFAULT 'RECEPCIONISTA',
+    perfil ENUM('ADMIN','RECEPCIONISTA','INSTRUTOR') DEFAULT 'RECEPCIONISTA',
     ativo BOOLEAN DEFAULT TRUE,
-    criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
+    criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_email (email)
 );
 
 CREATE TABLE IF NOT EXISTS cliente (
     id INT PRIMARY KEY AUTO_INCREMENT,
     nome VARCHAR(100) NOT NULL,
-    telefone VARCHAR(20) NOT NULL UNIQUE,
-    telefone_whatsapp VARCHAR(20) UNIQUE,
+    telefone_whatsapp VARCHAR(20) NOT NULL UNIQUE,
     whatsapp_ativo BOOLEAN DEFAULT FALSE,
     data_nascimento DATE,
     sexo ENUM('M','F','OUTRO'),
     foto_link VARCHAR(255),
     criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
     atualizado_em DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    INDEX idx_telefone (telefone),
     INDEX idx_whatsapp (telefone_whatsapp)
 );
 
@@ -53,19 +58,18 @@ CREATE TABLE IF NOT EXISTS agendamento (
     id INT PRIMARY KEY AUTO_INCREMENT,
     cliente_id INT NOT NULL,
     servico_id INT NOT NULL,
-    usuario_id INT,
+    usuario_id INT NOT NULL,
     data DATE NOT NULL,
     hora_inicio TIME NOT NULL,
     hora_fim TIME NOT NULL,
-    status ENUM('AGENDADO','CONFIRMADO','CANCELADO','REMARCADO','CONCLUIDO','NAO_CONFIRMADO','FALTOU') 
-           DEFAULT 'AGENDADO',
+    status ENUM('AGENDADO','CANCELADO','CONCLUIDO') DEFAULT 'AGENDADO',
     observacoes TEXT,
     criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
     atualizado_em DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (cliente_id) REFERENCES cliente(id),
     FOREIGN KEY (servico_id) REFERENCES servico(id),
     FOREIGN KEY (usuario_id) REFERENCES usuario(id),
-    UNIQUE KEY uk_agendamento (data, hora_inicio),
+    UNIQUE KEY uk_agendamento (data, hora_inicio, usuario_id),
     INDEX idx_cliente_data (cliente_id, data),
     INDEX idx_data_status (data, status),
     INDEX idx_status (status)
@@ -146,7 +150,7 @@ CREATE OR REPLACE VIEW kpi_aulas_dia AS
 SELECT COUNT(*) AS total_aulas_hoje
 FROM agendamento
 WHERE DATE(data) = CURDATE()
-AND status NOT IN ('CANCELADO','FALTOU');
+AND status != 'CANCELADO';
 
 -- KPI: Total aulas do mês
 CREATE OR REPLACE VIEW kpi_aulas_mes AS
@@ -154,7 +158,7 @@ SELECT COUNT(*) AS total_aulas_mes
 FROM agendamento
 WHERE MONTH(data) = MONTH(CURDATE())
 AND YEAR(data) = YEAR(CURDATE())
-AND status NOT IN ('CANCELADO','FALTOU');
+AND status != 'CANCELADO';
 
 -- KPI: Percentual de cancelamentos
 CREATE OR REPLACE VIEW kpi_percentual_cancelamento_mes AS
@@ -167,25 +171,13 @@ FROM agendamento
 WHERE MONTH(data) = MONTH(CURDATE())
 AND YEAR(data) = YEAR(CURDATE());
 
--- KPI: Percentual de remarcações
-CREATE OR REPLACE VIEW kpi_percentual_remarcacao_mes AS
+-- KPI: Taxa de aulas realizadas (concluídas entre os não cancelados no mês)
+CREATE OR REPLACE VIEW kpi_taxa_realizacao_mes AS
 SELECT 
     ROUND(
-        (SUM(CASE WHEN status = 'REMARCADO' THEN 1 ELSE 0 END) 
-        / NULLIF(COUNT(*), 0)) * 100
-    , 2) AS percentual_remarcacao
+        (SUM(CASE WHEN status = 'CONCLUIDO' THEN 1 ELSE 0 END)
+        / NULLIF(SUM(CASE WHEN status != 'CANCELADO' THEN 1 ELSE 0 END), 0)) * 100
+    , 2) AS percentual_realizacao
 FROM agendamento
 WHERE MONTH(data) = MONTH(CURDATE())
 AND YEAR(data) = YEAR(CURDATE());
-
--- KPI: Taxa de confirmação (clientes que confirmaram)
-CREATE OR REPLACE VIEW kpi_confirmacao_taxa AS
-SELECT 
-    ROUND(
-        (SUM(CASE WHEN status IN ('CONFIRMADO','CONCLUIDO') THEN 1 ELSE 0 END)
-        / NULLIF(COUNT(*), 0)) * 100
-    , 2) AS percentual_confirmacao
-FROM agendamento
-WHERE MONTH(data) = MONTH(CURDATE())
-AND YEAR(data) = YEAR(CURDATE())
-AND status != 'CANCELADO';

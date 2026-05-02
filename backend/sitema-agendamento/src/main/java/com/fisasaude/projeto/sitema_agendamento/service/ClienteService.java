@@ -32,7 +32,7 @@ public class ClienteService {
         validarDataNascimento(dto.dataNascimento());
 
         if (clienteRepository.existsByTelefone(dto.telefone())) {
-            throw new ConflictException("Ja existe cliente com o telefone informado");
+            throw new ConflictException("Ja existe cliente com esse numero WhatsApp");
         }
 
         Cliente cliente = clienteMapper.toEntity(dto);
@@ -67,7 +67,7 @@ public class ClienteService {
                 .orElseThrow(() -> new NotFoundException("Cliente nao encontrado"));
 
         if (clienteRepository.existsByTelefoneAndIdNot(dto.telefone(), id)) {
-            throw new ConflictException("Ja existe outro cliente com o telefone informado");
+            throw new ConflictException("Ja existe outro cliente com esse numero WhatsApp");
         }
 
         clienteMapper.updateEntity(cliente, dto);

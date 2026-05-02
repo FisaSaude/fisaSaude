@@ -27,10 +27,10 @@ public class AgendamentoService {
                 dataFim,
                 StatusAgendamentoEnum.CONCLUIDO
         );
-        long remarcados = agendamentoRepository.countByDataBetweenAndStatus(
+        long agendados = agendamentoRepository.countByDataBetweenAndStatus(
                 dataInicio,
                 dataFim,
-                StatusAgendamentoEnum.REMARCADO
+                StatusAgendamentoEnum.AGENDADO
         );
         long cancelados = agendamentoRepository.countByDataBetweenAndStatus(
                 dataInicio,
@@ -38,9 +38,9 @@ public class AgendamentoService {
                 StatusAgendamentoEnum.CANCELADO
         );
 
-        long total = concluidos + remarcados + cancelados;
+        long total = concluidos + agendados + cancelados;
 
-        return new AgendamentoResumoPeriodoResponseDto(concluidos, remarcados, cancelados, total);
+        return new AgendamentoResumoPeriodoResponseDto(concluidos, agendados, cancelados, total);
     }
 
     private void validarPeriodo(LocalDate dataInicio, LocalDate dataFim) {
