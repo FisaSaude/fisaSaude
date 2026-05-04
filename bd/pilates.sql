@@ -7,36 +7,37 @@
 CREATE DATABASE IF NOT EXISTS pilates;
 USE pilates;
 
--- Dados do estúdio/estabelecimento de pilates
 CREATE TABLE IF NOT EXISTS estabelecimento (
     id INT PRIMARY KEY AUTO_INCREMENT,
     nome VARCHAR(150) NOT NULL,
-    endereco VARCHAR(255),
+    endereco VARCHAR(255) NOT NULL,
+    parametros VARCHAR(255),
+    inicio_funcionamento TIME NOT NULL,
+    fim_funcionamento TIME NOT NULL,
     telefone VARCHAR(20),
-    horario_abertura TIME,
-    horario_fechamento TIME,
     criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
--- Usuários com acesso ao sistema (Admin, Recepcionista, Instrutor)
 CREATE TABLE IF NOT EXISTS usuario (
     id INT PRIMARY KEY AUTO_INCREMENT,
     nome VARCHAR(100) NOT NULL,
     email VARCHAR(100) NOT NULL UNIQUE,
     senha VARCHAR(255) NOT NULL,
-    perfil ENUM('ADMIN','RECEPCIONISTA','INSTRUTOR') DEFAULT 'RECEPCIONISTA',
+    role ENUM('ADMIN','USUARIO') NOT NULL DEFAULT 'USUARIO',
     ativo BOOLEAN DEFAULT TRUE,
+    estabelecimento_id INT NOT NULL,
     criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
-    INDEX idx_email (email)
+    INDEX idx_email (email),
+    CONSTRAINT fk_usuario_estabelecimento FOREIGN KEY (estabelecimento_id) REFERENCES estabelecimento(id)
 );
 
 CREATE TABLE IF NOT EXISTS cliente (
     id INT PRIMARY KEY AUTO_INCREMENT,
     nome VARCHAR(100) NOT NULL,
     telefone_whatsapp VARCHAR(20) NOT NULL UNIQUE,
-    whatsapp_ativo BOOLEAN DEFAULT FALSE,
-    data_nascimento DATE,
-    sexo ENUM('M','F','OUTRO'),
+    whatsapp_ativo BOOLEAN DEFAULT TRUE,
+    data_nascimento DATE NOT NULL,
+    sexo ENUM('M','F','OUTRO') NOT NULL,
     foto_link VARCHAR(255),
     criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
     atualizado_em DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -46,8 +47,8 @@ CREATE TABLE IF NOT EXISTS cliente (
 CREATE TABLE IF NOT EXISTS servico (
     id INT PRIMARY KEY AUTO_INCREMENT,
     nome VARCHAR(100) NOT NULL,
-    tipo VARCHAR(50),
-    duracao_minutos INT NOT NULL,
+    tipo VARCHAR(50) NOT NULL DEFAULT 'geral',
+    duracao_minutos INT NOT NULL DEFAULT 60,
     preco DECIMAL(10,2) NOT NULL,
     ativo BOOLEAN DEFAULT TRUE,
     criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -125,9 +126,9 @@ CREATE TABLE IF NOT EXISTS mensagem_resposta_whatsapp (
 CREATE TABLE IF NOT EXISTS prontuario (
     id INT PRIMARY KEY AUTO_INCREMENT,
     cliente_id INT NOT NULL,
-    agendamento_id INT,
+    agendamento_id INT NOT NULL,
     observacoes TEXT NOT NULL,
-    criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
+    criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     atualizado_em DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (cliente_id) REFERENCES cliente(id),
     FOREIGN KEY (agendamento_id) REFERENCES agendamento(id),
@@ -136,13 +137,14 @@ CREATE TABLE IF NOT EXISTS prontuario (
 
 CREATE TABLE IF NOT EXISTS despesas (
     id INT PRIMARY KEY AUTO_INCREMENT,
-    descricao VARCHAR(255) NOT NULL,
+    nome VARCHAR(100) NOT NULL,
+    tipo VARCHAR(45) NOT NULL,
     valor DECIMAL(10,2) NOT NULL,
-    categoria VARCHAR(100),
     data_despesa DATE NOT NULL,
+    estabelecimento_id INT NOT NULL,
     criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
-    INDEX idx_data (data_despesa),
-    INDEX idx_categoria (categoria)
+    FOREIGN KEY (estabelecimento_id) REFERENCES estabelecimento(id),
+    INDEX idx_data (data_despesa)
 );
 
 -- KPI: Total aulas do dia
