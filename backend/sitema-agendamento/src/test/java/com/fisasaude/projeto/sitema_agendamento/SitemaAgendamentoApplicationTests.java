@@ -1,16 +1,14 @@
 package com.fisasaude.projeto.sitema_agendamento;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 
 /**
- * Smoke com contexto JPA/MySQL inteiro — opção ao rodar com DB local configurado em {@code application.yaml}.
- *
- * <p>O pipeline padrão usa apenas testes unitários (Maven {@code test}) sem datasource.
+ * Smoke: sobe o contexto Spring com H2 ({@code application-test.yaml}), sem MySQL nem variáveis de ambiente.
  */
-@Disabled("Smoke local: remover @Disabled quando MySQL estiver acessível aos testes de integração.")
 @SpringBootTest
+@ActiveProfiles("test")
 class SitemaAgendamentoApplicationTests {
 
     @Test
