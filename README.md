@@ -139,33 +139,50 @@ O diagrama abaixo reflete **`assets/der-v3.png`**, espelhado em **`bd/pilates.sq
 
 ---
 
-## Arquitetura (visão simplificada)
+## Arquitetura (confirmação e lembretes via WhatsApp)
 
-```mermaid
-flowchart LR
-  subgraph cliente_http["Clientes HTTP"]
-    FE["Dashboard / SPA\n(repo web da organização)"]
-  end
+<p align="center">
+  <img src="./assets/arquitetura.png" alt="Arquitetura backend - confirmação e lembretes via WhatsApp/Twilio" width="1080" />
+</p>
 
-  subgraph backends["Este repositório"]
-    AG["sitema-agendamento\nJWT + REST + JPA"]
-    NT["notificacao\nTwilio SDK + webhook"]
-  end
+### Sequência completa (explicação direta)
 
-  DB[("MySQL\npilates v3")]
-  TW["Twilio API"]
+#### Quem faz o quê
 
-  FE -->|"HTTPS + Bearer JWT"| AG
-  AG --> DB
-  AG -.->|"pode invocar fila/API interna"| NT
-  NT --> DB
-  NT --> TW
-  TW -.->|"POST /webhook/whatsapp"| NT
-```
+- `sitema-agendamento` (`:8080`): atualiza status e aplica regra de negócio de agendamento.
+- `notificacao` (`:8081`): envia WhatsApp, recebe webhook da Twilio e orquestra confirmação/lembretes.
+- Twilio: entrega mensagens ao paciente e chama webhook inbound/status no `notificacao`.
 
-### Jobs concorrentes (produção)
+#### Fluxo A - Confirmação do paciente
 
-Se houver **várias réplicas** de um mesmo serviço com scheduler, vale coordenar com **lock** (tabela MySQL ou outro mecanismo acordado). **Redis não é obrigatório** no MVP desde que não haja execução duplicada prejudicial ao negócio.
+1. `sitema-agendamento` cria/remarca e chama:
+   - `POST /internal/v1/notifications/confirmacao/{agendamentoId}`
+2. `notificacao` envia mensagem de confirmação via Twilio.
+3. Paciente responde no WhatsApp (`SIM`/`NAO`, com ou sem ID).
+4. Twilio chama:
+   - `POST /webhook/twilio/whatsapp/incoming`
+5. `notificacao` identifica cliente/agendamento e chama:
+   - `POST /internal/v1/agendamentos/{agendamentoId}/resposta-whatsapp`
+6. `sitema-agendamento` atualiza status:
+   - `SIM` -> `CONFIRMADO`
+   - `NAO` -> `CANCELADO`
+7. `notificacao` envia retorno final ao paciente via Twilio (com protocolo `AG{id}`).
+
+#### Fluxo B - Lembrete diário (15:00)
+
+1. Scheduler roda no `notificacao` todos os dias às 15h.
+2. `notificacao` consulta o `sitema-agendamento`:
+   - `GET /internal/v1/agendamentos/lembretes-confirmados?data=YYYY-MM-DD`
+3. `sitema-agendamento` retorna os agendamentos `CONFIRMADOS` de D+1.
+4. `notificacao` envia os lembretes via Twilio para cada paciente.
+
+#### Pontos críticos de operação
+
+- Twilio fica centralizado no `notificacao`.
+- `sitema-agendamento` não envia mensagem e não conhece Twilio.
+- Integração entre microsserviços é REST interno com token.
+- Webhook Twilio entra somente no `notificacao`.
+- Mesmo com falha na integração com `agendamento`, o `notificacao` prioriza responder o paciente (UX primeiro).
 
 ---
 
