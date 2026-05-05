@@ -12,10 +12,6 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
-/**
- * Aciona o dominio de agendamento apos registrar a mensagem inbound (webhook).
- * A regra de mudanca de status fica em {@code AgendamentoService} do outro microsservico.
- */
 @Component
 public class AgendamentoIntegracaoCliente {
 
@@ -32,7 +28,6 @@ public class AgendamentoIntegracaoCliente {
         this.props = props;
     }
 
-    /** Envia apenas classificacoes que podem alterar status (SIM/NAO). */
     public void notificarRespostaWhatsapp(Integer agendamentoId, RespostaWhatsappTipoEnum tipo) {
         if (agendamentoId == null || tipo == null) {
             return;

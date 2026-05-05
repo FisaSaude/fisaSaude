@@ -1,0 +1,81 @@
+ARQUITETURA BACKEND - GUIA RAPIDO (VERSAO DIRETA)
+=================================================
+
+Imagem de apoio: assets/arquitetura.png
+
+1) QUEM FAZ O QUE
+-----------------
+- sitema-agendamento (porta 8080):
+  - decide e atualiza status do agendamento
+  - expõe endpoints internos para o notificacao
+  - nao envia WhatsApp
+
+- notificacao (porta 8081):
+  - envia mensagens WhatsApp via Twilio
+  - recebe webhook do Twilio
+  - interpreta resposta do paciente (SIM/NAO)
+  - chama o agendamento para atualizar status
+  - roda job diario de lembrete (15:00)
+
+
+2) FLUXO DE CONFIRMACAO (PONTA A PONTA)
+---------------------------------------
+PASSO 1
+- agendamento cria/remarca consulta
+- agendamento chama notificacao:
+  POST /internal/v1/notifications/confirmacao/{agendamentoId}
+
+PASSO 2
+- notificacao envia WhatsApp de confirmacao para o paciente
+
+PASSO 3
+- paciente responde no WhatsApp (SIM, NAO, NÂO, com ou sem id)
+
+PASSO 4
+- Twilio entrega a resposta no webhook:
+  POST /webhook/twilio/whatsapp/incoming
+
+PASSO 5
+- notificacao identifica o cliente e o agendamento
+- se vier SIM/NAO sem id, prioriza resposta simples e tenta auto-selecao
+
+PASSO 6
+- notificacao chama agendamento para atualizar status:
+  POST /internal/v1/agendamentos/{agendamentoId}/resposta-whatsapp
+
+PASSO 7
+- agendamento atualiza status no banco:
+  - SIM -> CONFIRMADO
+  - NAO -> CANCELADO
+
+PASSO 8
+- notificacao responde ao paciente via Twilio:
+  - SIM: "Agendamento confirmado..."
+  - NAO: "Agendamento cancelado..."
+  - com "Protocolo: AG{id}"
+
+
+3) FLUXO DE LEMBRETE DIARIO (15:00)
+-----------------------------------
+PASSO 1
+- scheduler no notificacao dispara as 15:00 todos os dias
+
+PASSO 2
+- notificacao consulta agendamento:
+  GET /internal/v1/agendamentos/lembretes-confirmados?data=YYYY-MM-DD
+
+PASSO 3
+- agendamento devolve lista de consultas CONFIRMADAS do dia seguinte
+
+PASSO 4
+- notificacao envia lembrete via Twilio para cada paciente:
+  "Seu atendimento e amanha as {hora}"
+
+
+4) PONTOS CRITICOS
+------------------
+- Twilio fica centralizado no notificacao
+- agendamento nunca envia mensagem
+- comunicacao entre microsservicos e REST interno com token
+- webhook do Twilio entra so no notificacao
+- se integracao com agendamento falhar, notificacao ainda tenta responder o paciente (UX primeiro)

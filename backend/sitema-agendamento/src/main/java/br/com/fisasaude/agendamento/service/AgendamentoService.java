@@ -249,11 +249,6 @@ public class AgendamentoService {
         return agendamentoMapper.toDto(salvoRemarcacao);
     }
 
-    /**
-     * Aplica transicao de status a partir da classificacao do texto recebido no WhatsApp.
-     * Invocado apenas via API interna pelo microsservico de notificacao.
-     * Persistência do status por UPDATE nativo (sem save / dirty checking).
-     */
     @Transactional
     public void aplicarRespostaWhatsappInbound(Integer agendamentoId, RespostaWhatsappTipoEnum tipo) {
         validarIdAgendamento(agendamentoId);

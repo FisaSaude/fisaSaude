@@ -58,11 +58,6 @@ public class WhatsAppInboundService {
         this.props = props;
     }
 
-    /**
-     * @param buttonPayload valor Twilio ({@code ButtonPayload}) quando quick reply/interactive
-     * @param buttonText texto visível ({@code ButtonText}); só log/auditoria
-     * @param originalRepliedMessageSid {@code OriginalRepliedMessageSid} (resposta citando mensagem outbound)
-     */
     @Transactional
     public void processarEntradaPaciente(
             String fromBruto,

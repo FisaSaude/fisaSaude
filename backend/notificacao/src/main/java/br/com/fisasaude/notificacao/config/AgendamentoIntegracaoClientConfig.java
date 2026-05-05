@@ -13,7 +13,6 @@ public class AgendamentoIntegracaoClientConfig {
         return RestClient.builder().baseUrl(baseUrl).build();
     }
 
-    /** Evita barras extras que quebram resolução de URI no RestClient. */
     static String normalizeBaseUrl(String raw) {
         if (raw == null || raw.isBlank()) {
             return "";
