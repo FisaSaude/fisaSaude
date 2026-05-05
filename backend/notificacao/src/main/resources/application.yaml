@@ -1,0 +1,49 @@
+spring:
+  application:
+    name: fisasaude-notificacao
+  datasource:
+    url: jdbc:mysql://${DB_HOST:localhost}:3306/${DB_NAME:pilates}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=America/Sao_Paulo
+    username: ${DB_USER:root}
+    password: ${DB_PASSWORD:}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jackson:
+    time-zone: America/Sao_Paulo
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    database-platform: org.hibernate.dialect.MySQLDialect
+
+server:
+  port: ${SERVER_PORT:8081}
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+app:
+  notifications:
+    timezone: America/Sao_Paulo
+    lembrete-cron: "0 0 15 * * ?"
+    retry-fixed-rate-ms: 3600000
+    max-send-attempts: 3
+    twilio-enabled: ${TWILIO_ENABLED:false}
+    account-sid: ${TWILIO_ACCOUNT_SID:}
+    auth-token: ${TWILIO_AUTH_TOKEN:}
+    whatsapp-from: ${TWILIO_WHATSAPP_FROM:}
+    whatsapp:
+      usar-template: false
+      content-sid: HXcd1c538b64154efd240cf1655d9b0fc1
+    # Quick reply WhatsApp via Content Template Builder (sessão 24h).
+    # Ajuste o template Twilio para consumir {{1}}..{{7}} alinhadas com NotificacaoDispatchService montarVariaveisJsonQuickReplyConfirmacao.
+    confirmacao-whatsapp-content-sid: ${TWILIO_CONFIRMACAO_CONTENT_SID:}
+    confirmacao-whatsapp-messaging-service-sid: ${TWILIO_WHATSAPP_MESSAGING_SERVICE_SID:}
+    establishment-alert-to: ${TWILIO_ALERT_RECEPCAO:}
+  internal:
+    api-key: dev123
+  integracao:
+    agendamento:
+      base-url: ${AGENDAMENTO_BASE_URL:http://localhost:8080}
+      internal-api-key: ${AGENDAMENTO_INTERNAL_TOKEN:${INTERNAL_API_KEY:dev123}}

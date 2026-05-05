@@ -3,11 +3,13 @@
 -- ========================================
 CREATE TABLE IF NOT EXISTS estabelecimento (
     id INT PRIMARY KEY AUTO_INCREMENT,
-    nome VARCHAR(100) NOT NULL,
+    nome VARCHAR(150) NOT NULL,
     endereco VARCHAR(255) NOT NULL,
     parametros VARCHAR(255),
     inicio_funcionamento TIME NOT NULL,
-    fim_funcionamento TIME NOT NULL
+    fim_funcionamento TIME NOT NULL,
+    telefone VARCHAR(20),
+    criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
 
 -- ========================================
@@ -35,7 +37,9 @@ CREATE TABLE IF NOT EXISTS usuario (
     email VARCHAR(100) NOT NULL UNIQUE,
     senha VARCHAR(255) NOT NULL,
     role ENUM('ADMIN', 'USUARIO') NOT NULL,
-	estabelecimento_id INT NOT NULL,
+    ativo BOOLEAN DEFAULT TRUE,
+    estabelecimento_id INT NOT NULL,
+    criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT fk_usuario_estabelecimento
         FOREIGN KEY (estabelecimento_id) REFERENCES estabelecimento(id)
@@ -63,7 +67,9 @@ CREATE TABLE IF NOT EXISTS cliente (
     whatsapp_ativo BOOLEAN DEFAULT TRUE,
     data_nascimento DATE NOT NULL,
     sexo ENUM('M', 'F', 'OUTRO') NOT NULL,
-    foto_link VARCHAR(255)
+    foto_link VARCHAR(255),
+    criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    atualizado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
 
 -- ========================================
@@ -72,8 +78,11 @@ CREATE TABLE IF NOT EXISTS cliente (
 CREATE TABLE IF NOT EXISTS servico (
     id INT PRIMARY KEY AUTO_INCREMENT,
     nome VARCHAR(100) NOT NULL,
-    tipo VARCHAR(45) NOT NULL,
-    preco DECIMAL(10,2) NOT NULL
+    tipo VARCHAR(50) NOT NULL DEFAULT 'geral',
+    duracao_minutos INT NOT NULL DEFAULT 60,
+    preco DECIMAL(10,2) NOT NULL,
+    ativo BOOLEAN DEFAULT TRUE,
+    criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
 
 -- ========================================
@@ -84,7 +93,7 @@ CREATE TABLE IF NOT EXISTS agendamento (
     data DATE NOT NULL,
     hora_inicio TIME NOT NULL,
     hora_fim TIME NOT NULL,
-    `status` ENUM('AGENDADO', 'CANCELADO', 'CONCLUIDO') NOT NULL DEFAULT 'AGENDADO',
+    `status` ENUM('AGENDADO', 'CONFIRMADO', 'CANCELADO', 'CONCLUIDO') NOT NULL DEFAULT 'AGENDADO',
     criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     atualizado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     observacoes TEXT,

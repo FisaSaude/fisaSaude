@@ -63,7 +63,7 @@ CREATE TABLE IF NOT EXISTS agendamento (
     data DATE NOT NULL,
     hora_inicio TIME NOT NULL,
     hora_fim TIME NOT NULL,
-    status ENUM('AGENDADO','CANCELADO','CONCLUIDO') DEFAULT 'AGENDADO',
+    status ENUM('AGENDADO','CONFIRMADO','CANCELADO','CONCLUIDO') DEFAULT 'AGENDADO',
     observacoes TEXT,
     criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
     atualizado_em DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -183,3 +183,70 @@ SELECT
 FROM agendamento
 WHERE MONTH(data) = MONTH(CURDATE())
 AND YEAR(data) = YEAR(CURDATE());
+
+-- Usem esses dados abaixo pra testar:
+
+-- ESTABELECIMENTO
+INSERT INTO estabelecimento (
+    nome,
+    endereco,
+    telefone,
+    inicio_funcionamento,
+    fim_funcionamento
+) VALUES (
+    'FisaSaude Studio Pilates',
+    'Av. Paulista, 1000 - São Paulo/SP',
+    '11999999999',
+    '06:00:00',
+    '22:00:00'
+);
+
+-- USUARIO (CORRIGIDO: role + estabelecimento_id)
+INSERT INTO usuario (
+    nome,
+    email,
+    senha,
+    role,
+    ativo,
+    estabelecimento_id
+) VALUES (
+    'Admin FisaSaude',
+    'admin@fisasaude.com',
+    '$2b$12$dLBnwtmrP0WqDmyCw6dPr.Ak2fbj0MX0MjI444/Gs6c85hB1aAwtW',
+    'ADMIN',
+    true,
+    1
+);
+
+-- CLIENTE
+INSERT INTO cliente (
+    nome,
+    telefone_whatsapp,
+    whatsapp_ativo,
+    data_nascimento,
+    sexo
+) VALUES (
+    'Edson Felix',
+    '5511965643020',
+    true,
+    '1998-05-10',
+    'M'
+);
+
+-- SERVICO
+INSERT INTO servico (
+    nome,
+    tipo,
+    duracao_minutos,
+    preco,
+    ativo
+) VALUES (
+    'Pilates Solo',
+    'PILATES',
+    60,
+    120.00,
+    true
+);
+
+
+
