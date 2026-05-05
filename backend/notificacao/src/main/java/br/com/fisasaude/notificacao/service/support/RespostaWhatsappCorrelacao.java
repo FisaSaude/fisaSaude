@@ -26,6 +26,7 @@ public final class RespostaWhatsappCorrelacao {
     public enum OrigemCorrelacao {
         BUTTON_PAYLOAD,
         BODY_BOTAO_SIMULADO,
+        BODY_SIM_NAO_SIMPLES,
         BODY_SIM_NAO_ID,
         MENSAGEM_ANTERIOR_SID
     }
@@ -125,6 +126,14 @@ public final class RespostaWhatsappCorrelacao {
                             texto));
         }
         return Optional.empty();
+    }
+
+    public static boolean contemIdNoTexto(String texto) {
+        String t = normalized(texto);
+        if (t.isBlank()) {
+            return false;
+        }
+        return SIM_ID.matcher(t).matches() || NAO_ID.matcher(t).matches();
     }
 
     private static String normalized(String raw) {

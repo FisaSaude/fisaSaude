@@ -5,11 +5,13 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import br.com.fisasaude.notificacao.config.NotificacaoAppProperties;
 import br.com.fisasaude.notificacao.integration.agendamento.AgendamentoIntegracaoCliente;
+import br.com.fisasaude.notificacao.integration.twilio.TwilioWhatsappSender;
 import br.com.fisasaude.notificacao.model.entity.Agendamento;
 import br.com.fisasaude.notificacao.model.entity.Cliente;
 import br.com.fisasaude.notificacao.model.enums.RespostaWhatsappTipoEnum;
@@ -54,6 +56,9 @@ class WhatsAppInboundServiceTest {
 
     @Mock
     private AgendamentoIntegracaoCliente agendamentoIntegracaoCliente;
+
+    @Mock
+    private TwilioWhatsappSender twilioWhatsappSender;
 
     @Mock
     private NotificacaoAppProperties props;
@@ -127,15 +132,46 @@ class WhatsAppInboundServiceTest {
     }
 
     @Test
-    void texto_sim_sem_protocolo_sem_correlacao_nao_chama_servico_agendamento() {
+    void texto_sim_sem_id_auto_seleciona_agendamento_mais_recente() {
         Cliente cliente = clienteCompleto();
+        Agendamento ag = novoAgendamento(210, StatusAgendamentoEnum.AGENDADO, cliente, LocalDate.now(TZ_BR).plusDays(3), LocalTime.of(16, 0));
         when(clienteRepository.findAll()).thenReturn(List.of(cliente));
+        when(agendamentoRepository.findByClienteAndStatusOrderByMaisRecente(9, StatusAgendamentoEnum.AGENDADO))
+                .thenReturn(List.of(ag));
+        when(agendamentoRepository.findByIdWithRelations(210)).thenReturn(Optional.of(ag));
         when(mensagemRepository.existsByTwilioMessageSid("SID-X")).thenReturn(false);
+        stubReferences();
 
         service.processarEntradaPaciente("whatsapp:+5511888887777", "5511888887777", "sim", "SID-X", "", "", null);
 
-        verify(mensagemRepository, never()).save(any());
-        verify(agendamentoIntegracaoCliente, never()).notificarRespostaWhatsapp(anyInt(), any());
+        verify(mensagemRepository).save(any());
+        verify(agendamentoIntegracaoCliente).notificarRespostaWhatsapp(210, RespostaWhatsappTipoEnum.SIM);
+        verify(twilioWhatsappSender)
+                .enviarTextoParaWhatsapp(
+                        "5511888887777",
+                        "✅ Agendamento confirmado com sucesso! Te esperamos 👍\n\nProtocolo: AG210");
+    }
+
+    @Test
+    void quando_integracao_falha_envia_confirmacao_recebimento_para_ux() {
+        Cliente cliente = clienteCompleto();
+        Agendamento ag = novoAgendamento(211, StatusAgendamentoEnum.AGENDADO, cliente, LocalDate.now(TZ_BR).plusDays(4), LocalTime.of(10, 0));
+        when(clienteRepository.findAll()).thenReturn(List.of(cliente));
+        when(agendamentoRepository.findByClienteAndStatusOrderByMaisRecente(9, StatusAgendamentoEnum.AGENDADO))
+                .thenReturn(List.of(ag));
+        when(agendamentoRepository.findByIdWithRelations(211)).thenReturn(Optional.of(ag));
+        when(mensagemRepository.existsByTwilioMessageSid("SID-FAIL")).thenReturn(false);
+        doThrow(new RuntimeException("erro integracao"))
+                .when(agendamentoIntegracaoCliente)
+                .notificarRespostaWhatsapp(211, RespostaWhatsappTipoEnum.SIM);
+        stubReferences();
+
+        service.processarEntradaPaciente("whatsapp:+5511888887777", "5511888887777", "SIM", "SID-FAIL", "", "", null);
+
+        verify(twilioWhatsappSender)
+                .enviarTextoParaWhatsapp(
+                        "5511888887777",
+                        "✅ Agendamento confirmado com sucesso! Te esperamos 👍\n\nProtocolo: AG211");
     }
 
     private void stubReferences() {

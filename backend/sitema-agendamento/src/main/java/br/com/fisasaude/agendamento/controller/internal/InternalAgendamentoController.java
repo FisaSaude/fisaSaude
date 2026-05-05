@@ -1,15 +1,20 @@
 package br.com.fisasaude.agendamento.controller.internal;
 
 import br.com.fisasaude.agendamento.dto.internal.AgendamentoRespostaWhatsappRequestDto;
+import br.com.fisasaude.agendamento.dto.internal.AgendamentoLembreteResponseDto;
 import br.com.fisasaude.agendamento.service.AgendamentoService;
 import jakarta.validation.Valid;
+import java.time.LocalDate;
+import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -34,5 +39,11 @@ public class InternalAgendamentoController {
         agendamentoService.aplicarRespostaWhatsappInbound(agendamentoId, body.tipo());
 
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/lembretes-confirmados")
+    public ResponseEntity<List<AgendamentoLembreteResponseDto>> listarConfirmadosParaLembrete(
+            @RequestParam("data") LocalDate data) {
+        return ResponseEntity.ok(agendamentoService.listarConfirmadosParaLembrete(data));
     }
 }

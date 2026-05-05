@@ -6,6 +6,7 @@ import br.com.fisasaude.agendamento.dto.agendamento.AgendamentoResumoPeriodoResp
 import br.com.fisasaude.agendamento.dto.agendamento.AgendamentoResponseDto;
 import br.com.fisasaude.agendamento.dto.agendamento.HorarioSlotResponseDto;
 import br.com.fisasaude.agendamento.dto.agendamento.VerificacaoConflitoAgendamentoResponseDto;
+import br.com.fisasaude.agendamento.dto.internal.AgendamentoLembreteResponseDto;
 import br.com.fisasaude.agendamento.event.AgendamentoNotificacaoConfirmacaoEvent;
 import br.com.fisasaude.agendamento.exception.BadRequestException;
 import br.com.fisasaude.agendamento.exception.ConflictException;
@@ -366,6 +367,19 @@ public class AgendamentoService {
         StatusAgendamentoEnum usado = status != null ? status : StatusAgendamentoEnum.AGENDADO;
         return agendamentoRepository.findAgendamentosParaLembrete(data, usado).stream()
                 .map(agendamentoMapper::toDto)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<AgendamentoLembreteResponseDto> listarConfirmadosParaLembrete(LocalDate data) {
+        if (data == null) {
+            throw new BadRequestException("data e obrigatoria");
+        }
+        return agendamentoRepository.findAgendamentosParaLembrete(data, StatusAgendamentoEnum.CONFIRMADO).stream()
+                .map(a -> new AgendamentoLembreteResponseDto(
+                        a.getId(),
+                        a.getCliente().getTelefone(),
+                        a.getHoraInicio()))
                 .toList();
     }
 

@@ -2,10 +2,12 @@ package br.com.fisasaude.notificacao.service;
 
 import br.com.fisasaude.notificacao.config.NotificacaoAppProperties;
 import br.com.fisasaude.notificacao.integration.agendamento.AgendamentoIntegracaoCliente;
+import br.com.fisasaude.notificacao.integration.twilio.TwilioWhatsappSender;
 import br.com.fisasaude.notificacao.model.entity.Agendamento;
 import br.com.fisasaude.notificacao.model.entity.Cliente;
 import br.com.fisasaude.notificacao.model.entity.MensagemRespostaWhatsapp;
 import br.com.fisasaude.notificacao.model.enums.RespostaWhatsappTipoEnum;
+import br.com.fisasaude.notificacao.model.enums.StatusAgendamentoEnum;
 import br.com.fisasaude.notificacao.repository.AgendamentoRepository;
 import br.com.fisasaude.notificacao.repository.ClienteRepository;
 import br.com.fisasaude.notificacao.repository.MensagemRespostaWhatsappRepository;
@@ -15,6 +17,7 @@ import br.com.fisasaude.notificacao.service.support.RespostaWhatsappTexto;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,6 +36,7 @@ public class WhatsAppInboundService {
     private final MensagemRespostaWhatsappRepository mensagemRepository;
     private final NotificacaoDispatchService dispatchService;
     private final AgendamentoIntegracaoCliente agendamentoIntegracaoCliente;
+    private final TwilioWhatsappSender twilioWhatsappSender;
     private final NotificacaoAppProperties props;
 
     public WhatsAppInboundService(
@@ -42,6 +46,7 @@ public class WhatsAppInboundService {
             MensagemRespostaWhatsappRepository mensagemRepository,
             NotificacaoDispatchService dispatchService,
             AgendamentoIntegracaoCliente agendamentoIntegracaoCliente,
+            TwilioWhatsappSender twilioWhatsappSender,
             NotificacaoAppProperties props) {
         this.clienteRepository = clienteRepository;
         this.agendamentoRepository = agendamentoRepository;
@@ -49,6 +54,7 @@ public class WhatsAppInboundService {
         this.mensagemRepository = mensagemRepository;
         this.dispatchService = dispatchService;
         this.agendamentoIntegracaoCliente = agendamentoIntegracaoCliente;
+        this.twilioWhatsappSender = twilioWhatsappSender;
         this.props = props;
     }
 
@@ -96,9 +102,8 @@ public class WhatsAppInboundService {
         Cliente cliente = opCliente.get();
         log.info("[INBOUND] Cliente id={} nome='{}'", cliente.getId(), cliente.getNome());
 
-        Optional<RespostaWhatsappCorrelacao.Resultado> correl =
-                RespostaWhatsappCorrelacao.resolver(
-                        buttonPayload, body, originalRepliedMessageSid, notificacaoRepository);
+        Optional<RespostaWhatsappCorrelacao.Resultado> correl = resolverComPrioridadeTextoSimples(
+                cliente, buttonPayload, body, originalRepliedMessageSid);
         if (correl.isEmpty()) {
             log.warn(
                     "[INBOUND] Nao correlacionado — sem CONFIRMAR_x/CANCELAR_x, SIM id/NAO id, nem OriginalRepliedMessageSid registrado. clienteId={} body='{}' payload='{}'",
@@ -151,11 +156,20 @@ public class WhatsAppInboundService {
         mensagemRepository.save(mr);
 
         if (tipoClassificado == RespostaWhatsappTipoEnum.SIM || tipoClassificado == RespostaWhatsappTipoEnum.NAO) {
-            agendamentoIntegracaoCliente.notificarRespostaWhatsapp(agenda.getId(), tipoClassificado);
-            log.info(
-                    "[INBOUND] Atualizacao de status delegada ao agendamento — agendamentoId={} tipo={}",
-                    agenda.getId(),
-                    tipoClassificado);
+            try {
+                agendamentoIntegracaoCliente.notificarRespostaWhatsapp(agenda.getId(), tipoClassificado);
+                log.info(
+                        "[INBOUND] Atualizacao de status delegada ao agendamento — agendamentoId={} tipo={}",
+                        agenda.getId(),
+                        tipoClassificado);
+            } catch (Exception ex) {
+                log.warn(
+                        "[INBOUND] Falha ao integrar resposta com agendamento id={} tipo={} erro={}",
+                        agenda.getId(),
+                        tipoClassificado,
+                        ex.toString());
+            }
+            enviarRespostaAutomaticaPaciente(telefoneOrigem, tipoClassificado, agenda.getId());
         } else {
             log.debug(
                     "[INBOUND] Tipo {} nao atualiza status no dominio agendamento.",
@@ -208,6 +222,52 @@ public class WhatsAppInboundService {
         }
         String limpo = s.replace("whatsapp:", "").replace("WhatsApp:", "").trim();
         return limpo.replaceAll("\\D+", "");
+    }
+
+    private Optional<RespostaWhatsappCorrelacao.Resultado> resolverComPrioridadeTextoSimples(
+            Cliente cliente, String buttonPayload, String body, String originalRepliedMessageSid) {
+        RespostaWhatsappTipoEnum tipoLivre = RespostaWhatsappTexto.classificarRespostaPaciente(body);
+        if ((tipoLivre == RespostaWhatsappTipoEnum.SIM || tipoLivre == RespostaWhatsappTipoEnum.NAO)
+                && !RespostaWhatsappCorrelacao.contemIdNoTexto(body)) {
+            List<Agendamento> agendados =
+                    agendamentoRepository.findByClienteAndStatusOrderByMaisRecente(
+                            cliente.getId(), StatusAgendamentoEnum.AGENDADO);
+            if (!agendados.isEmpty()) {
+                Agendamento escolhido = agendados.get(0);
+                log.info(
+                        "[INBOUND] Agendamento auto-selecionado para clienteId={} -> agendamentoId={} data={} hora={} status={}",
+                        cliente.getId(),
+                        escolhido.getId(),
+                        escolhido.getData(),
+                        escolhido.getHoraInicio(),
+                        escolhido.getStatus());
+                return Optional.of(
+                        new RespostaWhatsappCorrelacao.Resultado(
+                                escolhido.getId(),
+                                tipoLivre,
+                                RespostaWhatsappCorrelacao.OrigemCorrelacao.BODY_SIM_NAO_SIMPLES,
+                                RespostaWhatsappTexto.conteudoParaPersistencia(body)));
+            }
+            log.warn(
+                    "[INBOUND] Sem agendamento AGENDADO para auto-selecao clienteId={} texto='{}'",
+                    cliente.getId(),
+                    body);
+        }
+        return RespostaWhatsappCorrelacao.resolver(
+                buttonPayload, body, originalRepliedMessageSid, notificacaoRepository);
+    }
+
+    private void enviarRespostaAutomaticaPaciente(
+            String telefoneOrigem, RespostaWhatsappTipoEnum tipo, Integer agendamentoId) {
+        String msg =
+                tipo == RespostaWhatsappTipoEnum.SIM
+                        ? "✅ Agendamento confirmado com sucesso! Te esperamos 👍\n\nProtocolo: AG" + agendamentoId
+                        : "❌ Agendamento cancelado. A recepção foi avisada.\n\nProtocolo: AG" + agendamentoId;
+        try {
+            twilioWhatsappSender.enviarTextoParaWhatsapp(telefoneOrigem, msg);
+        } catch (Exception e) {
+            log.warn("[INBOUND] Falha ao enviar resposta automatica ao paciente: {}", e.toString());
+        }
     }
 
     @Transactional
