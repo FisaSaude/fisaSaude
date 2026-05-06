@@ -101,4 +101,18 @@ public interface AgendamentoRepository extends JpaRepository<Agendamento, Intege
             """,
             nativeQuery = true)
     int atualizarStatusDireto(@Param("id") Integer id, @Param("status") String status);
+
+    @Query("""
+            SELECT DISTINCT a FROM Agendamento a
+            JOIN FETCH a.cliente
+            JOIN FETCH a.servico
+            WHERE a.usuario.id = :usuarioId
+            AND a.data BETWEEN :inicio AND :fim
+            ORDER BY a.data ASC, a.horaInicio ASC
+            """)
+    List<Agendamento> findByUsuarioIdAndDataBetweenOrderByDataAscHoraInicioAsc(
+            @Param("usuarioId") Integer usuarioId,
+            @Param("inicio") LocalDate inicio,
+            @Param("fim") LocalDate fim
+    );
 }

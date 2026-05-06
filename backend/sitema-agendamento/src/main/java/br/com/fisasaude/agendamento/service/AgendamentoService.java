@@ -4,6 +4,8 @@ import br.com.fisasaude.agendamento.dto.agendamento.AgendamentoCreateRequestDto;
 import br.com.fisasaude.agendamento.dto.agendamento.AgendamentoRemarcarRequestDto;
 import br.com.fisasaude.agendamento.dto.agendamento.AgendamentoResumoPeriodoResponseDto;
 import br.com.fisasaude.agendamento.dto.agendamento.AgendamentoResponseDto;
+import br.com.fisasaude.agendamento.dto.agendamento.AgendamentoUsuarioPeriodoResponseDto;
+import br.com.fisasaude.agendamento.dto.agendamento.DiaValidoPeriodoResponseDto;
 import br.com.fisasaude.agendamento.dto.agendamento.HorarioSlotResponseDto;
 import br.com.fisasaude.agendamento.dto.agendamento.VerificacaoConflitoAgendamentoResponseDto;
 import br.com.fisasaude.agendamento.dto.internal.AgendamentoLembreteResponseDto;
@@ -12,6 +14,8 @@ import br.com.fisasaude.agendamento.exception.BadRequestException;
 import br.com.fisasaude.agendamento.exception.ConflictException;
 import br.com.fisasaude.agendamento.exception.NotFoundException;
 import br.com.fisasaude.agendamento.exception.UnprocessableEntityException;
+import br.com.fisasaude.agendamento.feignclient.ApiFeriados;
+import br.com.fisasaude.agendamento.feignclient.FeriadoDto;
 import br.com.fisasaude.agendamento.mapper.AgendamentoMapper;
 import br.com.fisasaude.agendamento.model.entity.Agendamento;
 import br.com.fisasaude.agendamento.model.entity.Cliente;
@@ -23,13 +27,16 @@ import br.com.fisasaude.agendamento.repository.AgendamentoRepository;
 import br.com.fisasaude.agendamento.repository.ClienteRepository;
 import br.com.fisasaude.agendamento.repository.ServicoRepository;
 import br.com.fisasaude.agendamento.repository.UsuarioRepository;
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import br.com.fisasaude.agendamento.integration.notificacao.NotificacaoClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,6 +60,7 @@ public class AgendamentoService {
     private final AgendamentoMapper agendamentoMapper;
     private final ApplicationEventPublisher eventPublisher;
     private final NotificacaoClient notificacaoClient;
+    private final ApiFeriados apiFeriados;
 
     public AgendamentoService(
             AgendamentoRepository agendamentoRepository,
@@ -61,7 +69,8 @@ public class AgendamentoService {
             UsuarioRepository usuarioRepository,
             AgendamentoMapper agendamentoMapper,
             ApplicationEventPublisher eventPublisher,
-            NotificacaoClient notificacaoClient
+            NotificacaoClient notificacaoClient,
+            ApiFeriados apiFeriados
     ) {
         this.agendamentoRepository = agendamentoRepository;
         this.clienteRepository = clienteRepository;
@@ -70,6 +79,7 @@ public class AgendamentoService {
         this.agendamentoMapper = agendamentoMapper;
         this.eventPublisher = eventPublisher;
         this.notificacaoClient = notificacaoClient;
+        this.apiFeriados = apiFeriados;
     }
 
     @Transactional(readOnly = true)
@@ -448,6 +458,66 @@ public class AgendamentoService {
             }
         }
         return resultado;
+    }
+
+    @Transactional(readOnly = true)
+    public List<AgendamentoUsuarioPeriodoResponseDto> listarPorUsuarioEPeriodo(
+            Integer usuarioId,
+            LocalDate dataInicio,
+            LocalDate dataFim
+    ) {
+        if (usuarioId == null) {
+            throw new BadRequestException("usuarioId e obrigatorio");
+        }
+        validarPeriodo(dataInicio, dataFim);
+
+        return agendamentoRepository
+                .findByUsuarioIdAndDataBetweenOrderByDataAscHoraInicioAsc(usuarioId, dataInicio, dataFim)
+                .stream()
+                .map(a -> new AgendamentoUsuarioPeriodoResponseDto(
+                        a.getHoraInicio(),
+                        a.getCliente().getNome(),
+                        a.getStatus(),
+                        a.getServico().getPreco()
+                ))
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<DiaValidoPeriodoResponseDto> listarDiasValidos(
+            Integer usuarioId,
+            LocalDate dataInicio,
+            LocalDate dataFim
+    ) {
+        if (usuarioId == null) {
+            throw new BadRequestException("usuarioId e obrigatorio");
+        }
+        validarPeriodo(dataInicio, dataFim);
+
+        Set<LocalDate> feriados = new HashSet<>();
+        for (int ano = dataInicio.getYear(); ano <= dataFim.getYear(); ano++) {
+            List<FeriadoDto> feriadosAno = apiFeriados.listarFeriados(ano);
+            for (FeriadoDto feriado : feriadosAno) {
+                feriados.add(feriado.date());
+            }
+        }
+
+        List<DiaValidoPeriodoResponseDto> dias = new ArrayList<>();
+        for (LocalDate data = dataInicio; !data.isAfter(dataFim); data = data.plusDays(1)) {
+            boolean fimDeSemana = data.getDayOfWeek() == DayOfWeek.SATURDAY
+                    || data.getDayOfWeek() == DayOfWeek.SUNDAY;
+            boolean ehFeriado = feriados.contains(data);
+
+            boolean disponivel = false;
+            if (!fimDeSemana && !ehFeriado) {
+                // Dia fica indisponivel quando o endpoint de slots retornaria lista vazia.
+                disponivel = !listarSlotsDisponiveis(usuarioId, data, 60).isEmpty();
+            }
+
+            dias.add(new DiaValidoPeriodoResponseDto(data, disponivel));
+        }
+
+        return dias;
     }
 
     private boolean mesmoEstabelecimento(Usuario atual, Usuario outro) {

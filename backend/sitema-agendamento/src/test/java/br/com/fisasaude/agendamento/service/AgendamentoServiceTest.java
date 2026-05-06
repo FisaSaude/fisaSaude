@@ -10,12 +10,16 @@ import static org.mockito.Mockito.when;
 
 import br.com.fisasaude.agendamento.dto.agendamento.AgendamentoCreateRequestDto;
 import br.com.fisasaude.agendamento.dto.agendamento.AgendamentoRemarcarRequestDto;
+import br.com.fisasaude.agendamento.dto.agendamento.AgendamentoUsuarioPeriodoResponseDto;
+import br.com.fisasaude.agendamento.dto.agendamento.DiaValidoPeriodoResponseDto;
 import br.com.fisasaude.agendamento.dto.agendamento.HorarioSlotResponseDto;
 import br.com.fisasaude.agendamento.event.AgendamentoNotificacaoConfirmacaoEvent;
 import br.com.fisasaude.agendamento.exception.BadRequestException;
 import br.com.fisasaude.agendamento.exception.ConflictException;
 import br.com.fisasaude.agendamento.exception.NotFoundException;
 import br.com.fisasaude.agendamento.exception.UnprocessableEntityException;
+import br.com.fisasaude.agendamento.feignclient.ApiFeriados;
+import br.com.fisasaude.agendamento.feignclient.FeriadoDto;
 import br.com.fisasaude.agendamento.mapper.AgendamentoMapper;
 import br.com.fisasaude.agendamento.model.entity.Agendamento;
 import br.com.fisasaude.agendamento.model.entity.Cliente;
@@ -35,6 +39,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZoneId;
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -71,6 +76,9 @@ class AgendamentoServiceTest {
 
     @Mock
     private NotificacaoClient notificacaoClient;
+
+    @Mock
+    private ApiFeriados apiFeriados;
 
     @InjectMocks
     private AgendamentoService service;
@@ -415,6 +423,82 @@ class AgendamentoServiceTest {
 
         assertThatThrownBy(() -> service.obterResumoPorStatusNoPeriodo(ini, fim))
                 .isInstanceOf(UnprocessableEntityException.class);
+    }
+
+    @Test
+    void listarPorUsuarioEPeriodo_sucesso_retornaCamposEsperados() {
+        LocalDate inicio = LocalDate.now(Z);
+        LocalDate fim = inicio.plusDays(7);
+
+        Agendamento a = agendamentoAgendado(99, usuario, servico, cliente);
+        a.setHoraInicio(LocalTime.of(14, 30));
+        a.setStatus(StatusAgendamentoEnum.CONFIRMADO);
+
+        when(agendamentoRepository.findByUsuarioIdAndDataBetweenOrderByDataAscHoraInicioAsc(
+                usuario.getId(),
+                inicio,
+                fim
+        )).thenReturn(List.of(a));
+
+        List<AgendamentoUsuarioPeriodoResponseDto> resultado =
+                service.listarPorUsuarioEPeriodo(usuario.getId(), inicio, fim);
+
+        assertThat(resultado).hasSize(1);
+        assertThat(resultado.getFirst().horaInicio()).isEqualTo(LocalTime.of(14, 30));
+        assertThat(resultado.getFirst().nomeCliente()).isEqualTo("Ana");
+        assertThat(resultado.getFirst().status()).isEqualTo(StatusAgendamentoEnum.CONFIRMADO);
+        assertThat(resultado.getFirst().preco()).isEqualByComparingTo(BigDecimal.valueOf(80));
+    }
+
+    @Test
+    void listarPorUsuarioEPeriodo_usuarioIdNulo_lancaBadRequest() {
+        LocalDate inicio = LocalDate.now(Z);
+        LocalDate fim = inicio.plusDays(1);
+
+        assertThatThrownBy(() -> service.listarPorUsuarioEPeriodo(null, inicio, fim))
+                .isInstanceOf(BadRequestException.class);
+    }
+
+    @Test
+    void listarDiasValidos_diaUtilComSlots_disponivelTrue() {
+        LocalDate dia = LocalDate.of(2026, 5, 5);
+        when(apiFeriados.listarFeriados(dia.getYear())).thenReturn(List.of());
+        when(usuarioRepository.findById(usuario.getId())).thenReturn(Optional.of(usuario));
+        when(agendamentoRepository.countAgendamentosConflitantes(
+                eq(usuario.getId()),
+                eq(dia),
+                any(LocalTime.class),
+                any(LocalTime.class),
+                eq(null),
+                eq(StatusAgendamentoEnum.CANCELADO)
+        )).thenReturn(0L);
+
+        List<DiaValidoPeriodoResponseDto> resultado = service.listarDiasValidos(usuario.getId(), dia, dia);
+
+        assertThat(resultado).hasSize(1);
+        assertThat(resultado.getFirst().data()).isEqualTo(dia);
+        assertThat(resultado.getFirst().disponivel()).isTrue();
+    }
+
+    @Test
+    void listarDiasValidos_diaFeriado_disponivelFalse() {
+        LocalDate feriado = LocalDate.of(2026, 1, 1);
+        when(apiFeriados.listarFeriados(feriado.getYear()))
+                .thenReturn(List.of(new FeriadoDto(feriado, "Confraternizacao Universal", "national")));
+
+        List<DiaValidoPeriodoResponseDto> resultado = service.listarDiasValidos(usuario.getId(), feriado, feriado);
+
+        assertThat(resultado).hasSize(1);
+        assertThat(resultado.getFirst().disponivel()).isFalse();
+        verify(usuarioRepository, never()).findById(any());
+    }
+
+    @Test
+    void listarDiasValidos_usuarioIdNulo_lancaBadRequest() {
+        LocalDate dia = LocalDate.of(2026, 5, 5);
+
+        assertThatThrownBy(() -> service.listarDiasValidos(null, dia, dia))
+                .isInstanceOf(BadRequestException.class);
     }
 
     private void stubFksParaCriar() {

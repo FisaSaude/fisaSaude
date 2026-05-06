@@ -3,6 +3,8 @@ package br.com.fisasaude.agendamento.controller.agendamento;
 import br.com.fisasaude.agendamento.dto.agendamento.AgendamentoCreateRequestDto;
 import br.com.fisasaude.agendamento.dto.agendamento.AgendamentoRemarcarRequestDto;
 import br.com.fisasaude.agendamento.dto.agendamento.AgendamentoResponseDto;
+import br.com.fisasaude.agendamento.dto.agendamento.AgendamentoUsuarioPeriodoResponseDto;
+import br.com.fisasaude.agendamento.dto.agendamento.DiaValidoPeriodoResponseDto;
 import br.com.fisasaude.agendamento.dto.agendamento.HorarioSlotResponseDto;
 import br.com.fisasaude.agendamento.dto.agendamento.AgendamentoResumoPeriodoResponseDto;
 import br.com.fisasaude.agendamento.dto.agendamento.VerificacaoConflitoAgendamentoResponseDto;
@@ -228,6 +230,47 @@ public interface SwaggerAgendamentoController {
             @Parameter(description = "Inicio do periodo", example = "2026-01-01")
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataInicio,
             @Parameter(description = "Fim do periodo", example = "2026-01-31")
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataFim
+    );
+
+    @Operation(
+            summary = "Listar agendamentos por usuario em um periodo",
+            description = "Retorna hora de inicio, nome do cliente, status e preco para o usuario no intervalo informado (inclusivo)."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Lista retornada com sucesso",
+                    content = @Content(array = @ArraySchema(schema = @Schema(implementation = AgendamentoUsuarioPeriodoResponseDto.class)))),
+            @ApiResponse(responseCode = "400", description = "Parametro obrigatorio ausente", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "401", description = "Token ausente ou invalido"),
+            @ApiResponse(responseCode = "403", description = "Sem permissao"),
+            @ApiResponse(responseCode = "422", description = "Periodo invalido", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    ResponseEntity<List<AgendamentoUsuarioPeriodoResponseDto>> listarPorUsuarioEPeriodo(
+            @Parameter(description = "ID do usuario (profissional)", required = true, example = "1") @RequestParam Integer usuarioId,
+            @Parameter(description = "Data inicial (inclusive)", required = true, example = "2026-05-01")
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataInicio,
+            @Parameter(description = "Data final (inclusive)", required = true, example = "2026-05-31")
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataFim
+    );
+
+    @Operation(
+            summary = "Listar dias disponiveis por periodo",
+            description = "Retorna todos os dias do intervalo com indicacao se o dia esta disponivel (nao sabado/domingo, nao feriado e com slots disponiveis)."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Lista retornada com sucesso",
+                    content = @Content(array = @ArraySchema(schema = @Schema(implementation = DiaValidoPeriodoResponseDto.class)))),
+            @ApiResponse(responseCode = "400", description = "Parametros ausentes", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "401", description = "Token ausente ou invalido"),
+            @ApiResponse(responseCode = "403", description = "Sem permissao"),
+            @ApiResponse(responseCode = "422", description = "Periodo invalido", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    ResponseEntity<List<DiaValidoPeriodoResponseDto>> listarDiasValidos(
+            @Parameter(description = "ID do usuario (profissional)", required = true, example = "1")
+            @RequestParam Integer usuarioId,
+            @Parameter(description = "Inicio do periodo", required = true, example = "2026-05-01")
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataInicio,
+            @Parameter(description = "Fim do periodo", required = true, example = "2026-05-31")
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataFim
     );
 }

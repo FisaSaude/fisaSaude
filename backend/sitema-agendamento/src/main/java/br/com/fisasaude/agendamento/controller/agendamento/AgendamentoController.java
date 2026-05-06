@@ -3,6 +3,8 @@ package br.com.fisasaude.agendamento.controller.agendamento;
 import br.com.fisasaude.agendamento.dto.agendamento.AgendamentoCreateRequestDto;
 import br.com.fisasaude.agendamento.dto.agendamento.AgendamentoRemarcarRequestDto;
 import br.com.fisasaude.agendamento.dto.agendamento.AgendamentoResponseDto;
+import br.com.fisasaude.agendamento.dto.agendamento.AgendamentoUsuarioPeriodoResponseDto;
+import br.com.fisasaude.agendamento.dto.agendamento.DiaValidoPeriodoResponseDto;
 import br.com.fisasaude.agendamento.dto.agendamento.HorarioSlotResponseDto;
 import br.com.fisasaude.agendamento.dto.agendamento.AgendamentoResumoPeriodoResponseDto;
 import br.com.fisasaude.agendamento.dto.agendamento.VerificacaoConflitoAgendamentoResponseDto;
@@ -121,5 +123,23 @@ public class AgendamentoController implements SwaggerAgendamentoController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataFim
     ) {
         return ResponseEntity.ok(agendamentoService.obterResumoPorStatusNoPeriodo(dataInicio, dataFim));
+    }
+
+    @GetMapping("/usuario-periodo")
+    public ResponseEntity<List<AgendamentoUsuarioPeriodoResponseDto>> listarPorUsuarioEPeriodo(
+            @RequestParam Integer usuarioId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataInicio,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataFim
+    ) {
+        return ResponseEntity.ok(agendamentoService.listarPorUsuarioEPeriodo(usuarioId, dataInicio, dataFim));
+    }
+    
+    @GetMapping("listar-dias-validos")
+    public ResponseEntity<List<DiaValidoPeriodoResponseDto>> listarDiasValidos(
+            @RequestParam Integer usuarioId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataInicio,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataFim
+    ) {
+        return ResponseEntity.ok(agendamentoService.listarDiasValidos(usuarioId, dataInicio, dataFim));
     }
 }
