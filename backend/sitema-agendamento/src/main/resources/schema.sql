@@ -15,11 +15,11 @@ CREATE TABLE IF NOT EXISTS estabelecimento (
 -- ========================================
 -- DESPESAS
 -- ========================================
-CREATE TABLE IF NOT EXISTS despesas (
+CREATE TABLE IF NOT EXISTS despesa (
     id INT PRIMARY KEY AUTO_INCREMENT,
     nome VARCHAR(100) NOT NULL,
     data_despesa DATE NOT NULL,
-    tipo VARCHAR(45) NOT NULL,
+    tipo ENUM('ENTRADA', 'SAIDA') NOT NULL,
     valor DECIMAL(10,2) NOT NULL,
 
     estabelecimento_id INT NOT NULL,
@@ -93,7 +93,7 @@ CREATE TABLE IF NOT EXISTS agendamento (
     data DATE NOT NULL,
     hora_inicio TIME NOT NULL,
     hora_fim TIME NOT NULL,
-    `status` ENUM('AGENDADO', 'CONFIRMADO', 'CANCELADO', 'CONCLUIDO') NOT NULL DEFAULT 'AGENDADO',
+    `status` ENUM('AGENDADO', 'CONFIRMADO', 'CANCELADO', 'CONCLUIDO', 'BLOQUEADO') NOT NULL DEFAULT 'AGENDADO',
     criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     atualizado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     observacoes TEXT,
@@ -180,11 +180,7 @@ CREATE TABLE IF NOT EXISTS prontuario (
     criado_em DATETIME NOT NULL,
 
     cliente_id INT NOT NULL,
-    agendamento_id INT NOT NULL,
 
     CONSTRAINT fk_prontuario_cliente
-        FOREIGN KEY (cliente_id) REFERENCES cliente(id),
-
-    CONSTRAINT fk_prontuario_agendamento
-        FOREIGN KEY (agendamento_id) REFERENCES agendamento(id)
+        FOREIGN KEY (cliente_id) REFERENCES cliente(id)
 ) ENGINE=InnoDB;
