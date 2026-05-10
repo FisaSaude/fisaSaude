@@ -21,18 +21,14 @@ public class Prontuario {
     @JoinColumn(name = "cliente_id", nullable = false)
     private Cliente cliente;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "agendamento_id", nullable = false)
-    private Agendamento agendamento;
 
     public Prontuario() {}
 
-    public Prontuario(Integer id, String observacoes, LocalDateTime criadoEm, Cliente cliente, Agendamento agendamento) {
+    public Prontuario(Integer id, String observacoes, LocalDateTime criadoEm, Cliente cliente) {
         this.id = id;
         this.observacoes = observacoes;
         this.criadoEm = criadoEm;
         this.cliente = cliente;
-        this.agendamento = agendamento;
     }
 
     public Integer getId() { return id; }
@@ -47,8 +43,6 @@ public class Prontuario {
     public Cliente getCliente() { return cliente; }
     public void setCliente(Cliente cliente) { this.cliente = cliente; }
 
-    public Agendamento getAgendamento() { return agendamento; }
-    public void setAgendamento(Agendamento agendamento) { this.agendamento = agendamento; }
 
     @Override
     public String toString() {
@@ -57,7 +51,6 @@ public class Prontuario {
                 ", observacoes='" + observacoes + '\'' +
                 ", criadoEm=" + criadoEm +
                 ", cliente=" + (cliente != null ? cliente.getId() : null) +
-                ", agendamento=" + (agendamento != null ? agendamento.getId() : null) +
                 '}';
     }
 }
