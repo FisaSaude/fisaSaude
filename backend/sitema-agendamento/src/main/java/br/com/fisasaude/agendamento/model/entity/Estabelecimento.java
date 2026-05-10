@@ -38,7 +38,7 @@ public class Estabelecimento {
 
     public Estabelecimento() {}
 
-    public Estabelecimento(Integer id, String nome, String endereco, String parametros, LocalTime inicioFuncionamento, LocalTime fimFuncionamento, List<Usuario> usuarios, List<Despesas> despesas) {
+    public Estabelecimento(Integer id, String nome, String endereco, String parametros, LocalTime inicioFuncionamento, LocalTime fimFuncionamento, List<Usuario> usuarios, List<Despesa> despesas) {
         this.id = id;
         this.nome = nome;
         this.endereco = endereco;
@@ -103,11 +103,11 @@ public class Estabelecimento {
         this.usuarios = usuarios;
     }
 
-    public List<Despesas> getDespesas() {
+    public List<Despesa> getDespesas() {
         return despesas;
     }
 
-    public void setDespesas(List<Despesas> despesas) {
+    public void setDespesas(List<Despesa> despesas) {
         this.despesas = despesas;
     }
 
@@ -128,6 +128,6 @@ public class Estabelecimento {
 
     @OneToMany(mappedBy = "estabelecimento", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore
-    private List<Despesas> despesas = new ArrayList<>();
+    private List<Despesa> despesas = new ArrayList<>();
 }
 
