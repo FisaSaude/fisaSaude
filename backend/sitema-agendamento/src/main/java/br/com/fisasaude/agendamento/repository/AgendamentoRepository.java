@@ -15,6 +15,8 @@ public interface AgendamentoRepository extends JpaRepository<Agendamento, Intege
 
     long countByDataBetweenAndStatus(LocalDate dataInicio, LocalDate dataFim, StatusAgendamentoEnum status);
 
+    long countByDataAndUsuarioId(LocalDate data, Integer usuarioId);
+
     @Query("""
             SELECT DISTINCT a FROM Agendamento a
             JOIN FETCH a.cliente
@@ -114,5 +116,18 @@ public interface AgendamentoRepository extends JpaRepository<Agendamento, Intege
             @Param("usuarioId") Integer usuarioId,
             @Param("inicio") LocalDate inicio,
             @Param("fim") LocalDate fim
+    );
+
+    @Query("""
+            SELECT COUNT(a.id) FROM Agendamento a
+            WHERE a.usuario.id = :usuarioId
+            AND a.data BETWEEN :inicio AND :fim
+            AND a.status NOT IN :statusExcluidos
+            """)
+    long countByUsuarioIdAndDataBetweenAndStatusNotIn(
+            @Param("usuarioId") Integer usuarioId,
+            @Param("inicio") LocalDate inicio,
+            @Param("fim") LocalDate fim,
+            @Param("statusExcluidos") java.util.Collection<StatusAgendamentoEnum> statusExcluidos
     );
 }

@@ -1,4 +1,4 @@
-package br.com.fisasaude.agendamento.dto.agendamento;
+package br.com.fisasaude.agendamento.dto.agendamento.response;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.math.BigDecimal;

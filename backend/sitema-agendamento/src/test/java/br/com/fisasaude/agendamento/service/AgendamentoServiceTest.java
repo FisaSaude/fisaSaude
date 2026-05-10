@@ -8,11 +8,11 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import br.com.fisasaude.agendamento.dto.agendamento.AgendamentoCreateRequestDto;
-import br.com.fisasaude.agendamento.dto.agendamento.AgendamentoRemarcarRequestDto;
-import br.com.fisasaude.agendamento.dto.agendamento.AgendamentoUsuarioPeriodoResponseDto;
-import br.com.fisasaude.agendamento.dto.agendamento.DiaValidoPeriodoResponseDto;
-import br.com.fisasaude.agendamento.dto.agendamento.HorarioSlotResponseDto;
+import br.com.fisasaude.agendamento.dto.agendamento.request.AgendamentoCreateRequestDto;
+import br.com.fisasaude.agendamento.dto.agendamento.request.AgendamentoRemarcarRequestDto;
+import br.com.fisasaude.agendamento.dto.agendamento.response.AgendamentoUsuarioPeriodoResponseDto;
+import br.com.fisasaude.agendamento.dto.agendamento.response.DiaValidoPeriodoResponseDto;
+import br.com.fisasaude.agendamento.dto.agendamento.response.HorarioSlotResponseDto;
 import br.com.fisasaude.agendamento.event.AgendamentoNotificacaoConfirmacaoEvent;
 import br.com.fisasaude.agendamento.exception.BadRequestException;
 import br.com.fisasaude.agendamento.exception.ConflictException;

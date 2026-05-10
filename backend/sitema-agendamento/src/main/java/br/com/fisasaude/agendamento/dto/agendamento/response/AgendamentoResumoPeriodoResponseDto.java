@@ -1,4 +1,4 @@
-package br.com.fisasaude.agendamento.dto.agendamento;
+package br.com.fisasaude.agendamento.dto.agendamento.response;
 
 public record AgendamentoResumoPeriodoResponseDto(
         long concluidos,

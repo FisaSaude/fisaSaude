@@ -1,13 +1,15 @@
 package br.com.fisasaude.agendamento.controller.agendamento;
 
-import br.com.fisasaude.agendamento.dto.agendamento.AgendamentoCreateRequestDto;
-import br.com.fisasaude.agendamento.dto.agendamento.AgendamentoRemarcarRequestDto;
-import br.com.fisasaude.agendamento.dto.agendamento.AgendamentoResponseDto;
-import br.com.fisasaude.agendamento.dto.agendamento.AgendamentoUsuarioPeriodoResponseDto;
-import br.com.fisasaude.agendamento.dto.agendamento.DiaValidoPeriodoResponseDto;
-import br.com.fisasaude.agendamento.dto.agendamento.HorarioSlotResponseDto;
-import br.com.fisasaude.agendamento.dto.agendamento.AgendamentoResumoPeriodoResponseDto;
-import br.com.fisasaude.agendamento.dto.agendamento.VerificacaoConflitoAgendamentoResponseDto;
+import br.com.fisasaude.agendamento.dto.agendamento.request.AgendamentoBloquearDiaRequestDto;
+import br.com.fisasaude.agendamento.dto.agendamento.request.AgendamentoCreateRequestDto;
+import br.com.fisasaude.agendamento.dto.agendamento.request.AgendamentoRemarcarRequestDto;
+import br.com.fisasaude.agendamento.dto.agendamento.response.AgendamentoResponseDto;
+import br.com.fisasaude.agendamento.dto.agendamento.response.AgendamentoUsuarioPeriodoResponseDto;
+import br.com.fisasaude.agendamento.dto.agendamento.response.DiaValidoPeriodoResponseDto;
+import br.com.fisasaude.agendamento.dto.agendamento.response.HorarioSlotResponseDto;
+import br.com.fisasaude.agendamento.dto.agendamento.response.AgendamentoResumoPeriodoResponseDto;
+import br.com.fisasaude.agendamento.dto.agendamento.response.TaxaOcupacaoResponseDto;
+import br.com.fisasaude.agendamento.dto.agendamento.response.VerificacaoConflitoAgendamentoResponseDto;
 import br.com.fisasaude.agendamento.feignclient.ApiFeriados;
 import br.com.fisasaude.agendamento.feignclient.FeriadoDto;
 import br.com.fisasaude.agendamento.model.enums.StatusAgendamentoEnum;
@@ -141,5 +143,20 @@ public class AgendamentoController implements SwaggerAgendamentoController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataFim
     ) {
         return ResponseEntity.ok(agendamentoService.listarDiasValidos(usuarioId, dataInicio, dataFim));
+    }
+
+    @PostMapping("/bloquear-dia")
+    public ResponseEntity<AgendamentoResponseDto> bloquearDia(@Valid @RequestBody AgendamentoBloquearDiaRequestDto dto) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(agendamentoService.bloquearDia(dto));
+    }
+
+    @GetMapping("/taxa-ocupacao")
+    public ResponseEntity<TaxaOcupacaoResponseDto> taxaOcupacao(
+            @RequestParam Integer usuarioId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataInicio,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataFim,
+            @RequestParam(required = false, defaultValue = "60") Integer duracaoMinutos
+    ) {
+        return ResponseEntity.ok(agendamentoService.calcularTaxaOcupacao(usuarioId, dataInicio, dataFim, duracaoMinutos));
     }
 }

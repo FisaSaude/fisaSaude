@@ -1,13 +1,15 @@
 package br.com.fisasaude.agendamento.service;
 
-import br.com.fisasaude.agendamento.dto.agendamento.AgendamentoCreateRequestDto;
-import br.com.fisasaude.agendamento.dto.agendamento.AgendamentoRemarcarRequestDto;
-import br.com.fisasaude.agendamento.dto.agendamento.AgendamentoResumoPeriodoResponseDto;
-import br.com.fisasaude.agendamento.dto.agendamento.AgendamentoResponseDto;
-import br.com.fisasaude.agendamento.dto.agendamento.AgendamentoUsuarioPeriodoResponseDto;
-import br.com.fisasaude.agendamento.dto.agendamento.DiaValidoPeriodoResponseDto;
-import br.com.fisasaude.agendamento.dto.agendamento.HorarioSlotResponseDto;
-import br.com.fisasaude.agendamento.dto.agendamento.VerificacaoConflitoAgendamentoResponseDto;
+import br.com.fisasaude.agendamento.dto.agendamento.request.AgendamentoBloquearDiaRequestDto;
+import br.com.fisasaude.agendamento.dto.agendamento.request.AgendamentoCreateRequestDto;
+import br.com.fisasaude.agendamento.dto.agendamento.request.AgendamentoRemarcarRequestDto;
+import br.com.fisasaude.agendamento.dto.agendamento.response.AgendamentoResumoPeriodoResponseDto;
+import br.com.fisasaude.agendamento.dto.agendamento.response.AgendamentoResponseDto;
+import br.com.fisasaude.agendamento.dto.agendamento.response.AgendamentoUsuarioPeriodoResponseDto;
+import br.com.fisasaude.agendamento.dto.agendamento.response.DiaValidoPeriodoResponseDto;
+import br.com.fisasaude.agendamento.dto.agendamento.response.HorarioSlotResponseDto;
+import br.com.fisasaude.agendamento.dto.agendamento.response.TaxaOcupacaoResponseDto;
+import br.com.fisasaude.agendamento.dto.agendamento.response.VerificacaoConflitoAgendamentoResponseDto;
 import br.com.fisasaude.agendamento.dto.internal.AgendamentoLembreteResponseDto;
 import br.com.fisasaude.agendamento.event.AgendamentoNotificacaoConfirmacaoEvent;
 import br.com.fisasaude.agendamento.exception.BadRequestException;
@@ -34,6 +36,7 @@ import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -322,6 +325,39 @@ public class AgendamentoService {
         log.debug("Tipo de resposta WhatsApp {} sem efeito no status para agendamento {}.", tipo, agendamentoId);
     }
 
+    public AgendamentoResponseDto bloquearDia(AgendamentoBloquearDiaRequestDto dto) {
+        if (dto == null) {
+            throw new BadRequestException("Corpo da requisição não pode ser nulo");
+        }
+        Usuario usuario = usuarioRepository.findById(dto.usuarioId())
+                .orElseThrow(() -> new NotFoundException("Usuário não encontrado"));
+        Servico servico = servicoRepository.findById(dto.servicoId())
+                .orElseThrow(() -> new NotFoundException("Serviço não encontrado"));
+        LocalDate data = dto.data();
+        // Verifica se já existe qualquer agendamento para o usuário no dia
+        long existentes = agendamentoRepository.countByDataAndUsuarioId(data, usuario.getId());
+        if (existentes > 0) {
+            throw new ConflictException("Já existem agendamentos para este usuário neste dia");
+        }
+        // Cria agendamento bloqueado cobrindo todo o expediente
+        LocalTime inicio = usuario.getEstabelecimento().getInicioFuncionamento();
+        LocalTime fim = usuario.getEstabelecimento().getFimFuncionamento();
+        LocalDateTime now = LocalDateTime.now(ZoneId.of("America/Sao_Paulo"));
+        Agendamento bloqueio = new Agendamento();
+        bloqueio.setData(data);
+        bloqueio.setHoraInicio(inicio);
+        bloqueio.setHoraFim(fim);
+        bloqueio.setStatus(StatusAgendamentoEnum.BLOQUEADO);
+        bloqueio.setObservacoes("BLOQUEIO DE DIA INTEIRO");
+        bloqueio.setCriadoEm(now);
+        bloqueio.setAtualizadoEm(now);
+        bloqueio.setCliente(null);
+        bloqueio.setServico(servico);
+        bloqueio.setUsuario(usuario);
+        Agendamento salvo = agendamentoRepository.save(bloqueio);
+        return agendamentoMapper.toDto(salvo);
+    }
+
     private void validarIdAgendamento(Integer id) {
         if (id == null || id <= 0) {
             throw new BadRequestException("Id do agendamento invalido");
@@ -518,6 +554,55 @@ public class AgendamentoService {
         }
 
         return dias;
+    }
+
+    @Transactional(readOnly = true)
+    public TaxaOcupacaoResponseDto calcularTaxaOcupacao(
+            Integer usuarioId,
+            LocalDate dataInicio,
+            LocalDate dataFim,
+            Integer duracaoMinutos
+    ) {
+        if (usuarioId == null) {
+            throw new BadRequestException("usuarioId e obrigatorio");
+        }
+        validarPeriodo(dataInicio, dataFim);
+
+        int dur = duracaoMinutos != null ? duracaoMinutos : 60;
+        if (dur < DURACAO_SLOT_MIN || dur > DURACAO_SLOT_MAX) {
+            throw new UnprocessableEntityException(
+                    "duracaoMinutos deve estar entre " + DURACAO_SLOT_MIN + " e " + DURACAO_SLOT_MAX
+            );
+        }
+
+        Usuario u = usuarioRepository.findById(usuarioId)
+                .orElseThrow(() -> new NotFoundException("Usuario nao encontrado"));
+
+        LocalTime expedienteInicio = u.getEstabelecimento().getInicioFuncionamento();
+        LocalTime expedienteFim = u.getEstabelecimento().getFimFuncionamento();
+
+        if (!expedienteInicio.isBefore(expedienteFim)) {
+            throw new UnprocessableEntityException("Horario de funcionamento do estabelecimento invalido");
+        }
+
+        long slotsPorDia = java.time.Duration.between(expedienteInicio, expedienteFim).toMinutes() / dur;
+
+        long totalDias = dataInicio.datesUntil(dataFim.plusDays(1)).count();
+        long capacidadeMaxima = totalDias * slotsPorDia;
+
+        // Conta agendamentos efetivos (exclui CANCELADO e BLOQUEADO)
+        java.util.EnumSet<StatusAgendamentoEnum> statusExcluidos =
+                java.util.EnumSet.of(StatusAgendamentoEnum.CANCELADO, StatusAgendamentoEnum.BLOQUEADO);
+
+        long totalAgendamentos = agendamentoRepository.countByUsuarioIdAndDataBetweenAndStatusNotIn(
+                usuarioId, dataInicio, dataFim, statusExcluidos
+        );
+
+        double taxaOcupacao = capacidadeMaxima > 0
+                ? Math.round((double) totalAgendamentos / capacidadeMaxima * 10000.0) / 100.0
+                : 0.0;
+
+        return new TaxaOcupacaoResponseDto(dataInicio, dataFim, dur, totalAgendamentos, capacidadeMaxima, taxaOcupacao);
     }
 
     private boolean mesmoEstabelecimento(Usuario atual, Usuario outro) {

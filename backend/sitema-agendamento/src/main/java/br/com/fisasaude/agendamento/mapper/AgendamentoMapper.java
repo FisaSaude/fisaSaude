@@ -1,9 +1,9 @@
 package br.com.fisasaude.agendamento.mapper;
 
-import br.com.fisasaude.agendamento.dto.agendamento.AgendamentoResponseDto;
-import br.com.fisasaude.agendamento.dto.agendamento.ClienteMiniResponseDto;
-import br.com.fisasaude.agendamento.dto.agendamento.ServicoMiniResponseDto;
-import br.com.fisasaude.agendamento.dto.agendamento.UsuarioMiniResponseDto;
+import br.com.fisasaude.agendamento.dto.agendamento.response.AgendamentoResponseDto;
+import br.com.fisasaude.agendamento.dto.agendamento.response.ClienteMiniResponseDto;
+import br.com.fisasaude.agendamento.dto.agendamento.response.ServicoMiniResponseDto;
+import br.com.fisasaude.agendamento.dto.agendamento.response.UsuarioMiniResponseDto;
 import br.com.fisasaude.agendamento.model.entity.Agendamento;
 import org.springframework.stereotype.Component;
 

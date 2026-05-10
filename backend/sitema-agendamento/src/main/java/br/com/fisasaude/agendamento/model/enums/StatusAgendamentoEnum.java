@@ -4,7 +4,8 @@ public enum StatusAgendamentoEnum {
     AGENDADO("Agendado"),
     CONFIRMADO("Confirmado pelo paciente"),
     CANCELADO("Cancelado"),
-    CONCLUIDO("Concluído");
+    CONCLUIDO("Concluído"),
+    BLOQUEADO("Bloqueado");
 
     private final String descricao;
 

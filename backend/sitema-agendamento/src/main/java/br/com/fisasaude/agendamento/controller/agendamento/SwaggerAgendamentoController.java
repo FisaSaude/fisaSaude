@@ -1,13 +1,15 @@
 package br.com.fisasaude.agendamento.controller.agendamento;
 
-import br.com.fisasaude.agendamento.dto.agendamento.AgendamentoCreateRequestDto;
-import br.com.fisasaude.agendamento.dto.agendamento.AgendamentoRemarcarRequestDto;
-import br.com.fisasaude.agendamento.dto.agendamento.AgendamentoResponseDto;
-import br.com.fisasaude.agendamento.dto.agendamento.AgendamentoUsuarioPeriodoResponseDto;
-import br.com.fisasaude.agendamento.dto.agendamento.DiaValidoPeriodoResponseDto;
-import br.com.fisasaude.agendamento.dto.agendamento.HorarioSlotResponseDto;
-import br.com.fisasaude.agendamento.dto.agendamento.AgendamentoResumoPeriodoResponseDto;
-import br.com.fisasaude.agendamento.dto.agendamento.VerificacaoConflitoAgendamentoResponseDto;
+import br.com.fisasaude.agendamento.dto.agendamento.request.AgendamentoBloquearDiaRequestDto;
+import br.com.fisasaude.agendamento.dto.agendamento.request.AgendamentoCreateRequestDto;
+import br.com.fisasaude.agendamento.dto.agendamento.request.AgendamentoRemarcarRequestDto;
+import br.com.fisasaude.agendamento.dto.agendamento.response.AgendamentoResponseDto;
+import br.com.fisasaude.agendamento.dto.agendamento.response.AgendamentoUsuarioPeriodoResponseDto;
+import br.com.fisasaude.agendamento.dto.agendamento.response.DiaValidoPeriodoResponseDto;
+import br.com.fisasaude.agendamento.dto.agendamento.response.HorarioSlotResponseDto;
+import br.com.fisasaude.agendamento.dto.agendamento.response.AgendamentoResumoPeriodoResponseDto;
+import br.com.fisasaude.agendamento.dto.agendamento.response.TaxaOcupacaoResponseDto;
+import br.com.fisasaude.agendamento.dto.agendamento.response.VerificacaoConflitoAgendamentoResponseDto;
 import br.com.fisasaude.agendamento.exception.ErrorResponse;
 import br.com.fisasaude.agendamento.feignclient.FeriadoDto;
 import br.com.fisasaude.agendamento.model.enums.StatusAgendamentoEnum;
@@ -272,5 +274,47 @@ public interface SwaggerAgendamentoController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataInicio,
             @Parameter(description = "Fim do periodo", required = true, example = "2026-05-31")
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataFim
+    );
+
+    @Operation(
+        summary = "Bloquear um dia inteiro para agendamentos",
+        description = "Cria um bloqueio de agenda para um dia inteiro para um usuário/profissional, impedindo novos agendamentos nesta data."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "201", description = "Dia bloqueado com sucesso", content = @Content(schema = @Schema(implementation = AgendamentoResponseDto.class))),
+        @ApiResponse(responseCode = "400", description = "Dados inválidos", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+        @ApiResponse(responseCode = "404", description = "Usuário não encontrado", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    ResponseEntity<AgendamentoResponseDto> bloquearDia(@Valid @RequestBody AgendamentoBloquearDiaRequestDto dto);
+
+    @Operation(
+            summary = "Taxa de ocupação por periodo",
+            description = "Calcula a taxa de ocupação de um profissional no período informado: " +
+                    "(total de agendamentos efetivos / capacidade máxima de slots) × 100. " +
+                    "A capacidade é calculada com base nos dias úteis (excluindo fins de semana e feriados nacionais) " +
+                    "e no horário de funcionamento do estabelecimento dividido pela duração do slot. " +
+                    "Agendamentos com status CANCELADO e BLOQUEADO são excluídos da contagem efetiva."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Taxa calculada com sucesso",
+                    content = @Content(schema = @Schema(implementation = TaxaOcupacaoResponseDto.class))),
+            @ApiResponse(responseCode = "400", description = "Parâmetros ausentes ou inválidos",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "401", description = "Token ausente ou inválido"),
+            @ApiResponse(responseCode = "403", description = "Sem permissão"),
+            @ApiResponse(responseCode = "404", description = "Usuário não encontrado",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "422", description = "Período ou duração inválida",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    ResponseEntity<TaxaOcupacaoResponseDto> taxaOcupacao(
+            @Parameter(description = "ID do usuário (profissional)", required = true, example = "1")
+            @RequestParam Integer usuarioId,
+            @Parameter(description = "Início do período (inclusive)", required = true, example = "2026-05-01")
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataInicio,
+            @Parameter(description = "Fim do período (inclusive)", required = true, example = "2026-05-31")
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataFim,
+            @Parameter(description = "Duração do slot em minutos (padrão 60, entre 15 e 480)")
+            @RequestParam(required = false, defaultValue = "60") Integer duracaoMinutos
     );
 }
