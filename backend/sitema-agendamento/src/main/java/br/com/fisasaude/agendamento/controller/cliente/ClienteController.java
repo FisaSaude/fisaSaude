@@ -56,4 +56,9 @@ public class ClienteController implements SwaggerClienteController {
         clienteService.deletar(id);
         return ResponseEntity.noContent().build();
     }
+
+    @GetMapping("/usuario/{usuarioId}")
+    public ResponseEntity<List<ClienteResponseDto>> listarPorUsuarioId(@PathVariable Integer usuarioId) {
+        return ResponseEntity.ok(clienteService.listarPorUsuarioId(usuarioId));
+    }
 }
