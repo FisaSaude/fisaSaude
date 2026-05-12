@@ -58,7 +58,6 @@ public class Agendamento {
         this.servico = servico;
         this.usuario = usuario;
         this.notificacoes = notificacoes != null ? notificacoes : new ArrayList<>();
-        this.prontuarios = prontuarios != null ? prontuarios : new ArrayList<>();
     }
 
     public Integer getId() { return id; }
@@ -97,9 +96,6 @@ public class Agendamento {
     public List<Notificacao> getNotificacoes() { return notificacoes; }
     public void setNotificacoes(List<Notificacao> notificacoes) { this.notificacoes = notificacoes; }
 
-    public List<Prontuario> getProntuarios() { return prontuarios; }
-    public void setProntuarios(List<Prontuario> prontuarios) { this.prontuarios = prontuarios; }
-
     @Override
     public String toString() {
         return "Agendamento{" +
@@ -132,8 +128,5 @@ public class Agendamento {
     @JsonIgnore
     private List<Notificacao> notificacoes = new ArrayList<>();
 
-    @OneToMany(mappedBy = "agendamento", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonIgnore
-    private List<Prontuario> prontuarios = new ArrayList<>();
 }
 

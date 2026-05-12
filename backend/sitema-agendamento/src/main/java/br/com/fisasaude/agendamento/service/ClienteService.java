@@ -85,13 +85,6 @@ public class ClienteService {
         clienteRepository.delete(cliente);
     }
 
-    @Transactional(readOnly = true)
-    public List<ClienteResponseDto> listarPorUsuarioId(Integer usuarioId) {
-        // Supondo que Cliente tenha um campo usuario_id ou relação com Usuario
-        List<Cliente> clientes = clienteRepository.findByUsuarioId(usuarioId);
-        return clientes.stream().map(clienteMapper::toResponse).toList();
-    }
-
     private void validarId(Integer id) {
         if (id == null || id <= 0) {
             throw new BadRequestException("Id invalido");

@@ -10,5 +10,4 @@ public interface ClienteRepository extends JpaRepository<Cliente, Integer> {
 
     boolean existsByTelefoneAndIdNot(String telefone, Integer id);
 
-    List<Cliente> findByUsuarioId(Integer usuarioId);
 }
