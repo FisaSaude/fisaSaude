@@ -55,10 +55,12 @@ Este repositório é o núcleo de **backend Java**, **notificações WhatsApp** 
 
 | Caminho | Função |
 |--------|--------|
-| `backend/sitema-agendamento/` | API REST (Spring Boot): clientes, agendamentos, usuários, **JWT/OpenAPI**, JPA/MySQL |
-| `backend/notificacao/` | Envio WhatsApp via Twilio, **webhook de entrada** (`/webhook/whatsapp`) |
-| `bd/pilates.sql` | Script MySQL **canônico (v3)** — fonte para ambiente integrado |
-| `bd/der_v3.mwb` | DER no MySQL Workbench |
+| `backend/sitema-agendamento/` | API REST (Spring Boot, **:8080**): clientes, agendamentos, usuários, **JWT/OpenAPI**, JPA/MySQL |
+| `backend/notificacao/` | Envio WhatsApp via Twilio, webhooks e rotas internas (**:8081**), mesmo MySQL `pilates` |
+| `bd/pilates.sql` | **Único script** de banco: `DROP` + `CREATE` + seeds (instalação do zero, sem `ALTER`) |
+| `bd/apply-pilates.sh` | Atalho: `DB_PASSWORD=… ./bd/apply-pilates.sh` |
+| `backend/docs/api/bruno/FisaSaude/` | Collection Bruno unificada (8080 + 8081) |
+| `bd/der_v3.mwb` | DER conceitual no MySQL Workbench (pode divergir do SQL versionado) |
 | `assets/der-v3.png` | Imagem do diagrama para onboarding rápido |
 | `progWebProjetosIndividuais/` | Entregas de front/acadêmicos por sprint |
 
@@ -68,8 +70,17 @@ Este repositório é o núcleo de **backend Java**, **notificações WhatsApp** 
 
 ### 1. Banco MySQL
 
-- Suba um MySQL 8 compatível com o projeto.
-- Crie o schema e cargas iniciais executando **`bd/pilates.sql`** (database `pilates`).
+- Suba um **MySQL 8** compatível com o projeto.
+- O schema **não** é mais criado por `schema.sql` / `data.sql` dentro dos módulos Spring (`spring.sql.init.mode: never`).
+- Fonte única versionada: **`bd/pilates.sql`** (database `pilates`).
+
+```bash
+export DB_PASSWORD='sua_senha'
+./bd/apply-pilates.sh
+# ou: mysql -u root -p < bd/pilates.sql
+```
+
+Isso recria o banco do zero (apaga dados anteriores em `pilates`) e aplica tabelas + dados de desenvolvimento.
 
 ### 2. API `sitema-agendamento`
 
@@ -93,11 +104,33 @@ Endpoints (exceto login e documentação OpenAPI liberados pela configuração a
 
 ### 3. Serviço `notificacao`
 
-- Configurar credenciais Twilio (**não commitar secrets** — preferir env ou arquivo local fora do Git).
-- Hoje usa H2 em memória no exemplo; para integração real com o mesmo schema pilates em MySQL, alinhar `application.properties`/profile com time.
-- **`POST /webhook/whatsapp`** recebe callbacks da Twilio (form params como `Body`, `From`). Este módulo **não usa Spring Security JWT** atualmente — o webhook precisa ficar HTTP-recebível onde a Twilio alcança a URL configurada na console.
+Variáveis de ambiente (mesmo MySQL `pilates` que o agendamento):
 
-Para subir os dois backends na mesma máquina, use **portas diferentes** (ex.: `server.port` em uma das aplicações).
+- `DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`
+- Credenciais Twilio: `TWILIO_ENABLED`, `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, etc. (**não commitar secrets**)
+
+```bash
+cd backend/notificacao
+./mvnw spring-boot:run
+```
+
+- Porta padrão: **8081**
+- Webhooks Twilio: `POST /webhook/twilio/whatsapp/incoming` e `POST /webhook/twilio/whatsapp/status`
+- Rotas internas (token `X-Internal-Token`, padrão dev `dev123`): `/internal/v1/notifications/…`
+- Lembrete D-1: scheduler às **15h** + disparo manual `POST /internal/v1/notifications/lembretes/disparar`
+
+Este módulo **não usa JWT** no fluxo do paciente; webhooks precisam ser alcançáveis pela Twilio.
+
+### 4. Bruno (testes de API)
+
+Abra a collection em **`backend/docs/api/bruno/FisaSaude`** (pasta que contém `bruno.json`).
+
+| Pasta na collection | Serviço | Ambiente Bruno |
+|---------------------|---------|----------------|
+| `01-sistema-agendamento` | `:8080` | `local` |
+| `02-notificacao` | `:8081` | `notificacao` |
+
+Para subir os dois backends na mesma máquina, use **8080** e **8081** (já é o padrão nos `application.yaml`).
 
 ---
 
@@ -109,33 +142,38 @@ Para subir os dois backends na mesma máquina, use **portas diferentes** (ex.: `
 
 ---
 
-## Modelo de dados (DER v3)
+## Modelo de dados
 
-O diagrama abaixo reflete **`assets/der-v3.png`**, espelhado em **`bd/pilates.sql`**.
+O diagrama em **`assets/der-v3.png`** / **`bd/der_v3.mwb`** é referência conceitual. O que as APIs Spring validam hoje é **`bd/pilates.sql`** (9 tabelas usadas por JPA).
 
 <p align="center">
   <img src="./assets/der-v3.png" alt="DER v3 FisaSaúde" width="920" />
 </p>
 
-### Tabelas em linguagem simples
+### Tabelas no `bd/pilates.sql` (runtime)
 
-1. **`cliente`** — Nome, **WhatsApp** (`telefone_whatsapp`), `whatsapp_ativo`, opcionais: nascimento, sexo, foto.
-2. **`usuario`** — Operadores do sistema (**perfil**: admin, recepcionista, instrutor), credenciais, vínculo a estabelecimento conforme modelo.
-3. **`servico`** — Tipo de serviço/aula, duração, preço.
-4. **`agendamento`** — Núcleo: cliente + serviço + **usuário** (slot), **data**, **horários**, status, observações; **unique** `(data, hora_inicio, usuario_id)` evita conflito de agenda para o mesmo profissional.
-5. **`notificacao`** — Envios ligados ao agendamento (tipo, status, texto, tentativas, SID Twilio, retry).
-6. **`agendamento_status_historico`** — Histórico de mudanças de status.
-7. **`mensagem_resposta_whatsapp`** — Respostas de clientes recebidas via canal WhatsApp/webhook.
-8. **`prontuario`**, **`estabelecimento`**, **`despesas`** conforme modelo operacional/financeiro.
+| Tabela | Uso |
+|--------|-----|
+| `estabelecimento` | Unidade, horário de funcionamento |
+| `usuario` | Login (`ADMIN` / `USUARIO`), vínculo ao estabelecimento |
+| `cliente` | Paciente + `telefone_whatsapp` |
+| `servico` | Tipo de aula, duração, preço |
+| `agendamento` | Agenda (`cliente`/`servico` opcionais para bloqueio de dia); status `AGENDADO`, `CONFIRMADO`, `CANCELADO`, `CONCLUIDO`, `BLOQUEADO` |
+| `notificacao` | Fila de envio (confirmação, lembrete, etc.) |
+| `mensagem_resposta_whatsapp` | Respostas SIM/NÃO recebidas via webhook |
+| `prontuario` | Observações clínicas por cliente |
+| `despesa` | Lançamentos financeiros (`tipo` como `VARCHAR`) |
 
-### Diagrama Visual x `pilates.sql`
+### O que saiu do script antigo (e por quê)
 
-| Possível nome no diagrama Workbench | Nome no SQL versionado aqui |
-|-------------------------------------|-----------------------------|
-| “auditoria” (conceito) | `agendamento_status_historico` |
-| “webhook” (conceito) | `mensagem_resposta_whatsapp` |
+No `pilates.sql` v3 anterior existiam também:
 
-**Status de agendamento** no schema atual: `AGENDADO`, `CANCELADO`, `CONCLUIDO`. Em caso de dúvida em tipos ENUM ou defaults, vale **`bd/pilates.sql`**.
+- **`agendamento_status_historico`** — auditoria de cada mudança de status. **Não há** `@Entity`, repository nem endpoint nos microserviços; o status atual fica só em `agendamento.status`. Incluir a tabela faria o Hibernate falhar em `ddl-auto: validate` ou exigiria código morto. Quando o time implementar auditoria, volta ao script + JPA.
+- **Views KPI** (`kpi_aulas_dia`, `kpi_aulas_mes`, etc.) — relatórios SQL no Workbench, **não** usadas pelo backend. Podem ser recriadas em migration/BI depois, fora do script de bootstrap.
+
+**Regra:** o script consolidado contém apenas o que os dois serviços **leem e gravam** hoje.
+
+**Status de agendamento** e demais ENUMs: conferir sempre **`bd/pilates.sql`** (fonte da verdade para dev/CI).
 
 ---
 
@@ -170,11 +208,12 @@ O diagrama abaixo reflete **`assets/der-v3.png`**, espelhado em **`bd/pilates.sq
 
 #### Fluxo B - Lembrete diário (15:00)
 
-1. Scheduler roda no `notificacao` todos os dias às 15h.
+1. Scheduler no `notificacao` (cron `0 0 15 * * ?`, fuso `America/Sao_Paulo`) ou disparo manual:
+   - `POST /internal/v1/notifications/lembretes/disparar?data=YYYY-MM-DD`
 2. `notificacao` consulta o `sitema-agendamento`:
    - `GET /internal/v1/agendamentos/lembretes-confirmados?data=YYYY-MM-DD`
-3. `sitema-agendamento` retorna os agendamentos `CONFIRMADOS` de D+1.
-4. `notificacao` envia os lembretes via Twilio para cada paciente.
+3. `sitema-agendamento` retorna agendamentos `CONFIRMADOS` na data informada (D+1 na rotina automática).
+4. `notificacao` envia lembretes via Twilio para cada paciente.
 
 #### Pontos críticos de operação
 
