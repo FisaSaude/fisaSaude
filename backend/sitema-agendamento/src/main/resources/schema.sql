@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS despesa (
     id INT PRIMARY KEY AUTO_INCREMENT,
     nome VARCHAR(100) NOT NULL,
     data_despesa DATE NOT NULL,
-    tipo ENUM('ENTRADA', 'SAIDA') NOT NULL,
+    tipo VARCHAR(45) NOT NULL,
     valor DECIMAL(10,2) NOT NULL,
 
     estabelecimento_id INT NOT NULL,

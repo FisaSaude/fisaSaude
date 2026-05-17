@@ -3,7 +3,6 @@ package br.com.fisasaude.agendamento.model.entity;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import br.com.fisasaude.agendamento.model.enums.TipoDespesaEnum;
 
 @Entity
 @Table(name = "despesa")
@@ -19,16 +18,15 @@ public class Despesa {
     @Column(nullable = false)
     private LocalDate dataDespesa;
 
-    @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 45)
-    private TipoDespesaEnum tipo;
+    private String tipo;
 
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal valor;
 
     public Despesa() {}
 
-    public Despesa(Integer id, String nome, LocalDate dataDespesa, TipoDespesaEnum tipo, BigDecimal valor, Estabelecimento estabelecimento) {
+    public Despesa(Integer id, String nome, LocalDate dataDespesa, String tipo, BigDecimal valor, Estabelecimento estabelecimento) {
         this.id = id;
         this.nome = nome;
         this.dataDespesa = dataDespesa;
@@ -46,8 +44,8 @@ public class Despesa {
     public LocalDate getDataDespesa() { return dataDespesa; }
     public void setDataDespesa(LocalDate dataDespesa) { this.dataDespesa = dataDespesa; }
 
-    public TipoDespesaEnum getTipo() { return tipo; }
-    public void setTipo(TipoDespesaEnum tipo) { this.tipo = tipo; }
+    public String getTipo() { return tipo; }
+    public void setTipo(String tipo) { this.tipo = tipo; }
 
     public BigDecimal getValor() { return valor; }
     public void setValor(BigDecimal valor) { this.valor = valor; }
@@ -61,7 +59,7 @@ public class Despesa {
                 "id=" + id +
                 ", nome='" + nome + '\'' +
                 ", dataDespesa=" + dataDespesa +
-                ", tipo=" + (tipo != null ? tipo.name() : null) +
+                ", tipo=" + (tipo != null ? tipo : null) +
                 ", valor=" + valor +
                 ", estabelecimento=" + (estabelecimento != null ? estabelecimento.getId() : null) +
                 '}';
