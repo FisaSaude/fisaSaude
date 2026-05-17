@@ -26,12 +26,12 @@ docs {
 
   Cria um bloqueio de agenda para um dia inteiro para um profissional, impedindo novos agendamentos nessa data.
 
-  O agendamento criado terá status `BLOQUEADO`.
+  Cria registro de agenda com status `BLOQUEADO` cobrindo o expediente do estabelecimento.
 
   **Campos obrigatórios:**
   - `usuarioId` — ID do profissional (positivo)
   - `data` — data a ser bloqueada (`yyyy-MM-dd`)
 
-  **Respostas:** 201 Bloqueado | 400 Dados inválidos | 404 Usuário não encontrado
+  **Respostas:** 204 Sem conteúdo | 400 Dados inválidos | 404 Usuário não encontrado | 409 Já existem agendamentos no dia
 }
 

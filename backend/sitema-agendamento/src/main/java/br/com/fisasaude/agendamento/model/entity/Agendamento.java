@@ -113,11 +113,11 @@ public class Agendamento {
                 '}';
     }
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "cliente_id", nullable = false)
+    @JoinColumn(name = "cliente_id")
     private Cliente cliente;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "servico_id", nullable = false)
+    @JoinColumn(name = "servico_id")
     private Servico servico;
 
     @ManyToOne(fetch = FetchType.LAZY)
