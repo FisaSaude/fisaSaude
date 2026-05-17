@@ -125,10 +125,12 @@ Este módulo **não usa JWT** no fluxo do paciente; webhooks precisam ser alcan�
 
 Abra a collection em **`backend/docs/api/bruno/FisaSaude`** (pasta que contém `bruno.json`).
 
-| Pasta na collection | Serviço | Ambiente Bruno |
-|---------------------|---------|----------------|
-| `01-sistema-agendamento` | `:8080` | `local` |
-| `02-notificacao` | `:8081` | `notificacao` |
+| Pasta na collection | Serviço | Ambiente Bruno (seletor no topo) |
+|---------------------|---------|----------------------------------|
+| `01-sistema-agendamento` | `:8080` | **`agendamento-8080`** (`baseUrl` → 8080) |
+| `02-notificacao` | `:8081` | **`notificacao-8081`** (`baseUrl` → 8081) |
+
+Cada ambiente define também `baseUrlAgendamento` e `baseUrlNotificacao` para referência; as requests usam `{{baseUrl}}`, que muda conforme o ambiente ativo.
 
 Para subir os dois backends na mesma máquina, use **8080** e **8081** (já é o padrão nos `application.yaml`).
 
