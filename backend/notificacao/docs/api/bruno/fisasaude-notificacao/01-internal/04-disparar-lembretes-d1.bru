@@ -1,0 +1,41 @@
+meta {
+  name: Disparar Lembretes D-1
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/internal/v1/notifications/lembretes/disparar?data={{dataAtendimento}}
+  body: none
+  auth: none
+}
+
+headers {
+  X-Internal-Token: {{internalApiKey}}
+}
+
+docs {
+  ## Disparar Lembretes D-1 (Internal)
+
+  Executa manualmente a mesma regra do **scheduler às 15h**: envia WhatsApp de lembrete para agendamentos **CONFIRMADOS** na data informada.
+
+  **Query opcional:**
+  - `data` — data do atendimento (`yyyy-MM-dd`). Se omitida, usa **amanhã** no fuso `America/Sao_Paulo`.
+
+  O serviço de agendamento deve estar no ar (`8080`) — a lista de elegíveis vem de `GET /internal/v1/agendamentos/lembretes-confirmados`.
+
+  **Cron produção:** `0 0 15 * * ?` (`app.notifications.lembrete-cron`).
+
+  **Resposta 200:**
+  ```json
+  {
+    "dataAtendimento": "2026-05-10",
+    "totalElegiveis": 1,
+    "enviados": 1,
+    "falhas": 0,
+    "agendamentoIdsEnviados": [2]
+  }
+  ```
+
+  **Autenticação:** `X-Internal-Token`
+}

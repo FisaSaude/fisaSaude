@@ -1,0 +1,24 @@
+meta {
+  name: WhatsApp Status Twilio
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/webhook/twilio/whatsapp/status
+  body: form-urlencoded
+  auth: none
+}
+
+body:form-urlencoded {
+  MessageSid: SM00000000000000000000000000000001
+  MessageStatus: delivered
+}
+
+docs {
+  ## Webhook Twilio — status de entrega
+
+  Simula atualização de status de mensagem enviada (entregue, falhou, etc.).
+
+  **Respostas:** 200 OK
+}

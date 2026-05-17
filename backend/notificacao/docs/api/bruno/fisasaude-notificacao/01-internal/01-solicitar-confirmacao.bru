@@ -1,0 +1,25 @@
+meta {
+  name: Solicitar Confirmacao
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/internal/v1/notifications/confirmacao/{{agendamentoId}}
+  body: none
+  auth: none
+}
+
+headers {
+  X-Internal-Token: {{internalApiKey}}
+}
+
+docs {
+  ## Solicitar Confirmacao (Internal)
+
+  Enfileira/envia WhatsApp de confirmação após salvar agendamento com status `AGENDADO`.
+
+  **Autenticação:** `X-Internal-Token` (`internalApiKey`, padrão `dev123`).
+
+  **Respostas:** 202 Accepted
+}

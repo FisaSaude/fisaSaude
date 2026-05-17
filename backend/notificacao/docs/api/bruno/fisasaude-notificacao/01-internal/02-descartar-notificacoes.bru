@@ -1,0 +1,23 @@
+meta {
+  name: Descartar Confirmacao e Lembrete
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/internal/v1/notifications/descartar/{{agendamentoId}}
+  body: none
+  auth: none
+}
+
+headers {
+  X-Internal-Token: {{internalApiKey}}
+}
+
+docs {
+  ## Descartar Confirmacao e Lembrete (Internal)
+
+  Marca como `DESCARTADA` notificações de confirmação e lembrete do agendamento.
+
+  **Respostas:** 204 No Content
+}

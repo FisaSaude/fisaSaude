@@ -1,0 +1,23 @@
+meta {
+  name: Descartar Somente Confirmacao
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/internal/v1/notifications/descartar-confirmacao/{{agendamentoId}}
+  body: none
+  auth: none
+}
+
+headers {
+  X-Internal-Token: {{internalApiKey}}
+}
+
+docs {
+  ## Descartar Somente Confirmacao (Internal)
+
+  Descarta apenas notificações do tipo `CONFIRMACAO`, mantendo lembretes pendentes.
+
+  **Respostas:** 204 No Content
+}

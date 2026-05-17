@@ -1,0 +1,29 @@
+meta {
+  name: WhatsApp Incoming Twilio
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/webhook/twilio/whatsapp/incoming
+  body: form-urlencoded
+  auth: none
+}
+
+body:form-urlencoded {
+  From: whatsapp:+5511988776655
+  WaId: 5511988776655
+  To: whatsapp:+14155238886
+  Body: SIM
+  MessageSid: SM00000000000000000000000000000001
+}
+
+docs {
+  ## Webhook Twilio — mensagem recebida
+
+  Simula callback `application/x-www-form-urlencoded` da Twilio quando o paciente responde no WhatsApp.
+
+  **Não usa JWT.** Rota pública para a Twilio alcançar o serviço.
+
+  **Respostas:** 200 OK (corpo vazio)
+}
