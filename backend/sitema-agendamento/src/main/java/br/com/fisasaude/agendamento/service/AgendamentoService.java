@@ -511,6 +511,7 @@ public class AgendamentoService {
                 .findByUsuarioIdAndDataBetweenOrderByDataAscHoraInicioAsc(usuarioId, dataInicio, dataFim)
                 .stream()
                 .map(a -> new AgendamentoUsuarioPeriodoResponseDto(
+                        a.getData(),
                         a.getHoraInicio(),
                         a.getCliente().getNome(),
                         a.getStatus(),
