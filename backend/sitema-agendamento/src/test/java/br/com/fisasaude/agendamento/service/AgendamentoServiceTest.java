@@ -36,6 +36,7 @@ import br.com.fisasaude.agendamento.repository.ServicoRepository;
 import br.com.fisasaude.agendamento.repository.UsuarioRepository;
 import br.com.fisasaude.agendamento.integration.notificacao.NotificacaoClient;
 import java.math.BigDecimal;
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZoneId;
@@ -461,7 +462,7 @@ class AgendamentoServiceTest {
 
     @Test
     void listarDiasValidos_diaUtilComSlots_disponivelTrue() {
-        LocalDate dia = LocalDate.of(2026, 5, 5);
+        LocalDate dia = proximoDiaUtil(LocalDate.now(Z).plusDays(2));
         when(apiFeriados.listarFeriados(dia.getYear())).thenReturn(List.of());
         when(usuarioRepository.findById(usuario.getId())).thenReturn(Optional.of(usuario));
         when(agendamentoRepository.countAgendamentosConflitantes(
@@ -499,6 +500,14 @@ class AgendamentoServiceTest {
 
         assertThatThrownBy(() -> service.listarDiasValidos(null, dia, dia))
                 .isInstanceOf(BadRequestException.class);
+    }
+
+    private static LocalDate proximoDiaUtil(LocalDate aPartirDe) {
+        LocalDate dia = aPartirDe;
+        while (dia.getDayOfWeek() == DayOfWeek.SATURDAY || dia.getDayOfWeek() == DayOfWeek.SUNDAY) {
+            dia = dia.plusDays(1);
+        }
+        return dia;
     }
 
     private void stubFksParaCriar() {
