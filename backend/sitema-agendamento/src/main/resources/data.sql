@@ -37,9 +37,9 @@ VALUES (1, 'Mariana Silva', '5511999000111', TRUE, '1990-04-12', 'F', NULL),
        (5, 'Beatriz Costa', '5511955443322', TRUE, '2000-09-30', 'F', NULL);
 
 INSERT IGNORE INTO despesa (id, nome, data_despesa, tipo, valor, estabelecimento_id)
-VALUES (1, 'Compra de colchonetes', '2026-01-15', 'SAIDA', 350.00, 1),
-       (2, 'Venda pacote mensal - Cliente 3', '2026-02-01', 'ENTRADA', 180.00, 1),
-       (3, 'Pagamento professor - Fevereiro', '2026-02-28', 'SAIDA', 1200.00, 1);
+VALUES (1, 'Compra de colchonetes', '2026-01-15', 'Operacional', 350.00, 1),
+       (2, 'Pagamento aluguel - Cliente 3', '2026-02-01', 'Operacional', 180.00, 1),
+       (3, 'Pagamento professor - Fevereiro', '2026-02-28', 'Operacional', 1200.00, 1);
 
 INSERT IGNORE INTO agendamento (id, data, hora_inicio, hora_fim, `status`, observacoes, cliente_id, servico_id, usuario_id)
 VALUES (1, '2026-05-10', '09:00:00', '09:30:00', 'AGENDADO', 'Aula experimental de pilates', 1, 1, 2),
