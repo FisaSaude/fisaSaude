@@ -1,0 +1,24 @@
+meta {
+  name: Buscar Cliente por ID
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/clientes/{{clienteId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+docs {
+  ## Buscar Cliente por ID
+
+  Retorna um cliente pelo seu identificador.
+
+  **Respostas:** 200 Encontrado | 404 Não encontrado | 401 Não autenticado
+}
+

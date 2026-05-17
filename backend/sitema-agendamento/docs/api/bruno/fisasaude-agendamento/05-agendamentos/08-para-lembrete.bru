@@ -1,0 +1,35 @@
+meta {
+  name: Listar Para Lembrete
+  type: http
+  seq: 8
+}
+
+get {
+  url: {{baseUrl}}/agendamentos/para-lembrete
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+params:query {
+  data: 2026-06-10
+  ~status: AGENDADO
+}
+
+docs {
+  ## Listar Agendamentos Candidatos a Lembrete
+
+  Lista agendamentos de uma data específica para envio de lembretes/notificações.
+
+  **Query Params:**
+  - `data` (obrigatório) — data alvo no formato `yyyy-MM-dd`
+  - `status` (opcional) — padrão `AGENDADO` | valores: `AGENDADO` | `CONFIRMADO` | `CANCELADO` | `CONCLUIDO` | `BLOQUEADO`
+
+  > O parâmetro `status` está desabilitado (prefixo `~`). Remova o `~` para habilitá-lo.
+
+  **Respostas:** 200 Lista | 400 Data obrigatória | 401 Não autenticado
+}
+

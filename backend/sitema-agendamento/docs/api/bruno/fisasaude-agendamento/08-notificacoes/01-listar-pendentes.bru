@@ -1,0 +1,24 @@
+meta {
+  name: Listar Notificações Pendentes
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/notificacoes/pendentes
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+docs {
+  ## Listar Notificações Pendentes
+
+  Retorna as notificações com status `PENDENTE`, ordenadas por prioridade/data.
+
+  **Respostas:** 200 Lista | 401 Não autenticado
+}
+

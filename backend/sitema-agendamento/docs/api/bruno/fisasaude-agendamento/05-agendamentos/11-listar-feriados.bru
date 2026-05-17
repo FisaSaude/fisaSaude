@@ -1,0 +1,28 @@
+meta {
+  name: Listar Feriados por Ano
+  type: http
+  seq: 11
+}
+
+get {
+  url: {{baseUrl}}/agendamentos/feriados/2026
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+docs {
+  ## Listar Feriados por Ano
+
+  Retorna os feriados nacionais do Brasil para o ano informado.
+
+  Integração com BrasilAPI (`https://brasilapi.com.br/api/feriados/v1/{ano}`).
+
+  **Path Variable:** `ano` — ex: `2026`
+
+  **Respostas:** 200 Lista de feriados | 401 Não autenticado
+}
+

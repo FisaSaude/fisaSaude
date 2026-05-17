@@ -1,0 +1,26 @@
+meta {
+  name: Listar Agendamentos por Cliente
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{baseUrl}}/agendamentos/cliente/{{clienteId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+docs {
+  ## Listar Agendamentos por Cliente
+
+  Retorna todos os agendamentos de um cliente específico, com dados de cliente, serviço e usuário.
+
+  **Path Variable:** `clienteId`
+
+  **Respostas:** 200 Lista | 400 ID inválido | 401 Não autenticado
+}
+

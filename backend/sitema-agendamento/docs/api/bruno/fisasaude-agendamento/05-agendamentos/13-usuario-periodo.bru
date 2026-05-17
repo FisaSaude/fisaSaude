@@ -1,0 +1,35 @@
+meta {
+  name: Listar por Usuário e Período
+  type: http
+  seq: 13
+}
+
+get {
+  url: {{baseUrl}}/agendamentos/usuario-periodo?usuarioId=2&dataInicio=2026-05-01&dataFim=2026-05-31
+  body: none
+  auth: bearer
+}
+
+params:query {
+  usuarioId: 2
+  dataInicio: 2026-05-01
+  dataFim: 2026-05-31
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+docs {
+  ## Listar Agendamentos por Usuário e Período
+  
+  Retorna agendamentos de um profissional em um intervalo de datas.
+  Resposta inclui: hora de início, nome do cliente, status e preço.
+  
+  **Query Params obrigatórios:**
+  - `usuarioId` — ID do profissional
+  - `dataInicio` — formato `yyyy-MM-dd`
+  - `dataFim` — formato `yyyy-MM-dd`
+  
+  **Respostas:** 200 Lista | 400 Parâmetro ausente | 422 Período inválido
+}

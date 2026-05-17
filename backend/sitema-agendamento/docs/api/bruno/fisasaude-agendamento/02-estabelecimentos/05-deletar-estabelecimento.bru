@@ -1,0 +1,24 @@
+meta {
+  name: Deletar Estabelecimento
+  type: http
+  seq: 5
+}
+
+delete {
+  url: {{baseUrl}}/estabelecimentos/{{estabelecimentoId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+docs {
+  ## Deletar Estabelecimento
+
+  Remove um estabelecimento pelo identificador.
+
+  **Respostas:** 204 Removido | 404 Não encontrado | 401 Não autenticado
+}
+

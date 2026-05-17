@@ -1,0 +1,45 @@
+meta {
+  name: Taxa de Ocupação
+  type: http
+  seq: 16
+}
+
+get {
+  url: {{baseUrl}}/agendamentos/taxa-ocupacao?usuarioId={{usuarioId}}&dataInicio=2026-05-14&dataFim=2026-05-14&duracaoMinutos=60
+  body: none
+  auth: bearer
+}
+
+params:query {
+  usuarioId: {{usuarioId}}
+  dataInicio: 2026-05-14
+  dataFim: 2026-05-14
+  duracaoMinutos: 60
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+docs {
+  ## Taxa de Ocupação por Período
+  
+  Calcula a taxa de ocupação de um profissional no período:
+  `(agendamentos efetivos / capacidade máxima de slots) × 100`
+  
+  **Capacidade calculada com base em:**
+  - Dias úteis (sem fins de semana e feriados nacionais)
+  - Horário de funcionamento do estabelecimento ÷ duração do slot
+  
+  **Excluídos da contagem efetiva:** agendamentos com status `CANCELADO` e `BLOQUEADO`
+  
+  **Query Params obrigatórios:**
+  - `usuarioId` — ID do profissional
+  - `dataInicio` — formato `yyyy-MM-dd`
+  - `dataFim` — formato `yyyy-MM-dd`
+  
+  **Query Params opcionais:**
+  - `duracaoMinutos` — padrão 60, entre 15 e 480
+  
+  **Respostas:** 200 Taxa calculada | 400 Parâmetros ausentes | 404 Usuário não encontrado | 422 Período ou duração inválida
+}

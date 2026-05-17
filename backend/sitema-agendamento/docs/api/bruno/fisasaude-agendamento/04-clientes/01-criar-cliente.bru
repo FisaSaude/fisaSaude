@@ -1,0 +1,40 @@
+meta {
+  name: Criar Cliente
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/clientes
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "nome": "Maria Oliveira",
+    "telefone": "5511988887777",
+    "whatsappAtivo": true,
+    "dataNascimento": "1990-03-15",
+    "sexo": "F",
+    "fotoLink": "https://example.com/fotos/maria.jpg"
+  }
+}
+
+docs {
+  ## Criar Cliente
+
+  Cria um novo cliente/paciente no sistema.
+
+  **Enums `sexo`:** `M` (Masculino) | `F` (Feminino) | `OUTRO`
+
+  **Campos obrigatórios:** `nome` (max 100), `telefone` (max 20, único para WhatsApp), `dataNascimento` (não futuro), `sexo`
+  **Campos opcionais:** `whatsappAtivo` (boolean), `fotoLink` (max 255)
+
+  **Respostas:** 201 Criado | 400 Validação | 409 Telefone WhatsApp já cadastrado | 422 Inválido
+}
+

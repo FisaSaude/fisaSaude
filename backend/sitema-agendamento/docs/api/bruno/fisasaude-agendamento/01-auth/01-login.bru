@@ -1,0 +1,44 @@
+meta {
+  name: Login
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/auth/login
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "email": "admin@fisasaude.com",
+    "senha": "Admin@1234"
+  }
+}
+
+docs {
+  ## Login
+  
+  Autentica o usuário e retorna um Bearer Token JWT.
+  
+  **Campos obrigatórios:**
+  - `email` — e-mail válido do usuário
+  - `senha` — senha em texto puro (a API aplica BCrypt internamente no cadastro)
+  
+  **Resposta 200:**
+  ```json
+  {
+    "token": "<JWT>",
+    "id": 1,
+    "nome": "Admin",
+    "email": "admin@fisasaude.com",
+    "estabelecimentoId": 1,
+    "estabelecimentoNome": "FisaSaude"
+  }
+  ```
+  
+  Copie o valor de `token` e salve na variável de ambiente `token`.
+  
+  **Não requer autenticação.**
+}

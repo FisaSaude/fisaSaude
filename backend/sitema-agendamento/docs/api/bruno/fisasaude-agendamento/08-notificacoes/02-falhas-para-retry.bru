@@ -1,0 +1,32 @@
+meta {
+  name: Listar Falhas Para Retry
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/notificacoes/falhou-retry
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+params:query {
+  tentativasMaximasExclusive: 5
+}
+
+docs {
+  ## Listar Notificações com Falha Para Retry
+
+  Retorna notificações que falharam e elegíveis para nova tentativa.
+
+  **Query Params opcionais:**
+  - `tentativasMaximasExclusive` — limite máximo de tentativas (exclusivo); padrão: `5`
+    - Retorna notificações com `tentativas < tentativasMaximasExclusive`
+
+  **Respostas:** 200 Lista | 401 Não autenticado
+}
+

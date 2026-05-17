@@ -1,0 +1,41 @@
+meta {
+  name: Remarcar Agendamento
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/agendamentos/{{agendamentoId}}/remarcar
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "data": "2026-06-15",
+    "horaInicio": "10:00:00",
+    "horaFim": "11:00:00",
+    "usuarioId": null,
+    "servicoId": null
+  }
+}
+
+docs {
+  ## Remarcar Agendamento
+
+  Atualiza data/horário de um agendamento com status `AGENDADO`. Mantém o status `AGENDADO`.
+
+  **Campos obrigatórios:** `data` (presente ou futura), `horaInicio`, `horaFim`
+  **Campos opcionais:**
+  - `usuarioId` — se omitido, mantém o profissional atual (deve ser do mesmo estabelecimento)
+  - `servicoId` — se omitido, mantém o serviço atual
+
+  **Regras:** Valida conflito de horário excluindo o próprio agendamento.
+
+  **Respostas:** 200 Remarcado | 400 Validação | 404 Agendamento/Usuário/Serviço não encontrado | 409 Conflito de horário | 422 Regra semântica
+}
+

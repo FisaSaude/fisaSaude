@@ -1,0 +1,33 @@
+meta {
+  name: Resumo de Status por Período
+  type: http
+  seq: 12
+}
+
+get {
+  url: {{baseUrl}}/agendamentos/resumo-status
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+params:query {
+  dataInicio: 2026-05-01
+  dataFim: 2026-05-31
+}
+
+docs {
+  ## Resumo de Agendamentos por Status no Período
+
+  Retorna totais de agendamentos por status (concluídos, agendados, cancelados) e a soma geral no intervalo.
+
+  **Query Params obrigatórios:**
+  - `dataInicio` — formato `yyyy-MM-dd`
+  - `dataFim` — formato `yyyy-MM-dd`
+
+  **Respostas:** 200 Resumo calculado | 400 Parâmetros ausentes | 422 Período inválido
+}
+

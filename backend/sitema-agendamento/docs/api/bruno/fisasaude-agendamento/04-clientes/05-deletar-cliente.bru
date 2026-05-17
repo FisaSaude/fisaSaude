@@ -1,0 +1,24 @@
+meta {
+  name: Deletar Cliente
+  type: http
+  seq: 5
+}
+
+delete {
+  url: {{baseUrl}}/clientes/{{clienteId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+docs {
+  ## Deletar Cliente
+
+  Remove um cliente pelo identificador.
+
+  **Respostas:** 204 Removido | 404 Não encontrado | 401 Não autenticado
+}
+

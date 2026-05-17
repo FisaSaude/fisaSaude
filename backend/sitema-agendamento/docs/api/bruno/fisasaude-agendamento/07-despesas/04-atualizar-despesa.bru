@@ -1,0 +1,34 @@
+meta {
+  name: Atualizar Despesa
+  type: http
+  seq: 4
+}
+
+put {
+  url: {{baseUrl}}/despesas/{{despesaId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "nome": "Aluguel do espaço - Revisado",
+    "dataDespesa": "2026-05-01",
+    "tipo": "Operacional",
+    "valor": 2700.00,
+    "estabelecimentoId": {{estabelecimentoId}}
+  }
+}
+
+docs {
+  ## Atualizar Despesa
+
+  Atualiza os dados de uma despesa existente.
+
+  **Respostas:** 200 Atualizado | 400 Validação | 404 Não encontrado | 401 Não autenticado
+}
+

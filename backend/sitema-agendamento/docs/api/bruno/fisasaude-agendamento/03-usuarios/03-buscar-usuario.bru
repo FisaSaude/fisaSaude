@@ -1,0 +1,24 @@
+meta {
+  name: Buscar Usuário por ID
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/usuarios/{{usuarioId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+docs {
+  ## Buscar Usuário por ID
+
+  Retorna um usuário pelo seu identificador.
+
+  **Respostas:** 200 Encontrado | 404 Não encontrado | 401 Não autenticado
+}
+

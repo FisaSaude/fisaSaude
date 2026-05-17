@@ -1,0 +1,37 @@
+meta {
+  name: Criar Prontuário
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/prontuarios
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "observacoes": "Paciente relatou dor lombar. Indicado alongamento e fortalecimento do core.",
+    "criadoEm": "2026-05-16T10:30:00",
+    "clienteId": {{clienteId}}
+  }
+}
+
+docs {
+  ## Criar Prontuário
+
+  Cria um novo prontuário para um cliente.
+
+  **Campos obrigatórios:**
+  - `observacoes` — texto das observações clínicas
+  - `criadoEm` — data e hora de criação (`yyyy-MM-ddTHH:mm:ss`)
+  - `clienteId` — ID do cliente associado
+
+  **Respostas:** 201 Criado | 400 Validação | 401 Não autenticado
+}
+

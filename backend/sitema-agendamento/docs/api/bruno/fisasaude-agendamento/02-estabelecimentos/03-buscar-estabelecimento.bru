@@ -1,0 +1,26 @@
+meta {
+  name: Buscar Estabelecimento por ID
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/estabelecimentos/{{estabelecimentoId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+docs {
+  ## Buscar Estabelecimento por ID
+
+  Retorna um estabelecimento pelo seu identificador.
+
+  **Path Variable:** `estabelecimentoId` (padrão: variável de ambiente)
+
+  **Respostas:** 200 Encontrado | 404 Não encontrado | 401 Não autenticado
+}
+

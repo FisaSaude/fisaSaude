@@ -1,0 +1,36 @@
+meta {
+  name: Atualizar Usuário
+  type: http
+  seq: 4
+}
+
+put {
+  url: {{baseUrl}}/usuarios/{{usuarioId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "nome": "João Silva Atualizado",
+    "email": "joao.silva@fisasaude.com",
+    "senha": "novaSenha456",
+    "role": "USUARIO",
+    "estabelecimentoId": {{estabelecimentoId}}
+  }
+}
+
+docs {
+  ## Atualizar Usuário
+
+  Atualiza os dados de um usuário existente.
+
+  **Enums `role`:** `ADMIN` | `USUARIO`
+
+  **Respostas:** 200 Atualizado | 400 Validação | 404 Usuário ou estabelecimento não encontrado | 409 Email conflito | 422 Inválido
+}
+

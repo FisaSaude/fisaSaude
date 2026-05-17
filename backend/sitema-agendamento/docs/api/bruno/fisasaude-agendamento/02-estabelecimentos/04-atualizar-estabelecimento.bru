@@ -1,0 +1,37 @@
+meta {
+  name: Atualizar Estabelecimento
+  type: http
+  seq: 4
+}
+
+put {
+  url: {{baseUrl}}/estabelecimentos/{{estabelecimentoId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "nome": "FisaSaude Centro - Atualizado",
+    "endereco": "Rua das Flores, 456 - Centro",
+    "parametros": "capacidade=15",
+    "inicioFuncionamento": "07:00:00",
+    "fimFuncionamento": "19:00:00",
+    "telefone": "(11) 99999-0002"
+  }
+}
+
+docs {
+  ## Atualizar Estabelecimento
+
+  Atualiza todos os dados de um estabelecimento existente.
+
+  **Todos os campos são obrigatórios** (exceto `parametros` e `telefone`).
+
+  **Respostas:** 200 Atualizado | 400 Validação | 404 Não encontrado | 401 Não autenticado
+}
+

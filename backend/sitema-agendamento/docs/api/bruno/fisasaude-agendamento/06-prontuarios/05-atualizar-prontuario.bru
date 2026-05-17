@@ -1,0 +1,33 @@
+meta {
+  name: Atualizar Prontuário
+  type: http
+  seq: 5
+}
+
+put {
+  url: {{baseUrl}}/prontuarios/{{prontuarioId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "observacoes": "Atualização: paciente apresentou melhora significativa. Continuando protocolo de fortalecimento."
+  }
+}
+
+docs {
+  ## Atualizar Prontuário
+
+  Atualiza as observações de um prontuário existente.
+
+  **Campo obrigatório:**
+  - `observacoes` — novo texto de observações clínicas
+
+  **Respostas:** 200 Atualizado | 400 Validação | 404 Não encontrado | 401 Não autenticado
+}
+

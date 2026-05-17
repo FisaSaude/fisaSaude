@@ -1,0 +1,26 @@
+meta {
+  name: Buscar Prontuários por Cliente
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/prontuarios/cliente/{{clienteId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+docs {
+  ## Buscar Prontuários por Cliente
+
+  Retorna todos os prontuários de um cliente específico.
+
+  **Path Variable:** `clienteId`
+
+  **Respostas:** 200 Lista | 404 Cliente não encontrado | 401 Não autenticado
+}
+

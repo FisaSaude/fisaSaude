@@ -1,0 +1,24 @@
+meta {
+  name: Deletar Prontuário
+  type: http
+  seq: 6
+}
+
+delete {
+  url: {{baseUrl}}/prontuarios/{{prontuarioId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+docs {
+  ## Deletar Prontuário
+
+  Remove um prontuário pelo identificador.
+
+  **Respostas:** 204 Removido | 404 Não encontrado | 401 Não autenticado
+}
+

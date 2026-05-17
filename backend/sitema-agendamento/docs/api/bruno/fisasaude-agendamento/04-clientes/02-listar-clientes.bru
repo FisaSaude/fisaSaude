@@ -1,0 +1,24 @@
+meta {
+  name: Listar Clientes
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/clientes
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+docs {
+  ## Listar Clientes
+
+  Retorna todos os clientes cadastrados.
+
+  **Respostas:** 200 Lista | 401 Não autenticado
+}
+

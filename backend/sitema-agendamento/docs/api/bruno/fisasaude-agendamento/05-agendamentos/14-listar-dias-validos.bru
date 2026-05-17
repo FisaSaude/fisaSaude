@@ -1,0 +1,39 @@
+meta {
+  name: Listar Dias Válidos por Período
+  type: http
+  seq: 14
+}
+
+get {
+  url: {{baseUrl}}/agendamentos/listar-dias-validos?usuarioId=2&dataInicio=2026-06-01&dataFim=2026-06-30
+  body: none
+  auth: bearer
+}
+
+params:query {
+  usuarioId: 2
+  dataInicio: 2026-06-01
+  dataFim: 2026-06-30
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+docs {
+  ## Listar Dias Válidos por Período
+  
+  Retorna todos os dias do intervalo com indicação se o dia está disponível para agendamento.
+  
+  **Critérios de disponibilidade:**
+  - Não é sábado ou domingo
+  - Não é feriado nacional
+  - Possui slots disponíveis para o profissional
+  
+  **Query Params obrigatórios:**
+  - `usuarioId` — ID do profissional
+  - `dataInicio` — formato `yyyy-MM-dd`
+  - `dataFim` — formato `yyyy-MM-dd`
+  
+  **Respostas:** 200 Lista com flag `disponivel` | 400 Parâmetros ausentes | 422 Período inválido
+}

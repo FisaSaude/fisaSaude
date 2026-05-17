@@ -1,0 +1,37 @@
+meta {
+  name: Listar Despesas por Estabelecimento
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{baseUrl}}/despesas/estabelecimento/{{estabelecimentoId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+params:query {
+  ~dataInicio: 2026-05-01
+  ~dataFim: 2026-05-31
+}
+
+docs {
+  ## Listar Despesas por Estabelecimento
+
+  Retorna despesas de um estabelecimento específico, com filtro opcional de período.
+
+  **Path Variable:** `estabelecimentoId`
+
+  **Query Params opcionais:**
+  - `dataInicio` — formato `yyyy-MM-dd` (filtro de data início, inclusivo)
+  - `dataFim` — formato `yyyy-MM-dd` (filtro de data fim, inclusivo)
+
+  > Os parâmetros de data estão desabilitados (prefixo `~`). Remova o `~` para filtragem por período.
+
+  **Respostas:** 200 Lista | 404 Estabelecimento não encontrado | 401 Não autenticado
+}
+

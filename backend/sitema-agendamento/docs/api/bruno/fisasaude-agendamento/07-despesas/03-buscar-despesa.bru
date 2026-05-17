@@ -1,0 +1,24 @@
+meta {
+  name: Buscar Despesa por ID
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/despesas/{{despesaId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+docs {
+  ## Buscar Despesa por ID
+
+  Retorna uma despesa pelo seu identificador.
+
+  **Respostas:** 200 Encontrado | 404 Não encontrado | 401 Não autenticado
+}
+

@@ -1,0 +1,26 @@
+meta {
+  name: Concluir Agendamento
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/agendamentos/{{agendamentoId}}/concluir
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+docs {
+  ## Concluir Agendamento
+
+  Altera o status do agendamento para `CONCLUIDO`.
+
+  **Regra:** Só pode concluir se o status atual for `AGENDADO`.
+
+  **Respostas:** 200 Concluído | 404 Não encontrado | 422 Status não permite esta ação
+}
+

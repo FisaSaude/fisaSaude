@@ -1,0 +1,43 @@
+meta {
+  name: Verificar Conflito de Horário
+  type: http
+  seq: 9
+}
+
+get {
+  url: {{baseUrl}}/agendamentos/verificar-conflito
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+params:query {
+  usuarioId: {{usuarioId}}
+  data: 2026-06-10
+  horaInicio: 09:00
+  horaFim: 10:00
+  ~excludeAgendamentoId: 1
+}
+
+docs {
+  ## Verificar Conflito de Horário
+
+  Verifica se existe sobreposição de agendamentos para um profissional em um intervalo de tempo.
+
+  **Query Params obrigatórios:**
+  - `usuarioId` — ID do profissional
+  - `data` — formato `yyyy-MM-dd`
+  - `horaInicio` — formato `HH:mm` ou `HH:mm:ss`
+  - `horaFim` — formato `HH:mm` ou `HH:mm:ss`
+
+  **Query Params opcionais:**
+  - `excludeAgendamentoId` — ID de agendamento a excluir da checagem (útil em edições)
+
+  > `excludeAgendamentoId` está desabilitado (prefixo `~`). Remova o `~` para habilitá-lo.
+
+  **Respostas:** 200 Verificação concluída | 400 Parâmetros inválidos | 422 Intervalo inválido
+}
+

@@ -1,0 +1,42 @@
+meta {
+  name: Criar Usuário
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/usuarios
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "nome": "João Silva",
+    "email": "joao.silva@fisasaude.com",
+    "senha": "senha123",
+    "role": "USUARIO",
+    "estabelecimentoId": {{estabelecimentoId}}
+  }
+}
+
+docs {
+  ## Criar Usuário
+
+  Cria um novo usuário (profissional/instrutor) no sistema.
+
+  **Requer role ADMIN.**
+
+  **Enums `role`:** `ADMIN` | `USUARIO`
+
+  **Campos obrigatórios:** `nome` (max 100), `email` (max 100, único), `senha` (8-100 chars), `role`, `estabelecimentoId`
+
+  A senha é criptografada com BCrypt antes de ser persistida.
+
+  **Respostas:** 201 Criado | 400 Validação | 404 Estabelecimento não encontrado | 409 Email já cadastrado | 422 Inválido semanticamente
+}
+

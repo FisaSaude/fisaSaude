@@ -1,0 +1,24 @@
+meta {
+  name: Buscar Prontuário por ID
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/prontuarios/{{prontuarioId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+docs {
+  ## Buscar Prontuário por ID
+
+  Retorna um prontuário pelo seu identificador.
+
+  **Respostas:** 200 Encontrado | 404 Não encontrado | 401 Não autenticado
+}
+

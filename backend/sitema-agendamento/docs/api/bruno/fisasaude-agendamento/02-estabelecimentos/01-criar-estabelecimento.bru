@@ -1,0 +1,38 @@
+meta {
+  name: Criar Estabelecimento
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/estabelecimentos
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "nome": "FisaSaude Centro",
+    "endereco": "Rua das Flores, 123 - Centro",
+    "parametros": "capacidade=10",
+    "inicioFuncionamento": "08:00:00",
+    "fimFuncionamento": "18:00:00",
+    "telefone": "(11) 99999-0001"
+  }
+}
+
+docs {
+  ## Criar Estabelecimento
+
+  Cria um novo estabelecimento de saúde.
+
+  **Campos obrigatórios:** `nome`, `endereco`, `inicioFuncionamento`, `fimFuncionamento`
+  **Campos opcionais:** `parametros` (max 255 chars), `telefone` (max 20 chars)
+
+  **Respostas:** 201 Criado | 400 Validação | 401 Não autenticado | 403 Sem permissão
+}
+

@@ -1,0 +1,37 @@
+meta {
+  name: Atualizar Cliente
+  type: http
+  seq: 4
+}
+
+put {
+  url: {{baseUrl}}/clientes/{{clienteId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "nome": "Maria Oliveira Atualizada",
+    "telefone": "5511988887777",
+    "whatsappAtivo": true,
+    "dataNascimento": "1990-03-15",
+    "sexo": "F",
+    "fotoLink": "https://example.com/fotos/maria-nova.jpg"
+  }
+}
+
+docs {
+  ## Atualizar Cliente
+
+  Atualiza os dados de um cliente existente.
+
+  **Enums `sexo`:** `M` | `F` | `OUTRO`
+
+  **Respostas:** 200 Atualizado | 400 Validação | 404 Não encontrado | 409 Telefone já cadastrado | 422 Inválido
+}
+

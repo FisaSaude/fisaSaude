@@ -1,0 +1,26 @@
+meta {
+  name: Buscar Agendamento por ID
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/agendamentos/registro/{{agendamentoId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+docs {
+  ## Buscar Agendamento por ID
+
+  Retorna um agendamento completo (com cliente, serviço e usuário via JOIN FETCH).
+
+  **Path Variable:** `agendamentoId`
+
+  **Respostas:** 200 Encontrado | 404 Não encontrado | 401 Não autenticado
+}
+

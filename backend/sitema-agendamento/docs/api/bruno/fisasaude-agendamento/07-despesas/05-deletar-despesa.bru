@@ -1,0 +1,24 @@
+meta {
+  name: Deletar Despesa
+  type: http
+  seq: 5
+}
+
+delete {
+  url: {{baseUrl}}/despesas/{{despesaId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+docs {
+  ## Deletar Despesa
+
+  Remove uma despesa pelo identificador.
+
+  **Respostas:** 204 Removido | 404 Não encontrado | 401 Não autenticado
+}
+

@@ -1,0 +1,26 @@
+meta {
+  name: Cancelar Agendamento
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/agendamentos/{{agendamentoId}}/cancelar
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+docs {
+  ## Cancelar Agendamento
+
+  Altera o status do agendamento para `CANCELADO`.
+
+  **Regra:** Só pode cancelar se o status atual for `AGENDADO`.
+
+  **Respostas:** 200 Cancelado | 404 Não encontrado | 422 Status não permite esta ação
+}
+

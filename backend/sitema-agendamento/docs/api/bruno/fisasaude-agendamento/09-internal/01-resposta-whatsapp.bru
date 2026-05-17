@@ -1,0 +1,43 @@
+meta {
+  name: Resposta WhatsApp Inbound
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/internal/v1/agendamentos/{{agendamentoId}}/resposta-whatsapp
+  body: json
+  auth: none
+}
+
+headers {
+  X-Internal-Token: {{internalApiKey}}
+}
+
+body:json {
+  {
+    "tipo": "SIM"
+  }
+}
+
+docs {
+  ## Resposta WhatsApp Inbound (Internal)
+
+  Endpoint chamado **exclusivamente pelo microsserviço de notificação** após registrar a resposta do cliente via WhatsApp.
+
+  **Autenticação:** Header `X-Internal-Token` com a chave interna configurada em `app.internal.api-key`.
+  O valor padrão em desenvolvimento é `dev123` (variável `internalApiKey`).
+
+  **Path Variable:** `agendamentoId`
+
+  **Enums `tipo`:**
+  - `SIM` — cliente confirmou o agendamento
+  - `NAO` — cliente recusou
+  - `REAGENDAR` — cliente solicitou remarcação
+  - `OUTRO` — resposta não reconhecida
+
+  **⚠️ Atenção:** Este endpoint não usa Bearer Token JWT — usa apenas o header `X-Internal-Token`.
+
+  **Respostas:** 204 Processado | 400 Tipo inválido | 404 Agendamento não encontrado
+}
+

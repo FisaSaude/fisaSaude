@@ -1,0 +1,35 @@
+meta {
+  name: Listar por Status e Período
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{baseUrl}}/agendamentos
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+params:query {
+  status: AGENDADO
+  dataInicio: 2026-05-01
+  dataFim: 2026-05-31
+}
+
+docs {
+  ## Listar Agendamentos por Status e Período
+
+  Retorna agendamentos filtrados por status e intervalo de datas (inclusivo).
+
+  **Query Params obrigatórios:**
+  - `status` — `AGENDADO` | `CONFIRMADO` | `CANCELADO` | `CONCLUIDO` | `BLOQUEADO`
+  - `dataInicio` — formato ISO: `yyyy-MM-dd`
+  - `dataFim` — formato ISO: `yyyy-MM-dd`
+
+  **Respostas:** 200 Lista | 400 Parâmetro ausente | 422 Período inválido
+}
+

@@ -1,0 +1,41 @@
+meta {
+  name: Criar Despesa
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/despesas
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "nome": "Aluguel do espaço",
+    "dataDespesa": "2026-05-01",
+    "tipo": "Operacional",
+    "valor": 2500.00,
+    "estabelecimentoId": {{estabelecimentoId}}
+  }
+}
+
+docs {
+  ## Criar Despesa
+
+  Registra uma nova despesa/receita financeira do estabelecimento.
+
+  **Campos:**
+  - `nome` — descrição da despesa
+  - `dataDespesa` — data no formato `yyyy-MM-dd`
+  - `tipo` — tipo da despesa
+  - `valor` — valor monetário (BigDecimal)
+  - `estabelecimentoId` — ID do estabelecimento
+
+  **Respostas:** 201 Criado | 400 Validação | 401 Não autenticado
+}
+

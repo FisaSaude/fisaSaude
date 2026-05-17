@@ -1,0 +1,43 @@
+meta {
+  name: Criar Agendamento
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/agendamentos
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "clienteId": {{clienteId}},
+    "servicoId": 1,
+    "usuarioId": {{usuarioId}},
+    "data": "2026-06-10",
+    "horaInicio": "09:00:00",
+    "horaFim": "10:00:00",
+    "observacoes": "Primeira consulta do paciente"
+  }
+}
+
+docs {
+  ## Criar Agendamento
+
+  Cria um novo agendamento com status inicial `AGENDADO`.
+
+  **Regras de negócio:**
+  - `data` deve ser presente ou futura (`@FutureOrPresent`)
+  - `horaInicio` e `horaFim` obrigatórios
+  - Valida que `clienteId`, `servicoId` e `usuarioId` existem
+  - Verifica conflito de horário do profissional
+  - `observacoes` é opcional (max 4000 chars)
+
+  **Respostas:** 201 Criado | 400 Validação | 404 Cliente/Serviço/Usuário não encontrado | 409 Conflito de horário | 422 Regra semântica
+}
+

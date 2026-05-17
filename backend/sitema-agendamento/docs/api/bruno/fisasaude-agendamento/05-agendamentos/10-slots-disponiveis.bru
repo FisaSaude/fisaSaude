@@ -1,0 +1,40 @@
+meta {
+  name: Listar Slots Disponíveis
+  type: http
+  seq: 10
+}
+
+get {
+  url: {{baseUrl}}/agendamentos/slots-disponiveis?usuarioId=2&data=2026-06-10&duracaoMinutos=60
+  body: none
+  auth: bearer
+}
+
+params:query {
+  usuarioId: 2
+  data: 2026-06-10
+  duracaoMinutos: 60
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+docs {
+  ## Listar Slots de Disponibilidade por Usuário
+  
+  Gera slots disponíveis dentro do expediente do estabelecimento do profissional, excluindo intervalos ocupados.
+  
+  **Query Params obrigatórios:**
+  - `usuarioId` — ID do profissional
+  - `data` — formato `yyyy-MM-dd`
+  
+  **Query Params opcionais:**
+  - `duracaoMinutos` — duração em minutos (padrão: 60, entre 15 e 480)
+  
+  **Regras:**
+  - Apenas horários futuros (timezone America/Sao_Paulo)
+  - Exclui intervalos com agendamentos não cancelados
+  
+  **Respostas:** 200 Lista de slots | 400 Parâmetros inválidos | 404 Usuário não encontrado | 422 Duração ou expediente inválido
+}
