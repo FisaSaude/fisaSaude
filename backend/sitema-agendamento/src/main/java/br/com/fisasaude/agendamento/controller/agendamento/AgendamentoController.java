@@ -146,8 +146,9 @@ public class AgendamentoController implements SwaggerAgendamentoController {
     }
 
     @PostMapping("/bloquear-dia")
-    public ResponseEntity<AgendamentoResponseDto> bloquearDia(@Valid @RequestBody AgendamentoBloquearDiaRequestDto dto) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(agendamentoService.bloquearDia(dto));
+    public ResponseEntity<Void> bloquearDia(@Valid @RequestBody AgendamentoBloquearDiaRequestDto dto) {
+        agendamentoService.bloquearDia(dto);
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/taxa-ocupacao")

@@ -98,8 +98,8 @@ CREATE TABLE IF NOT EXISTS agendamento (
     atualizado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     observacoes TEXT,
 
-    cliente_id INT NOT NULL,
-    servico_id INT NOT NULL,
+    cliente_id INT,
+    servico_id INT,
     usuario_id INT NOT NULL,
 
     CONSTRAINT fk_agendamento_cliente

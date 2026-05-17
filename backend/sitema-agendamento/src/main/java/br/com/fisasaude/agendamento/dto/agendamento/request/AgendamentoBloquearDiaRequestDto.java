@@ -8,7 +8,6 @@ import java.time.LocalDate;
 @Schema(description = "Requisição para bloquear um dia inteiro de agendamento para um usuário")
 public record AgendamentoBloquearDiaRequestDto(
         @NotNull @Positive Integer usuarioId,
-        @NotNull @Positive Integer servicoId,
         @NotNull LocalDate data
 ) {}
 

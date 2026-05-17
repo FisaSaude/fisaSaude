@@ -281,11 +281,11 @@ public interface SwaggerAgendamentoController {
         description = "Cria um bloqueio de agenda para um dia inteiro para um usuário/profissional, impedindo novos agendamentos nesta data."
     )
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "201", description = "Dia bloqueado com sucesso", content = @Content(schema = @Schema(implementation = AgendamentoResponseDto.class))),
+        @ApiResponse(responseCode = "204", description = "Dia bloqueado com sucesso"),
         @ApiResponse(responseCode = "400", description = "Dados inválidos", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
         @ApiResponse(responseCode = "404", description = "Usuário não encontrado", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
-    ResponseEntity<AgendamentoResponseDto> bloquearDia(@Valid @RequestBody AgendamentoBloquearDiaRequestDto dto);
+    ResponseEntity<Void> bloquearDia(@Valid @RequestBody AgendamentoBloquearDiaRequestDto dto);
 
     @Operation(
             summary = "Taxa de ocupação por periodo",

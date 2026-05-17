@@ -325,14 +325,12 @@ public class AgendamentoService {
         log.debug("Tipo de resposta WhatsApp {} sem efeito no status para agendamento {}.", tipo, agendamentoId);
     }
 
-    public AgendamentoResponseDto bloquearDia(AgendamentoBloquearDiaRequestDto dto) {
+    public void bloquearDia(AgendamentoBloquearDiaRequestDto dto) {
         if (dto == null) {
             throw new BadRequestException("Corpo da requisição não pode ser nulo");
         }
         Usuario usuario = usuarioRepository.findById(dto.usuarioId())
                 .orElseThrow(() -> new NotFoundException("Usuário não encontrado"));
-        Servico servico = servicoRepository.findById(dto.servicoId())
-                .orElseThrow(() -> new NotFoundException("Serviço não encontrado"));
         LocalDate data = dto.data();
         // Verifica se já existe qualquer agendamento para o usuário no dia
         long existentes = agendamentoRepository.countByDataAndUsuarioId(data, usuario.getId());
@@ -352,10 +350,9 @@ public class AgendamentoService {
         bloqueio.setCriadoEm(now);
         bloqueio.setAtualizadoEm(now);
         bloqueio.setCliente(null);
-        bloqueio.setServico(servico);
+        bloqueio.setServico(null);
         bloqueio.setUsuario(usuario);
-        Agendamento salvo = agendamentoRepository.save(bloqueio);
-        return agendamentoMapper.toDto(salvo);
+        agendamentoRepository.save(bloqueio);
     }
 
     private void validarIdAgendamento(Integer id) {
