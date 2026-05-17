@@ -1,13 +1,15 @@
 -- ==============================================================
--- BANCO DE DADOS: FISASAÚDE - Sistema de Agendamento Pilates
--- Versão: 3.0
--- Data: 01/05/2026
+-- FisaSaude — schema MySQL consolidado (instalação do zero)
+-- Database: pilates
+-- Uso: mysql -u root -p < bd/pilates.sql
 -- ==============================================================
 
-CREATE DATABASE IF NOT EXISTS pilates;
+DROP DATABASE IF EXISTS pilates;
+CREATE DATABASE pilates CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE pilates;
 
-CREATE TABLE IF NOT EXISTS estabelecimento (
+-- ESTABELECIMENTO
+CREATE TABLE estabelecimento (
     id INT PRIMARY KEY AUTO_INCREMENT,
     nome VARCHAR(150) NOT NULL,
     endereco VARCHAR(255) NOT NULL,
@@ -15,238 +17,185 @@ CREATE TABLE IF NOT EXISTS estabelecimento (
     inicio_funcionamento TIME NOT NULL,
     fim_funcionamento TIME NOT NULL,
     telefone VARCHAR(20),
-    criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
-);
+    criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
 
-CREATE TABLE IF NOT EXISTS usuario (
+-- DESPESA
+CREATE TABLE despesa (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    nome VARCHAR(100) NOT NULL,
+    data_despesa DATE NOT NULL,
+    tipo VARCHAR(45) NOT NULL,
+    valor DECIMAL(10, 2) NOT NULL,
+    estabelecimento_id INT NOT NULL,
+    CONSTRAINT fk_despesa_estabelecimento
+        FOREIGN KEY (estabelecimento_id) REFERENCES estabelecimento (id)
+) ENGINE=InnoDB;
+
+-- USUARIO
+CREATE TABLE usuario (
     id INT PRIMARY KEY AUTO_INCREMENT,
     nome VARCHAR(100) NOT NULL,
     email VARCHAR(100) NOT NULL UNIQUE,
     senha VARCHAR(255) NOT NULL,
-    role ENUM('ADMIN','USUARIO') NOT NULL DEFAULT 'USUARIO',
+    role ENUM('ADMIN', 'USUARIO') NOT NULL,
     ativo BOOLEAN DEFAULT TRUE,
     estabelecimento_id INT NOT NULL,
-    criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
-    INDEX idx_email (email),
-    CONSTRAINT fk_usuario_estabelecimento FOREIGN KEY (estabelecimento_id) REFERENCES estabelecimento(id)
-);
+    criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_usuario_estabelecimento
+        FOREIGN KEY (estabelecimento_id) REFERENCES estabelecimento (id)
+) ENGINE=InnoDB;
 
-CREATE TABLE IF NOT EXISTS cliente (
+-- CLIENTE
+CREATE TABLE cliente (
     id INT PRIMARY KEY AUTO_INCREMENT,
     nome VARCHAR(100) NOT NULL,
     telefone_whatsapp VARCHAR(20) NOT NULL UNIQUE,
     whatsapp_ativo BOOLEAN DEFAULT TRUE,
     data_nascimento DATE NOT NULL,
-    sexo ENUM('M','F','OUTRO') NOT NULL,
+    sexo ENUM('M', 'F', 'OUTRO') NOT NULL,
     foto_link VARCHAR(255),
-    criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
-    atualizado_em DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    INDEX idx_whatsapp (telefone_whatsapp)
-);
+    criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    atualizado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
 
-CREATE TABLE IF NOT EXISTS servico (
+-- SERVICO
+CREATE TABLE servico (
     id INT PRIMARY KEY AUTO_INCREMENT,
     nome VARCHAR(100) NOT NULL,
     tipo VARCHAR(50) NOT NULL DEFAULT 'geral',
     duracao_minutos INT NOT NULL DEFAULT 60,
-    preco DECIMAL(10,2) NOT NULL,
+    preco DECIMAL(10, 2) NOT NULL,
     ativo BOOLEAN DEFAULT TRUE,
-    criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
-    INDEX idx_tipo (tipo)
-);
+    criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
 
-CREATE TABLE IF NOT EXISTS agendamento (
+-- AGENDAMENTO
+CREATE TABLE agendamento (
     id INT PRIMARY KEY AUTO_INCREMENT,
-    cliente_id INT NOT NULL,
-    servico_id INT NOT NULL,
-    usuario_id INT NOT NULL,
     data DATE NOT NULL,
     hora_inicio TIME NOT NULL,
     hora_fim TIME NOT NULL,
-    status ENUM('AGENDADO','CONFIRMADO','CANCELADO','CONCLUIDO') DEFAULT 'AGENDADO',
+    status ENUM('AGENDADO', 'CONFIRMADO', 'CANCELADO', 'CONCLUIDO', 'BLOQUEADO') NOT NULL DEFAULT 'AGENDADO',
+    criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    atualizado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     observacoes TEXT,
-    criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
-    atualizado_em DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (cliente_id) REFERENCES cliente(id),
-    FOREIGN KEY (servico_id) REFERENCES servico(id),
-    FOREIGN KEY (usuario_id) REFERENCES usuario(id),
-    UNIQUE KEY uk_agendamento (data, hora_inicio, usuario_id),
-    INDEX idx_cliente_data (cliente_id, data),
-    INDEX idx_data_status (data, status),
-    INDEX idx_status (status)
-);
+    cliente_id INT,
+    servico_id INT,
+    usuario_id INT NOT NULL,
+    CONSTRAINT fk_agendamento_cliente
+        FOREIGN KEY (cliente_id) REFERENCES cliente (id),
+    CONSTRAINT fk_agendamento_servico
+        FOREIGN KEY (servico_id) REFERENCES servico (id),
+    CONSTRAINT fk_agendamento_usuario
+        FOREIGN KEY (usuario_id) REFERENCES usuario (id),
+    UNIQUE KEY uk_agendamento (data, hora_inicio, usuario_id)
+) ENGINE=InnoDB;
 
-CREATE TABLE IF NOT EXISTS notificacao (
+-- NOTIFICACAO
+CREATE TABLE notificacao (
     id INT PRIMARY KEY AUTO_INCREMENT,
-    agendamento_id INT NOT NULL,
-    tipo ENUM('LEMBRETE','CONFIRMACAO','CANCELAMENTO','REAGENDAMENTO') NOT NULL,
-    status ENUM('PENDENTE','ENVIADO','FALHOU','DESCARTADA') DEFAULT 'PENDENTE',
+    tipo ENUM('LEMBRETE', 'CONFIRMACAO', 'CANCELAMENTO', 'REAGENDAMENTO') NOT NULL,
+    status ENUM('PENDENTE', 'ENVIADO', 'FALHOU', 'DESCARTADA') NOT NULL DEFAULT 'PENDENTE',
     twilio_message_sid VARCHAR(100) UNIQUE,
-    tentativas INT DEFAULT 0,
+    tentativas INT NOT NULL DEFAULT 0,
     mensagem TEXT,
     proxima_retentativa DATETIME,
     enviado_em DATETIME,
-    criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (agendamento_id) REFERENCES agendamento(id),
+    criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    agendamento_id INT NOT NULL,
+    CONSTRAINT fk_notificacao_agendamento
+        FOREIGN KEY (agendamento_id) REFERENCES agendamento (id),
     INDEX idx_status (status),
     INDEX idx_tentativas (tentativas, proxima_retentativa),
     INDEX idx_agendamento (agendamento_id)
-);
+) ENGINE=InnoDB;
 
-CREATE TABLE IF NOT EXISTS agendamento_status_historico (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    agendamento_id INT NOT NULL,
-    status_anterior VARCHAR(50),
-    status_novo VARCHAR(50) NOT NULL,
-    motivo VARCHAR(255),
-    usuario_id INT,
-    criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (agendamento_id) REFERENCES agendamento(id),
-    FOREIGN KEY (usuario_id) REFERENCES usuario(id),
-    INDEX idx_agendamento (agendamento_id),
-    INDEX idx_criado (criado_em)
-);
-
-CREATE TABLE IF NOT EXISTS mensagem_resposta_whatsapp (
+-- MENSAGEM RESPOSTA WHATSAPP
+CREATE TABLE mensagem_resposta_whatsapp (
     id INT PRIMARY KEY AUTO_INCREMENT,
     agendamento_id INT NOT NULL,
     cliente_id INT NOT NULL,
     telefone VARCHAR(20) NOT NULL,
     conteudo_resposta TEXT NOT NULL,
-    resposta_tipo ENUM('SIM','NAO','REAGENDAR','OUTRO') DEFAULT 'OUTRO',
+    resposta_tipo ENUM('SIM', 'NAO', 'REAGENDAR', 'OUTRO') NOT NULL DEFAULT 'OUTRO',
     twilio_message_sid VARCHAR(100),
     data_recebida DATETIME NOT NULL,
-    criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (agendamento_id) REFERENCES agendamento(id),
-    FOREIGN KEY (cliente_id) REFERENCES cliente(id),
-    INDEX idx_agendamento (agendamento_id),
-    INDEX idx_data (data_recebida)
-);
-
-CREATE TABLE IF NOT EXISTS prontuario (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    cliente_id INT NOT NULL,
-    agendamento_id INT NOT NULL,
-    observacoes TEXT NOT NULL,
     criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    atualizado_em DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (cliente_id) REFERENCES cliente(id),
-    FOREIGN KEY (agendamento_id) REFERENCES agendamento(id),
-    INDEX idx_cliente (cliente_id)
-);
+    CONSTRAINT fk_mr_agendamento
+        FOREIGN KEY (agendamento_id) REFERENCES agendamento (id),
+    CONSTRAINT fk_mr_cliente
+        FOREIGN KEY (cliente_id) REFERENCES cliente (id),
+    INDEX idx_mr_agenda (agendamento_id),
+    INDEX idx_mr_data (data_recebida)
+) ENGINE=InnoDB;
 
-CREATE TABLE IF NOT EXISTS despesas (
+-- PRONTUARIO
+CREATE TABLE prontuario (
     id INT PRIMARY KEY AUTO_INCREMENT,
-    nome VARCHAR(100) NOT NULL,
-    tipo VARCHAR(45) NOT NULL,
-    valor DECIMAL(10,2) NOT NULL,
-    data_despesa DATE NOT NULL,
-    estabelecimento_id INT NOT NULL,
-    criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (estabelecimento_id) REFERENCES estabelecimento(id),
-    INDEX idx_data (data_despesa)
-);
+    observacoes TEXT NOT NULL,
+    criado_em DATETIME NOT NULL,
+    cliente_id INT NOT NULL,
+    CONSTRAINT fk_prontuario_cliente
+        FOREIGN KEY (cliente_id) REFERENCES cliente (id)
+) ENGINE=InnoDB;
 
--- KPI: Total aulas do dia
-CREATE OR REPLACE VIEW kpi_aulas_dia AS
-SELECT COUNT(*) AS total_aulas_hoje
-FROM agendamento
-WHERE DATE(data) = CURDATE()
-AND status != 'CANCELADO';
+-- ==============================================================
+-- Dados iniciais (desenvolvimento / testes)
+-- Admin: admin@fisasaude.com / Admin@1234
+-- Usuario: usuario@fisasaude.com / User@1234
+-- ==============================================================
 
--- KPI: Total aulas do mês
-CREATE OR REPLACE VIEW kpi_aulas_mes AS
-SELECT COUNT(*) AS total_aulas_mes
-FROM agendamento
-WHERE MONTH(data) = MONTH(CURDATE())
-AND YEAR(data) = YEAR(CURDATE())
-AND status != 'CANCELADO';
+INSERT INTO estabelecimento (id, nome, endereco, parametros, inicio_funcionamento, fim_funcionamento)
+VALUES (1, 'Fisa Saude Unidade Central', 'Rua das Flores, 123 - Centro', NULL, '08:00:00', '18:00:00'),
+       (2, 'Fisa Saude Unidade Zona Leste', 'Rua das Batatas, 321 - Bairro XPTO', NULL, '08:00:00', '18:00:00');
 
--- KPI: Percentual de cancelamentos
-CREATE OR REPLACE VIEW kpi_percentual_cancelamento_mes AS
-SELECT 
-    ROUND(
-        (SUM(CASE WHEN status = 'CANCELADO' THEN 1 ELSE 0 END) 
-        / NULLIF(COUNT(*), 0)) * 100
-    , 2) AS percentual_cancelamento
-FROM agendamento
-WHERE MONTH(data) = MONTH(CURDATE())
-AND YEAR(data) = YEAR(CURDATE());
+INSERT INTO usuario (id, nome, email, senha, role, estabelecimento_id)
+VALUES (1,
+        'Administrador',
+        'admin@fisasaude.com',
+        '$2a$10$g44XcIicHlha8CYRwwPPleDshvswcEvQoMiTZrDoxRHcOTj5LcJkK',
+        'ADMIN',
+        1),
+       (2,
+        'Profissional Teste',
+        'usuario@fisasaude.com',
+        '$2a$10$rpKmL65qI.PBz5wC4HKKEOpsinAdfpvkPbmlOcnAunjZxo6sWOTgy',
+        'USUARIO',
+        1);
 
--- KPI: Taxa de aulas realizadas (concluídas entre os não cancelados no mês)
-CREATE OR REPLACE VIEW kpi_taxa_realizacao_mes AS
-SELECT 
-    ROUND(
-        (SUM(CASE WHEN status = 'CONCLUIDO' THEN 1 ELSE 0 END)
-        / NULLIF(SUM(CASE WHEN status != 'CANCELADO' THEN 1 ELSE 0 END), 0)) * 100
-    , 2) AS percentual_realizacao
-FROM agendamento
-WHERE MONTH(data) = MONTH(CURDATE())
-AND YEAR(data) = YEAR(CURDATE());
+INSERT INTO servico (id, nome, tipo, duracao_minutos, preco, ativo)
+VALUES (1, 'Aula Experimental', 'pilates', 60, 0.00, TRUE),
+       (2, 'Aula Avulsa', 'pilates', 60, 50.00, TRUE),
+       (3, 'Aula Mensal', 'pilates', 60, 180.00, TRUE),
+       (4, 'Aula Semestral', 'pilates', 60, 950.00, TRUE);
 
--- Usem esses dados abaixo pra testar:
+INSERT INTO cliente (id, nome, telefone_whatsapp, whatsapp_ativo, data_nascimento, sexo, foto_link)
+VALUES (1, 'Mariana Silva', '5511999000111', TRUE, '1990-04-12', 'F', NULL),
+       (2, 'Joao Pereira', '5511988776655', TRUE, '1985-11-23', 'M', NULL),
+       (3, 'Ana Souza', '5511977112233', TRUE, '1995-07-02', 'F', NULL),
+       (4, 'Carlos Mendes', '5511966334455', TRUE, '1978-02-14', 'M', NULL),
+       (5, 'Beatriz Costa', '5511955443322', TRUE, '2000-09-30', 'F', NULL);
 
--- ESTABELECIMENTO
-INSERT INTO estabelecimento (
-    nome,
-    endereco,
-    telefone,
-    inicio_funcionamento,
-    fim_funcionamento
-) VALUES (
-    'FisaSaude Studio Pilates',
-    'Av. Paulista, 1000 - São Paulo/SP',
-    '11999999999',
-    '06:00:00',
-    '22:00:00'
-);
+INSERT INTO despesa (id, nome, data_despesa, tipo, valor, estabelecimento_id)
+VALUES (1, 'Compra de colchonetes', '2026-01-15', 'Operacional', 350.00, 1),
+       (2, 'Pagamento aluguel - Cliente 3', '2026-02-01', 'Operacional', 180.00, 1),
+       (3, 'Pagamento professor - Fevereiro', '2026-02-28', 'Operacional', 1200.00, 1);
 
--- USUARIO (CORRIGIDO: role + estabelecimento_id)
-INSERT INTO usuario (
-    nome,
-    email,
-    senha,
-    role,
-    ativo,
-    estabelecimento_id
-) VALUES (
-    'Admin FisaSaude',
-    'admin@fisasaude.com',
-    '$2b$12$dLBnwtmrP0WqDmyCw6dPr.Ak2fbj0MX0MjI444/Gs6c85hB1aAwtW',
-    'ADMIN',
-    true,
-    1
-);
+INSERT INTO agendamento (id, data, hora_inicio, hora_fim, status, observacoes, cliente_id, servico_id, usuario_id)
+VALUES (1, '2026-05-10', '09:00:00', '09:30:00', 'AGENDADO', 'Aula experimental de pilates', 1, 1, 2),
+       (2, '2026-05-10', '10:00:00', '11:00:00', 'CONFIRMADO', 'Aula avulsa - trouxe roupa adequada', 2, 2, 2),
+       (3, '2026-05-11', '14:00:00', '15:00:00', 'CANCELADO', 'Cliente avisou que nao podera comparecer', 3, 2, 2),
+       (4, '2026-05-12', '08:00:00', '09:00:00', 'CONCLUIDO', 'Aula mensal - 1a aula do pacote', 4, 3, 2),
+       (5, '2026-05-13', '11:00:00', '12:00:00', 'AGENDADO', 'Aula semestral - pagamento a confirmar', 5, 4, 2);
 
--- CLIENTE
-INSERT INTO cliente (
-    nome,
-    telefone_whatsapp,
-    whatsapp_ativo,
-    data_nascimento,
-    sexo
-) VALUES (
-    'Edson Felix',
-    '5511965643020',
-    true,
-    '1998-05-10',
-    'M'
-);
+INSERT INTO notificacao (id, tipo, status, twilio_message_sid, tentativas, mensagem, proxima_retentativa, enviado_em, agendamento_id)
+VALUES (1, 'LEMBRETE', 'PENDENTE', NULL, 0, 'Lembrete: voce tem um agendamento em 2026-05-10 as 09:00', '2026-05-10 08:50:00', NULL, 1),
+       (2, 'CONFIRMACAO', 'ENVIADO', 'SM1234567890', 1, 'Confirme sua presenca na aula das 10:00', NULL, '2026-05-09 09:00:00', 2),
+       (3, 'CANCELAMENTO', 'ENVIADO', 'SM1234567891', 0, 'Seu agendamento foi cancelado', NULL, '2026-05-10 12:00:00', 3),
+       (4, 'LEMBRETE', 'FALHOU', 'SM1234567892', 3, 'Tentativa de enviar lembrete falhou', '2026-05-10 09:05:00', NULL, 5);
 
--- SERVICO
-INSERT INTO servico (
-    nome,
-    tipo,
-    duracao_minutos,
-    preco,
-    ativo
-) VALUES (
-    'Pilates Solo',
-    'PILATES',
-    60,
-    120.00,
-    true
-);
-
-
-
+INSERT INTO prontuario (id, observacoes, criado_em, cliente_id)
+VALUES (1, 'Cliente com historico de lombalgia, liberar para exercicios leves', '2026-01-20 10:00:00', 1),
+       (2, 'Paciente em condicao cardiaca, necessita acompanhamento medico', '2026-03-05 15:30:00', 4),
+       (3, 'Sem restricoes significativas', '2026-04-10 11:00:00', 5);
