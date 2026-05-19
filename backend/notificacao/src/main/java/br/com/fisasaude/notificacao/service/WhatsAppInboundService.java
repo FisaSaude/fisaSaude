@@ -17,6 +17,7 @@ import br.com.fisasaude.notificacao.service.support.RespostaWhatsappTexto;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import org.slf4j.Logger;
@@ -89,44 +90,84 @@ public class WhatsAppInboundService {
                 buttonText,
                 originalRepliedMessageSid);
 
-        Optional<Cliente> opCliente = encontrarClientePorTelefoneDigitosIguais(digitosOrigem);
-        if (opCliente.isEmpty()) {
-            log.warn("[INBOUND] Cliente nao cadastrado digitosNorm={}", digitosOrigem);
-            return;
-        }
-        Cliente cliente = opCliente.get();
-        log.info("[INBOUND] Cliente id={} nome='{}'", cliente.getId(), cliente.getNome());
+        Optional<RespostaWhatsappCorrelacao.Resultado> correlExplicito =
+                RespostaWhatsappCorrelacao.resolver(
+                        buttonPayload, body, originalRepliedMessageSid, notificacaoRepository);
 
-        Optional<RespostaWhatsappCorrelacao.Resultado> correl = resolverComPrioridadeTextoSimples(
-                cliente, buttonPayload, body, originalRepliedMessageSid);
-        if (correl.isEmpty()) {
-            log.warn(
-                    "[INBOUND] Nao correlacionado — sem CONFIRMAR_x/CANCELAR_x, SIM id/NAO id, nem OriginalRepliedMessageSid registrado. clienteId={} body='{}' payload='{}'",
-                    cliente.getId(),
-                    body,
-                    buttonPayload);
-            return;
-        }
+        Cliente cliente;
+        RespostaWhatsappCorrelacao.Resultado c;
 
-        RespostaWhatsappCorrelacao.Resultado c = correl.get();
-        log.info(
-                "[INBOUND] Correlacao agendamentoId={} tipoResposta={} modo={}",
-                c.agendamentoId(),
-                c.tipo(),
-                c.origem());
+        if (correlExplicito.isPresent() && correlacaoExplicitaComAgendamentoId(buttonPayload, body)) {
+            c = correlExplicito.get();
+            Agendamento agendaExplicito =
+                    agendamentoRepository.findByIdWithRelations(c.agendamentoId()).orElse(null);
+            if (agendaExplicito == null) {
+                log.warn("[INBOUND] Agendamento id={} nao encontrado (correlacao explicita).", c.agendamentoId());
+                return;
+            }
+            if (!telefoneCompativelComCliente(digitosOrigem, agendaExplicito.getCliente())) {
+                log.warn(
+                        "[INBOUND] Telefone nao confere com cliente do agendamento id={} digitosNorm={}",
+                        c.agendamentoId(),
+                        digitosOrigem);
+                return;
+            }
+            cliente = agendaExplicito.getCliente();
+            log.info(
+                    "[INBOUND] Correlacao explicita agendamentoId={} tipoResposta={} modo={} clienteId={}",
+                    c.agendamentoId(),
+                    c.tipo(),
+                    c.origem(),
+                    cliente.getId());
+        } else {
+            List<Cliente> clientesComMesmoTelefone = encontrarClientesPorTelefoneDigitos(digitosOrigem);
+            if (clientesComMesmoTelefone.isEmpty()) {
+                log.warn("[INBOUND] Cliente nao cadastrado digitosNorm={}", digitosOrigem);
+                return;
+            }
+            if (clientesComMesmoTelefone.size() > 1) {
+                log.info(
+                        "[INBOUND] {} clientes com o mesmo telefone digitosNorm={} — correlacao por agendamento mais recente",
+                        clientesComMesmoTelefone.size(),
+                        digitosOrigem);
+            }
+            Optional<RespostaWhatsappCorrelacao.Resultado> correl =
+                    resolverComPrioridadeTextoSimples(
+                            clientesComMesmoTelefone, buttonPayload, body, originalRepliedMessageSid);
+            if (correl.isEmpty()) {
+                log.warn(
+                        "[INBOUND] Nao correlacionado — sem CONFIRMAR_x/CANCELAR_x, SIM id/NAO id, nem OriginalRepliedMessageSid registrado. body='{}' payload='{}'",
+                        body,
+                        buttonPayload);
+                return;
+            }
+            c = correl.get();
+            Agendamento agendaCorrelacionado =
+                    agendamentoRepository.findByIdWithRelations(c.agendamentoId()).orElse(null);
+            if (agendaCorrelacionado == null) {
+                log.warn("[INBOUND] Agendamento id={} nao encontrado (correlacao).", c.agendamentoId());
+                return;
+            }
+            cliente = agendaCorrelacionado.getCliente();
+            if (!telefoneCompativelComCliente(digitosOrigem, cliente)) {
+                log.warn(
+                        "[INBOUND] Telefone nao confere com cliente do agendamento id={} digitosNorm={}",
+                        c.agendamentoId(),
+                        digitosOrigem);
+                return;
+            }
+            log.info(
+                    "[INBOUND] Correlacao agendamentoId={} tipoResposta={} modo={} clienteId={}",
+                    c.agendamentoId(),
+                    c.tipo(),
+                    c.origem(),
+                    cliente.getId());
+        }
 
         Agendamento agenda =
                 agendamentoRepository.findByIdWithRelations(c.agendamentoId()).orElse(null);
         if (agenda == null) {
             log.warn("[INBOUND] Agendamento id={} nao encontrado (correlacao).", c.agendamentoId());
-            return;
-        }
-        if (!agenda.getCliente().getId().equals(cliente.getId())) {
-            log.warn(
-                    "[INBOUND] Agendamento id={} nao pertence ao remetente: clientePaciente={} clienteAgenda={}",
-                    c.agendamentoId(),
-                    cliente.getId(),
-                    agenda.getCliente().getId());
             return;
         }
         log.info(
@@ -151,20 +192,22 @@ public class WhatsAppInboundService {
         mensagemRepository.save(mr);
 
         if (tipoClassificado == RespostaWhatsappTipoEnum.SIM || tipoClassificado == RespostaWhatsappTipoEnum.NAO) {
-            try {
-                agendamentoIntegracaoCliente.notificarRespostaWhatsapp(agenda.getId(), tipoClassificado);
+            boolean statusAplicadoNoAgendamento =
+                    agendamentoIntegracaoCliente.notificarRespostaWhatsapp(agenda.getId(), tipoClassificado);
+            if (statusAplicadoNoAgendamento) {
                 log.info(
-                        "[INBOUND] Atualizacao de status delegada ao agendamento — agendamentoId={} tipo={}",
+                        "[INBOUND] Status atualizado no agendamento (8080) — agendamentoId={} tipo={}",
                         agenda.getId(),
                         tipoClassificado);
-            } catch (Exception ex) {
-                log.warn(
-                        "[INBOUND] Falha ao integrar resposta com agendamento id={} tipo={} erro={}",
+                enviarRespostaAutomaticaPaciente(telefoneOrigem, tipoClassificado, agenda.getId());
+            } else {
+                log.error(
+                        "[INBOUND] Resposta registrada mas agendamento (8080) indisponivel ou recusou — agendamentoId={} tipo={}. "
+                                + "Verifique se o servico 8080 esta no ar e se X-Internal-Token coincide (dev123).",
                         agenda.getId(),
-                        tipoClassificado,
-                        ex.toString());
+                        tipoClassificado);
+                enviarRespostaFalhaIntegracaoAgendamento(telefoneOrigem, agenda.getId());
             }
-            enviarRespostaAutomaticaPaciente(telefoneOrigem, tipoClassificado, agenda.getId());
         } else {
             log.debug(
                     "[INBOUND] Tipo {} nao atualiza status no dominio agendamento.",
@@ -195,20 +238,38 @@ public class WhatsAppInboundService {
         return sb.toString().trim();
     }
 
-    private Optional<Cliente> encontrarClientePorTelefoneDigitosIguais(String digitos) {
+    private static boolean correlacaoExplicitaComAgendamentoId(String buttonPayload, String body) {
+        String payload = buttonPayload != null ? buttonPayload.trim() : "";
+        String texto = body != null ? body.trim().replaceAll("\\s+", " ") : "";
+        if (RespostaWhatsappCorrelacao.contemIdNoTexto(texto)) {
+            return true;
+        }
+        return payload.matches("(?is)^\\s*CONFIRMAR[_\\s-]?\\d+\\s*$")
+                || payload.matches("(?is)^\\s*CANCELAR[_\\s-]?\\d+\\s*$");
+    }
+
+    private static boolean telefoneCompativelComCliente(String digitosOrigem, Cliente cliente) {
+        if (digitosOrigem == null || digitosOrigem.isBlank() || cliente == null) {
+            return false;
+        }
+        String cadastro = apenasDigitos(cliente.getTelefone());
+        if (digitosOrigem.equals(cadastro)) {
+            return true;
+        }
+        return !cadastro.isBlank() && (digitosOrigem.endsWith(cadastro) || cadastro.endsWith(digitosOrigem));
+    }
+
+    private List<Cliente> encontrarClientesPorTelefoneDigitos(String digitos) {
         if (digitos == null || digitos.isBlank()) {
-            return Optional.empty();
+            return List.of();
         }
+        List<Cliente> encontrados = new ArrayList<>();
         for (Cliente c : clienteRepository.findAll()) {
-            String cadastro = apenasDigitos(c.getTelefone());
-            if (digitos.equals(cadastro)) {
-                return Optional.of(c);
-            }
-            if (!cadastro.isBlank() && (digitos.endsWith(cadastro) || cadastro.endsWith(digitos))) {
-                return Optional.of(c);
+            if (telefoneCompativelComCliente(digitos, c)) {
+                encontrados.add(c);
             }
         }
-        return Optional.empty();
+        return encontrados;
     }
 
     private static String apenasDigitos(String s) {
@@ -220,22 +281,23 @@ public class WhatsAppInboundService {
     }
 
     private Optional<RespostaWhatsappCorrelacao.Resultado> resolverComPrioridadeTextoSimples(
-            Cliente cliente, String buttonPayload, String body, String originalRepliedMessageSid) {
+            List<Cliente> clientes, String buttonPayload, String body, String originalRepliedMessageSid) {
         RespostaWhatsappTipoEnum tipoLivre = RespostaWhatsappTexto.classificarRespostaPaciente(body);
         if ((tipoLivre == RespostaWhatsappTipoEnum.SIM || tipoLivre == RespostaWhatsappTipoEnum.NAO)
                 && !RespostaWhatsappCorrelacao.contemIdNoTexto(body)) {
+            List<Integer> clienteIds = clientes.stream().map(Cliente::getId).toList();
             List<Agendamento> agendados =
-                    agendamentoRepository.findByClienteAndStatusOrderByMaisRecente(
-                            cliente.getId(), StatusAgendamentoEnum.AGENDADO);
+                    agendamentoRepository.findByClienteIdInAndStatusOrderByMaisRecente(
+                            clienteIds, StatusAgendamentoEnum.AGENDADO);
             if (!agendados.isEmpty()) {
                 Agendamento escolhido = agendados.get(0);
                 log.info(
-                        "[INBOUND] Agendamento auto-selecionado para clienteId={} -> agendamentoId={} data={} hora={} status={}",
-                        cliente.getId(),
+                        "[INBOUND] Agendamento auto-selecionado entre {} cliente(s) -> agendamentoId={} clienteId={} data={} hora={}",
+                        clientes.size(),
                         escolhido.getId(),
+                        escolhido.getCliente().getId(),
                         escolhido.getData(),
-                        escolhido.getHoraInicio(),
-                        escolhido.getStatus());
+                        escolhido.getHoraInicio());
                 return Optional.of(
                         new RespostaWhatsappCorrelacao.Resultado(
                                 escolhido.getId(),
@@ -244,8 +306,8 @@ public class WhatsAppInboundService {
                                 RespostaWhatsappTexto.conteudoParaPersistencia(body)));
             }
             log.warn(
-                    "[INBOUND] Sem agendamento AGENDADO para auto-selecao clienteId={} texto='{}'",
-                    cliente.getId(),
+                    "[INBOUND] Sem agendamento AGENDADO para auto-selecao entre clienteIds={} texto='{}'",
+                    clienteIds,
                     body);
         }
         return RespostaWhatsappCorrelacao.resolver(
@@ -262,6 +324,19 @@ public class WhatsAppInboundService {
             twilioWhatsappSender.enviarTextoParaWhatsapp(telefoneOrigem, msg);
         } catch (Exception e) {
             log.warn("[INBOUND] Falha ao enviar resposta automatica ao paciente: {}", e.toString());
+        }
+    }
+
+    private void enviarRespostaFalhaIntegracaoAgendamento(String telefoneOrigem, Integer agendamentoId) {
+        String msg =
+                "⚠️ Recebemos sua resposta (AG"
+                        + agendamentoId
+                        + "), mas não foi possível confirmar no sistema agora.\n"
+                        + "A recepção foi alertada. Você também pode ligar para confirmar.";
+        try {
+            twilioWhatsappSender.enviarTextoParaWhatsapp(telefoneOrigem, msg);
+        } catch (Exception e) {
+            log.warn("[INBOUND] Falha ao enviar aviso de integracao ao paciente: {}", e.toString());
         }
     }
 

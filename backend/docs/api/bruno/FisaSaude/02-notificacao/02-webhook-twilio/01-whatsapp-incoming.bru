@@ -11,19 +11,27 @@ post {
 }
 
 body:form-urlencoded {
-  From: whatsapp:+5511988776655
-  WaId: 5511988776655
+  From: whatsapp:+5511965643020
+  WaId: 5511965643020
   To: whatsapp:+14155238886
-  Body: SIM
-  MessageSid: SM00000000000000000000000000000001
+  Body: SIM 8
+  MessageSid: SM00000000000000000000000000000008
 }
 
 docs {
   ## Webhook Twilio — mensagem recebida
 
-  Simula callback `application/x-www-form-urlencoded` da Twilio quando o paciente responde no WhatsApp.
+  **Não é JSON** — Twilio envia `application/x-www-form-urlencoded`.
 
-  **Não usa JWT.** Rota pública para a Twilio alcançar o serviço.
+  Troque `Body` e `MessageSid` a cada teste (`MessageSid` duplicado é ignorado).
 
-  **Respostas:** 200 OK (corpo vazio)
+  | Resposta | Body |
+  |----------|------|
+  | Confirmar agendamento 8 | `SIM 8` ou `CONFIRMAR_8` |
+  | Cancelar agendamento 8 | `NAO 8` ou `CANCELAR_8` |
+  | Confirmar o AGENDADO mais recente (mesmo telefone) | `SIM` |
+
+  **ButtonPayload** (botão template): `CONFIRMAR_8` / `CANCELAR_8`
+
+  Resposta esperada no WhatsApp: `Protocolo: AG8` (mesmo id do agendamento).
 }

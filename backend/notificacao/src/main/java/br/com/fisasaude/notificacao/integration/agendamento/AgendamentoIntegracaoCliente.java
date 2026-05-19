@@ -28,19 +28,22 @@ public class AgendamentoIntegracaoCliente {
         this.props = props;
     }
 
-    public void notificarRespostaWhatsapp(Integer agendamentoId, RespostaWhatsappTipoEnum tipo) {
+    /**
+     * @return {@code true} se o servico de agendamento (8080) aplicou SIM/NAO no status
+     */
+    public boolean notificarRespostaWhatsapp(Integer agendamentoId, RespostaWhatsappTipoEnum tipo) {
         if (agendamentoId == null || tipo == null) {
-            return;
+            return false;
         }
         if (tipo != RespostaWhatsappTipoEnum.SIM && tipo != RespostaWhatsappTipoEnum.NAO) {
-            return;
+            return false;
         }
         String base = props.getBaseUrl();
         if (base == null || base.isBlank()) {
             log.warn(
                     "Integracao agendamento base-url vazia — nao foi possivel aplicar transicao whatsapp para agendamento {}.",
                     agendamentoId);
-            return;
+            return false;
         }
         try {
             record Body(RespostaWhatsappTipoEnum tipo) {}
@@ -67,8 +70,14 @@ public class AgendamentoIntegracaoCliente {
                     agendamentoId,
                     tipo,
                     response.getStatusCode());
+            return response.getStatusCode().is2xxSuccessful();
         } catch (Exception e) {
-            log.error("Erro ao chamar agendamento", e);
+            log.error(
+                    "Falha ao chamar agendamento (8080) para agendamentoId={} tipo={} — status NAO foi atualizado no dominio agendamento.",
+                    agendamentoId,
+                    tipo,
+                    e);
+            return false;
         }
     }
 

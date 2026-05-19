@@ -37,7 +37,7 @@ springdoc:
 
 app:
   internal:
-    api-key: ${INTERNAL_API_KEY:}
+    api-key: ${INTERNAL_API_KEY:dev123}
   notificacao:
     base-url: ${NOTIFICACAO_BASE_URL:http://localhost:8081}
     internal-api-key: dev123

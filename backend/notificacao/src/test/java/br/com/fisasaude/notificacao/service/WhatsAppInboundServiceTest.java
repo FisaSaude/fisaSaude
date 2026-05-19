@@ -5,7 +5,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -69,6 +68,7 @@ class WhatsAppInboundServiceTest {
     @BeforeEach
     void setProps() {
         when(props.getTimezone()).thenReturn("America/Sao_Paulo");
+        when(agendamentoIntegracaoCliente.notificarRespostaWhatsapp(anyInt(), any())).thenReturn(true);
     }
 
     @Test
@@ -136,7 +136,7 @@ class WhatsAppInboundServiceTest {
         Cliente cliente = clienteCompleto();
         Agendamento ag = novoAgendamento(210, StatusAgendamentoEnum.AGENDADO, cliente, LocalDate.now(TZ_BR).plusDays(3), LocalTime.of(16, 0));
         when(clienteRepository.findAll()).thenReturn(List.of(cliente));
-        when(agendamentoRepository.findByClienteAndStatusOrderByMaisRecente(9, StatusAgendamentoEnum.AGENDADO))
+        when(agendamentoRepository.findByClienteIdInAndStatusOrderByMaisRecente(List.of(9), StatusAgendamentoEnum.AGENDADO))
                 .thenReturn(List.of(ag));
         when(agendamentoRepository.findByIdWithRelations(210)).thenReturn(Optional.of(ag));
         when(mensagemRepository.existsByTwilioMessageSid("SID-X")).thenReturn(false);
@@ -153,17 +153,75 @@ class WhatsAppInboundServiceTest {
     }
 
     @Test
-    void quando_integracao_falha_envia_confirmacao_recebimento_para_ux() {
+    void sim_com_id_escolhe_agendamento_mesmo_com_varios_clientes_mesmo_telefone() {
+        Cliente c1 = clienteComId(1, "5511965643020");
+        Cliente c2 = clienteComId(2, "5511965643020");
+        Agendamento ag1 = novoAgendamento(1, StatusAgendamentoEnum.AGENDADO, c1, LocalDate.now(TZ_BR).plusDays(1), LocalTime.of(9, 0));
+        Agendamento ag8 = novoAgendamento(8, StatusAgendamentoEnum.AGENDADO, c2, LocalDate.now(TZ_BR).plusDays(2), LocalTime.of(11, 0));
+
+        when(clienteRepository.findAll()).thenReturn(List.of(c1, c2));
+        when(agendamentoRepository.findByIdWithRelations(8)).thenReturn(Optional.of(ag8));
+        when(mensagemRepository.existsByTwilioMessageSid("SID-SIM8")).thenReturn(false);
+        stubReferences();
+
+        service.processarEntradaPaciente(
+                "whatsapp:+5511965643020",
+                "5511965643020",
+                "SIM 8",
+                "SID-SIM8",
+                "",
+                "",
+                null);
+
+        verify(agendamentoIntegracaoCliente).notificarRespostaWhatsapp(8, RespostaWhatsappTipoEnum.SIM);
+        verify(twilioWhatsappSender)
+                .enviarTextoParaWhatsapp(
+                        "5511965643020",
+                        "✅ Agendamento confirmado com sucesso! Te esperamos 👍\n\nProtocolo: AG8");
+        verify(agendamentoIntegracaoCliente, never()).notificarRespostaWhatsapp(1, RespostaWhatsappTipoEnum.SIM);
+    }
+
+    @Test
+    void sim_sem_id_escolhe_agendamento_mais_recente_entre_clientes_mesmo_telefone() {
+        Cliente c1 = clienteComId(1, "5511965643020");
+        Cliente c2 = clienteComId(2, "5511965643020");
+        Agendamento ag1 = novoAgendamento(1, StatusAgendamentoEnum.AGENDADO, c1, LocalDate.now(TZ_BR).plusDays(1), LocalTime.of(9, 0));
+        Agendamento ag8 = novoAgendamento(8, StatusAgendamentoEnum.AGENDADO, c2, LocalDate.now(TZ_BR).plusDays(2), LocalTime.of(11, 0));
+
+        when(clienteRepository.findAll()).thenReturn(List.of(c1, c2));
+        when(agendamentoRepository.findByClienteIdInAndStatusOrderByMaisRecente(List.of(1, 2), StatusAgendamentoEnum.AGENDADO))
+                .thenReturn(List.of(ag8, ag1));
+        when(agendamentoRepository.findByIdWithRelations(8)).thenReturn(Optional.of(ag8));
+        when(mensagemRepository.existsByTwilioMessageSid("SID-SIM-SIMPLES")).thenReturn(false);
+        stubReferences();
+
+        service.processarEntradaPaciente(
+                "whatsapp:+5511965643020",
+                "5511965643020",
+                "SIM",
+                "SID-SIM-SIMPLES",
+                "",
+                "",
+                null);
+
+        verify(agendamentoIntegracaoCliente).notificarRespostaWhatsapp(8, RespostaWhatsappTipoEnum.SIM);
+        verify(twilioWhatsappSender)
+                .enviarTextoParaWhatsapp(
+                        "5511965643020",
+                        "✅ Agendamento confirmado com sucesso! Te esperamos 👍\n\nProtocolo: AG8");
+    }
+
+    @Test
+    void quando_integracao_falha_nao_envia_confirmacao_falsa() {
         Cliente cliente = clienteCompleto();
         Agendamento ag = novoAgendamento(211, StatusAgendamentoEnum.AGENDADO, cliente, LocalDate.now(TZ_BR).plusDays(4), LocalTime.of(10, 0));
         when(clienteRepository.findAll()).thenReturn(List.of(cliente));
-        when(agendamentoRepository.findByClienteAndStatusOrderByMaisRecente(9, StatusAgendamentoEnum.AGENDADO))
+        when(agendamentoRepository.findByClienteIdInAndStatusOrderByMaisRecente(List.of(9), StatusAgendamentoEnum.AGENDADO))
                 .thenReturn(List.of(ag));
         when(agendamentoRepository.findByIdWithRelations(211)).thenReturn(Optional.of(ag));
         when(mensagemRepository.existsByTwilioMessageSid("SID-FAIL")).thenReturn(false);
-        doThrow(new RuntimeException("erro integracao"))
-                .when(agendamentoIntegracaoCliente)
-                .notificarRespostaWhatsapp(211, RespostaWhatsappTipoEnum.SIM);
+        when(agendamentoIntegracaoCliente.notificarRespostaWhatsapp(211, RespostaWhatsappTipoEnum.SIM))
+                .thenReturn(false);
         stubReferences();
 
         service.processarEntradaPaciente("whatsapp:+5511888887777", "5511888887777", "SIM", "SID-FAIL", "", "", null);
@@ -171,7 +229,8 @@ class WhatsAppInboundServiceTest {
         verify(twilioWhatsappSender)
                 .enviarTextoParaWhatsapp(
                         "5511888887777",
-                        "✅ Agendamento confirmado com sucesso! Te esperamos 👍\n\nProtocolo: AG211");
+                        "⚠️ Recebemos sua resposta (AG211), mas não foi possível confirmar no sistema agora.\n"
+                                + "A recepção foi alertada. Você também pode ligar para confirmar.");
     }
 
     private void stubReferences() {
@@ -191,10 +250,14 @@ class WhatsAppInboundServiceTest {
     }
 
     private static Cliente clienteCompleto() {
+        return clienteComId(9, "5511888887777");
+    }
+
+    private static Cliente clienteComId(int id, String telefone) {
         Cliente c = new Cliente();
-        c.setId(9);
-        c.setNome("Paciente Ana");
-        c.setTelefone("5511888887777");
+        c.setId(id);
+        c.setNome("Paciente " + id);
+        c.setTelefone(telefone);
         c.setDataNascimento(LocalDate.of(1990, 1, 5));
         c.setSexo(SexoEnum.F);
         return c;
