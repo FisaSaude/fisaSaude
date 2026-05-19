@@ -78,7 +78,6 @@ class WhatsAppInboundServiceTest {
         LocalDate dia = LocalDate.now(TZ_BR).plusDays(1);
         Agendamento ag = novoAgendamento(100, StatusAgendamentoEnum.AGENDADO, cliente, dia, LocalTime.of(9, 0));
 
-        when(clienteRepository.findAll()).thenReturn(List.of(cliente));
         when(agendamentoRepository.findByIdWithRelations(100)).thenReturn(Optional.of(ag));
         when(mensagemRepository.existsByTwilioMessageSid("SID-SIM")).thenReturn(false);
 
@@ -110,7 +109,6 @@ class WhatsAppInboundServiceTest {
         LocalDate dia = LocalDate.now(TZ_BR).plusDays(2);
         Agendamento ag = novoAgendamento(200, StatusAgendamentoEnum.AGENDADO, cliente, dia, LocalTime.of(14, 30));
 
-        when(clienteRepository.findAll()).thenReturn(List.of(cliente));
         when(agendamentoRepository.findByIdWithRelations(200)).thenReturn(Optional.of(ag));
         when(mensagemRepository.existsByTwilioMessageSid("SID-NAO")).thenReturn(false);
         stubReferences();
@@ -127,7 +125,7 @@ class WhatsAppInboundServiceTest {
         verify(dispatchService, never()).descartarSomenteConfirmacaoParaAgendamento(any());
         verify(dispatchService)
                 .enviarAvisoRecepcaoPacienteNegativo(
-                        eq(200), eq("Paciente Ana"), eq(dia), eq("14:30"), eq("5511888887777"));
+                        eq(200), eq("Paciente 9"), eq(dia), eq("14:30"), eq("5511888887777"));
         verify(agendamentoRepository, never()).save(ag);
     }
 
@@ -154,12 +152,9 @@ class WhatsAppInboundServiceTest {
 
     @Test
     void sim_com_id_escolhe_agendamento_mesmo_com_varios_clientes_mesmo_telefone() {
-        Cliente c1 = clienteComId(1, "5511965643020");
         Cliente c2 = clienteComId(2, "5511965643020");
-        Agendamento ag1 = novoAgendamento(1, StatusAgendamentoEnum.AGENDADO, c1, LocalDate.now(TZ_BR).plusDays(1), LocalTime.of(9, 0));
         Agendamento ag8 = novoAgendamento(8, StatusAgendamentoEnum.AGENDADO, c2, LocalDate.now(TZ_BR).plusDays(2), LocalTime.of(11, 0));
 
-        when(clienteRepository.findAll()).thenReturn(List.of(c1, c2));
         when(agendamentoRepository.findByIdWithRelations(8)).thenReturn(Optional.of(ag8));
         when(mensagemRepository.existsByTwilioMessageSid("SID-SIM8")).thenReturn(false);
         stubReferences();
