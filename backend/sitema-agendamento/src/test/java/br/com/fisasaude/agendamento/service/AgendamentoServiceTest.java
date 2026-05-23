@@ -8,11 +8,15 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import br.com.fisasaude.agendamento.dto.agendamento.request.AgendamentoBloquearPeriodoRequestDto;
 import br.com.fisasaude.agendamento.dto.agendamento.request.AgendamentoCreateRequestDto;
 import br.com.fisasaude.agendamento.dto.agendamento.request.AgendamentoRemarcarRequestDto;
+import br.com.fisasaude.agendamento.dto.agendamento.response.AgendamentoResponseDto;
 import br.com.fisasaude.agendamento.dto.agendamento.response.AgendamentoUsuarioPeriodoResponseDto;
 import br.com.fisasaude.agendamento.dto.agendamento.response.DiaValidoPeriodoResponseDto;
 import br.com.fisasaude.agendamento.dto.agendamento.response.HorarioSlotResponseDto;
+import br.com.fisasaude.agendamento.dto.agendamento.response.TaxaOcupacaoResponseDto;
+import br.com.fisasaude.agendamento.dto.agendamento.response.VerificacaoConflitoAgendamentoResponseDto;
 import br.com.fisasaude.agendamento.event.AgendamentoNotificacaoConfirmacaoEvent;
 import br.com.fisasaude.agendamento.exception.BadRequestException;
 import br.com.fisasaude.agendamento.exception.ConflictException;
@@ -530,6 +534,679 @@ class AgendamentoServiceTest {
         assertThatThrownBy(() -> service.listarDiasValidos(null, dia, dia))
                 .isInstanceOf(BadRequestException.class);
     }
+
+    // ─────────────────────────────────────────────────────────────
+    // criar – caminhos adicionais
+    // ─────────────────────────────────────────────────────────────
+
+    @Test
+    void criar_servicoNaoEncontrado_lancaNotFound() {
+        when(clienteRepository.findById(cliente.getId())).thenReturn(Optional.of(cliente));
+        when(servicoRepository.findById(servico.getId())).thenReturn(Optional.empty());
+
+        AgendamentoCreateRequestDto dto = new AgendamentoCreateRequestDto(
+                cliente.getId(), servico.getId(), usuario.getId(), dataFutura, hi, hf, null
+        );
+
+        assertThatThrownBy(() -> service.criar(dto)).isInstanceOf(NotFoundException.class);
+        verify(agendamentoRepository, never()).save(any());
+    }
+
+    @Test
+    void criar_usuarioNaoEncontrado_lancaNotFound() {
+        when(clienteRepository.findById(cliente.getId())).thenReturn(Optional.of(cliente));
+        when(servicoRepository.findById(servico.getId())).thenReturn(Optional.of(servico));
+        when(usuarioRepository.findById(usuario.getId())).thenReturn(Optional.empty());
+
+        AgendamentoCreateRequestDto dto = new AgendamentoCreateRequestDto(
+                cliente.getId(), servico.getId(), usuario.getId(), dataFutura, hi, hf, null
+        );
+
+        assertThatThrownBy(() -> service.criar(dto)).isInstanceOf(NotFoundException.class);
+        verify(agendamentoRepository, never()).save(any());
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // buscarPorId
+    // ─────────────────────────────────────────────────────────────
+
+    @Test
+    void buscarPorId_idNulo_lancaBadRequest() {
+        assertThatThrownBy(() -> service.buscarPorId(null)).isInstanceOf(BadRequestException.class);
+    }
+
+    @Test
+    void buscarPorId_idZero_lancaBadRequest() {
+        assertThatThrownBy(() -> service.buscarPorId(0)).isInstanceOf(BadRequestException.class);
+    }
+
+    @Test
+    void buscarPorId_naoEncontrado_lancaNotFound() {
+        when(agendamentoRepository.findByIdWithRelations(1)).thenReturn(Optional.empty());
+        assertThatThrownBy(() -> service.buscarPorId(1)).isInstanceOf(NotFoundException.class);
+    }
+
+    @Test
+    void buscarPorId_sucesso_retornaDto() {
+        Agendamento a = agendamentoAgendado(42, usuario, servico, cliente);
+        when(agendamentoRepository.findByIdWithRelations(42)).thenReturn(Optional.of(a));
+
+        AgendamentoResponseDto dto = service.buscarPorId(42);
+
+        assertThat(dto.id()).isEqualTo(42);
+        assertThat(dto.status()).isEqualTo(StatusAgendamentoEnum.AGENDADO);
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // cancelar – caminhos adicionais
+    // ─────────────────────────────────────────────────────────────
+
+    @Test
+    void cancelar_idNulo_lancaBadRequest() {
+        assertThatThrownBy(() -> service.cancelar(null)).isInstanceOf(BadRequestException.class);
+    }
+
+    @Test
+    void cancelar_naoEncontrado_lancaNotFound() {
+        when(agendamentoRepository.findByIdWithRelations(99)).thenReturn(Optional.empty());
+        assertThatThrownBy(() -> service.cancelar(99)).isInstanceOf(NotFoundException.class);
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // concluir – caminhos adicionais
+    // ─────────────────────────────────────────────────────────────
+
+    @Test
+    void concluir_idNulo_lancaBadRequest() {
+        assertThatThrownBy(() -> service.concluir(null)).isInstanceOf(BadRequestException.class);
+    }
+
+    @Test
+    void concluir_naoEncontrado_lancaNotFound() {
+        when(agendamentoRepository.findByIdWithRelations(99)).thenReturn(Optional.empty());
+        assertThatThrownBy(() -> service.concluir(99)).isInstanceOf(NotFoundException.class);
+    }
+
+    @Test
+    void concluir_statusInvalido_lancaUnprocessable() {
+        Agendamento a = agendamentoAgendado(3, usuario, servico, cliente);
+        a.setStatus(StatusAgendamentoEnum.CANCELADO);
+        when(agendamentoRepository.findByIdWithRelations(3)).thenReturn(Optional.of(a));
+
+        assertThatThrownBy(() -> service.concluir(3)).isInstanceOf(UnprocessableEntityException.class);
+        verify(notificacaoClient, never()).descartarConfirmacaoElembreteParaAgendamento(any());
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // remarcar – caminhos adicionais
+    // ─────────────────────────────────────────────────────────────
+
+    @Test
+    void remarcar_idNulo_lancaBadRequest() {
+        AgendamentoRemarcarRequestDto dto =
+                new AgendamentoRemarcarRequestDto(dataFutura, hi, hf, null, null);
+        assertThatThrownBy(() -> service.remarcar(null, dto)).isInstanceOf(BadRequestException.class);
+    }
+
+    @Test
+    void remarcar_dtoNulo_lancaBadRequest() {
+        assertThatThrownBy(() -> service.remarcar(1, null)).isInstanceOf(BadRequestException.class);
+    }
+
+    @Test
+    void remarcar_naoEncontrado_lancaNotFound() {
+        when(agendamentoRepository.findByIdWithRelations(9)).thenReturn(Optional.empty());
+        AgendamentoRemarcarRequestDto dto =
+                new AgendamentoRemarcarRequestDto(dataFutura, hi, hf, null, null);
+        assertThatThrownBy(() -> service.remarcar(9, dto)).isInstanceOf(NotFoundException.class);
+    }
+
+    @Test
+    void remarcar_statusInvalido_lancaUnprocessable() {
+        Agendamento a = agendamentoAgendado(10, usuario, servico, cliente);
+        a.setStatus(StatusAgendamentoEnum.CONCLUIDO);
+        when(agendamentoRepository.findByIdWithRelations(10)).thenReturn(Optional.of(a));
+        AgendamentoRemarcarRequestDto dto =
+                new AgendamentoRemarcarRequestDto(dataFutura, hi, hf, null, null);
+
+        assertThatThrownBy(() -> service.remarcar(10, dto)).isInstanceOf(UnprocessableEntityException.class);
+        verify(notificacaoClient, never()).descartarConfirmacaoElembreteParaAgendamento(any());
+        verify(eventPublisher, never()).publishEvent(any());
+    }
+
+    @Test
+    void remarcar_conflitoDeHorario_lancaConflict() {
+        Agendamento a = agendamentoAgendado(11, usuario, servico, cliente);
+        when(agendamentoRepository.findByIdWithRelations(11)).thenReturn(Optional.of(a));
+        when(agendamentoRepository.countAgendamentosConflitantes(
+                eq(usuario.getId()), eq(dataFutura), eq(hi), eq(hf),
+                eq(11), eq(StatusAgendamentoEnum.CANCELADO)
+        )).thenReturn(2L);
+        AgendamentoRemarcarRequestDto dto =
+                new AgendamentoRemarcarRequestDto(dataFutura, hi, hf, null, null);
+
+        assertThatThrownBy(() -> service.remarcar(11, dto)).isInstanceOf(ConflictException.class);
+        verify(notificacaoClient).descartarConfirmacaoElembreteParaAgendamento(11);
+        verify(agendamentoRepository, never()).save(any());
+    }
+
+    @Test
+    void remarcar_novoServico_sucesso_atualizaServico() {
+        Servico novoServico = new Servico();
+        novoServico.setId(55);
+        novoServico.setNome("Yoga");
+        novoServico.setTipo("individual");
+        novoServico.setPreco(java.math.BigDecimal.valueOf(100));
+
+        Agendamento a = agendamentoAgendado(12, usuario, servico, cliente);
+        when(agendamentoRepository.findByIdWithRelations(12)).thenReturn(Optional.of(a));
+        when(servicoRepository.findById(55)).thenReturn(Optional.of(novoServico));
+        when(agendamentoRepository.countAgendamentosConflitantes(
+                eq(usuario.getId()), eq(dataFutura), eq(hi), eq(hf),
+                eq(12), eq(StatusAgendamentoEnum.CANCELADO)
+        )).thenReturn(0L);
+        when(agendamentoRepository.save(any(Agendamento.class))).thenAnswer(inv -> {
+            Agendamento x = inv.getArgument(0);
+            x.setId(12);
+            return x;
+        });
+
+        AgendamentoRemarcarRequestDto dto =
+                new AgendamentoRemarcarRequestDto(dataFutura, hi, hf, null, 55);
+
+        AgendamentoResponseDto resultado = service.remarcar(12, dto);
+
+        assertThat(resultado.id()).isEqualTo(12);
+        assertThat(a.getServico()).isEqualTo(novoServico);
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // aplicarRespostaWhatsappInbound – caminhos adicionais
+    // ─────────────────────────────────────────────────────────────
+
+    @Test
+    void aplicarRespostaWhatsapp_idNulo_lancaBadRequest() {
+        assertThatThrownBy(() -> service.aplicarRespostaWhatsappInbound(null, RespostaWhatsappTipoEnum.SIM))
+                .isInstanceOf(BadRequestException.class);
+    }
+
+    @Test
+    void aplicarRespostaWhatsapp_tipoNulo_lancaBadRequest() {
+        assertThatThrownBy(() -> service.aplicarRespostaWhatsappInbound(1, null))
+                .isInstanceOf(BadRequestException.class);
+    }
+
+    @Test
+    void aplicarRespostaWhatsapp_naoEncontrado_lancaNotFound() {
+        when(agendamentoRepository.findById(77)).thenReturn(Optional.empty());
+        assertThatThrownBy(() -> service.aplicarRespostaWhatsappInbound(77, RespostaWhatsappTipoEnum.SIM))
+                .isInstanceOf(NotFoundException.class);
+    }
+
+    @Test
+    void aplicarRespostaWhatsapp_sim_comConfirmado_ignoraDuplicidade_semUpdateNemDescarte() {
+        Agendamento a = agendamentoAgendado(60, usuario, servico, cliente);
+        a.setStatus(StatusAgendamentoEnum.CONFIRMADO);
+        when(agendamentoRepository.findById(60)).thenReturn(Optional.of(a));
+
+        service.aplicarRespostaWhatsappInbound(60, RespostaWhatsappTipoEnum.SIM);
+
+        verify(agendamentoRepository, never()).atualizarStatusDireto(any(), any());
+        verify(notificacaoClient, never()).descartarSomenteConfirmacaoParaAgendamento(any());
+    }
+
+    @Test
+    void aplicarRespostaWhatsapp_sim_comCancelado_semEfeito_semUpdate() {
+        Agendamento a = agendamentoAgendado(61, usuario, servico, cliente);
+        a.setStatus(StatusAgendamentoEnum.CANCELADO);
+        when(agendamentoRepository.findById(61)).thenReturn(Optional.of(a));
+
+        service.aplicarRespostaWhatsappInbound(61, RespostaWhatsappTipoEnum.SIM);
+
+        verify(agendamentoRepository, never()).atualizarStatusDireto(any(), any());
+    }
+
+    @Test
+    void aplicarRespostaWhatsapp_nao_comConcluido_semEfeito_semUpdate() {
+        Agendamento a = agendamentoAgendado(62, usuario, servico, cliente);
+        a.setStatus(StatusAgendamentoEnum.CONCLUIDO);
+        when(agendamentoRepository.findById(62)).thenReturn(Optional.of(a));
+
+        service.aplicarRespostaWhatsappInbound(62, RespostaWhatsappTipoEnum.NAO);
+
+        verify(agendamentoRepository, never()).atualizarStatusDireto(any(), any());
+        verify(notificacaoClient, never()).descartarConfirmacaoElembreteParaAgendamento(any());
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // bloquearPeriodo
+    // ─────────────────────────────────────────────────────────────
+
+    @Test
+    void bloquearPeriodo_dtoNulo_lancaBadRequest() {
+        assertThatThrownBy(() -> service.bloquearPeriodo(null)).isInstanceOf(BadRequestException.class);
+    }
+
+    @Test
+    void bloquearPeriodo_usuarioNaoEncontrado_lancaNotFound() {
+        when(usuarioRepository.findById(usuario.getId())).thenReturn(Optional.empty());
+        AgendamentoBloquearPeriodoRequestDto dto = new AgendamentoBloquearPeriodoRequestDto(
+                usuario.getId(), dataFutura, hi, hf
+        );
+        assertThatThrownBy(() -> service.bloquearPeriodo(dto)).isInstanceOf(NotFoundException.class);
+    }
+
+    @Test
+    void bloquearPeriodo_intervaloInvalido_lancaUnprocessable() {
+        when(usuarioRepository.findById(usuario.getId())).thenReturn(Optional.of(usuario));
+        AgendamentoBloquearPeriodoRequestDto dto = new AgendamentoBloquearPeriodoRequestDto(
+                usuario.getId(), dataFutura, LocalTime.of(10, 0), LocalTime.of(10, 0)
+        );
+        assertThatThrownBy(() -> service.bloquearPeriodo(dto)).isInstanceOf(UnprocessableEntityException.class);
+    }
+
+    @Test
+    void bloquearPeriodo_conflito_lancaConflict() {
+        when(usuarioRepository.findById(usuario.getId())).thenReturn(Optional.of(usuario));
+        when(agendamentoRepository.countAgendamentosConflitantes(
+                eq(usuario.getId()), eq(dataFutura), eq(hi), eq(hf),
+                eq(null), eq(StatusAgendamentoEnum.CANCELADO)
+        )).thenReturn(1L);
+
+        AgendamentoBloquearPeriodoRequestDto dto = new AgendamentoBloquearPeriodoRequestDto(
+                usuario.getId(), dataFutura, hi, hf
+        );
+        assertThatThrownBy(() -> service.bloquearPeriodo(dto)).isInstanceOf(ConflictException.class);
+        verify(agendamentoRepository, never()).save(any());
+    }
+
+    @Test
+    void bloquearPeriodo_sucesso_salvaBloqueioComStatusBloqueado() {
+        when(usuarioRepository.findById(usuario.getId())).thenReturn(Optional.of(usuario));
+        when(agendamentoRepository.countAgendamentosConflitantes(
+                eq(usuario.getId()), eq(dataFutura), eq(hi), eq(hf),
+                eq(null), eq(StatusAgendamentoEnum.CANCELADO)
+        )).thenReturn(0L);
+
+        AgendamentoBloquearPeriodoRequestDto dto = new AgendamentoBloquearPeriodoRequestDto(
+                usuario.getId(), dataFutura, hi, hf
+        );
+        service.bloquearPeriodo(dto);
+
+        ArgumentCaptor<Agendamento> captor = ArgumentCaptor.forClass(Agendamento.class);
+        verify(agendamentoRepository).save(captor.capture());
+        assertThat(captor.getValue().getStatus()).isEqualTo(StatusAgendamentoEnum.BLOQUEADO);
+        assertThat(captor.getValue().getCliente()).isNull();
+        assertThat(captor.getValue().getServico()).isNull();
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // listarPorStatusEPeriodo
+    // ─────────────────────────────────────────────────────────────
+
+    @Test
+    void listarPorStatusEPeriodo_statusNulo_lancaBadRequest() {
+        assertThatThrownBy(() ->
+                service.listarPorStatusEPeriodo(null, LocalDate.now(Z), LocalDate.now(Z).plusDays(1))
+        ).isInstanceOf(BadRequestException.class);
+    }
+
+    @Test
+    void listarPorStatusEPeriodo_dataInicioNula_lancaBadRequest() {
+        assertThatThrownBy(() ->
+                service.listarPorStatusEPeriodo(StatusAgendamentoEnum.AGENDADO, null, LocalDate.now(Z))
+        ).isInstanceOf(BadRequestException.class);
+    }
+
+    @Test
+    void listarPorStatusEPeriodo_sucesso_retornaLista() {
+        LocalDate inicio = LocalDate.now(Z);
+        LocalDate fim = inicio.plusDays(3);
+        Agendamento a = agendamentoAgendado(70, usuario, servico, cliente);
+        when(agendamentoRepository.findByStatusAndDataBetweenOrderByDataAscHoraInicioAsc(
+                StatusAgendamentoEnum.AGENDADO, inicio, fim
+        )).thenReturn(List.of(a));
+
+        List<AgendamentoResponseDto> result =
+                service.listarPorStatusEPeriodo(StatusAgendamentoEnum.AGENDADO, inicio, fim);
+
+        assertThat(result).hasSize(1);
+        assertThat(result.getFirst().id()).isEqualTo(70);
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // listarPorCliente
+    // ─────────────────────────────────────────────────────────────
+
+    @Test
+    void listarPorCliente_clienteIdNulo_lancaBadRequest() {
+        assertThatThrownBy(() -> service.listarPorCliente(null)).isInstanceOf(BadRequestException.class);
+    }
+
+    @Test
+    void listarPorCliente_sucesso_retornaLista() {
+        Agendamento a = agendamentoAgendado(71, usuario, servico, cliente);
+        when(agendamentoRepository.findByClienteIdWithDetails(cliente.getId())).thenReturn(List.of(a));
+
+        List<AgendamentoResponseDto> result = service.listarPorCliente(cliente.getId());
+
+        assertThat(result).hasSize(1);
+        assertThat(result.getFirst().id()).isEqualTo(71);
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // listarParaLembrete
+    // ─────────────────────────────────────────────────────────────
+
+    @Test
+    void listarParaLembrete_dataNula_lancaBadRequest() {
+        assertThatThrownBy(() -> service.listarParaLembrete(null, null))
+                .isInstanceOf(BadRequestException.class);
+    }
+
+    @Test
+    void listarParaLembrete_statusNulo_usaAgendado() {
+        LocalDate hoje = LocalDate.now(Z);
+        Agendamento a = agendamentoAgendado(72, usuario, servico, cliente);
+        when(agendamentoRepository.findAgendamentosParaLembrete(hoje, StatusAgendamentoEnum.AGENDADO))
+                .thenReturn(List.of(a));
+
+        List<AgendamentoResponseDto> result = service.listarParaLembrete(hoje, null);
+
+        assertThat(result).hasSize(1);
+        verify(agendamentoRepository).findAgendamentosParaLembrete(hoje, StatusAgendamentoEnum.AGENDADO);
+    }
+
+    @Test
+    void listarParaLembrete_statusExplicito_usaStatusInformado() {
+        LocalDate hoje = LocalDate.now(Z);
+        Agendamento a = agendamentoAgendado(73, usuario, servico, cliente);
+        a.setStatus(StatusAgendamentoEnum.CONFIRMADO);
+        when(agendamentoRepository.findAgendamentosParaLembrete(hoje, StatusAgendamentoEnum.CONFIRMADO))
+                .thenReturn(List.of(a));
+
+        List<AgendamentoResponseDto> result = service.listarParaLembrete(hoje, StatusAgendamentoEnum.CONFIRMADO);
+
+        assertThat(result).hasSize(1);
+        verify(agendamentoRepository).findAgendamentosParaLembrete(hoje, StatusAgendamentoEnum.CONFIRMADO);
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // listarConfirmadosParaLembrete
+    // ─────────────────────────────────────────────────────────────
+
+    @Test
+    void listarConfirmadosParaLembrete_dataNula_lancaBadRequest() {
+        assertThatThrownBy(() -> service.listarConfirmadosParaLembrete(null))
+                .isInstanceOf(BadRequestException.class);
+    }
+
+    @Test
+    void listarConfirmadosParaLembrete_sucesso_retornaDto() {
+        LocalDate hoje = LocalDate.now(Z);
+        Agendamento a = agendamentoAgendado(74, usuario, servico, cliente);
+        a.setStatus(StatusAgendamentoEnum.CONFIRMADO);
+        when(agendamentoRepository.findAgendamentosParaLembrete(hoje, StatusAgendamentoEnum.CONFIRMADO))
+                .thenReturn(List.of(a));
+
+        var result = service.listarConfirmadosParaLembrete(hoje);
+
+        assertThat(result).hasSize(1);
+        assertThat(result.getFirst().agendamentoId()).isEqualTo(74);
+        assertThat(result.getFirst().telefoneCliente()).isEqualTo(cliente.getTelefone());
+        assertThat(result.getFirst().horaInicio()).isEqualTo(LocalTime.of(9, 0));
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // verificarConflitoHorario
+    // ─────────────────────────────────────────────────────────────
+
+    @Test
+    void verificarConflitoHorario_usuarioIdNulo_lancaBadRequest() {
+        assertThatThrownBy(() ->
+                service.verificarConflitoHorario(null, LocalDate.now(Z), hi, hf, null)
+        ).isInstanceOf(BadRequestException.class);
+    }
+
+    @Test
+    void verificarConflitoHorario_dataNula_lancaBadRequest() {
+        assertThatThrownBy(() ->
+                service.verificarConflitoHorario(usuario.getId(), null, hi, hf, null)
+        ).isInstanceOf(BadRequestException.class);
+    }
+
+    @Test
+    void verificarConflitoHorario_intervaloInvalido_lancaUnprocessable() {
+        assertThatThrownBy(() ->
+                service.verificarConflitoHorario(usuario.getId(), dataFutura, hf, hi, null)
+        ).isInstanceOf(UnprocessableEntityException.class);
+    }
+
+    @Test
+    void verificarConflitoHorario_semConflito_retornaZero() {
+        when(agendamentoRepository.countAgendamentosConflitantes(
+                eq(usuario.getId()), eq(dataFutura), eq(hi), eq(hf),
+                eq(null), eq(StatusAgendamentoEnum.CANCELADO)
+        )).thenReturn(0L);
+
+        VerificacaoConflitoAgendamentoResponseDto result =
+                service.verificarConflitoHorario(usuario.getId(), dataFutura, hi, hf, null);
+
+        assertThat(result.quantidadeConflitos()).isEqualTo(0L);
+    }
+
+    @Test
+    void verificarConflitoHorario_comConflito_retornaContagem() {
+        when(agendamentoRepository.countAgendamentosConflitantes(
+                eq(usuario.getId()), eq(dataFutura), eq(hi), eq(hf),
+                eq(5), eq(StatusAgendamentoEnum.CANCELADO)
+        )).thenReturn(3L);
+
+        VerificacaoConflitoAgendamentoResponseDto result =
+                service.verificarConflitoHorario(usuario.getId(), dataFutura, hi, hf, 5);
+
+        assertThat(result.quantidadeConflitos()).isEqualTo(3L);
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // listarSlotsDisponiveis – caminhos adicionais
+    // ─────────────────────────────────────────────────────────────
+
+    @Test
+    void listarSlotsDisponiveis_usuarioIdNulo_lancaBadRequest() {
+        assertThatThrownBy(() -> service.listarSlotsDisponiveis(null, dataFutura, 60))
+                .isInstanceOf(BadRequestException.class);
+    }
+
+    @Test
+    void listarSlotsDisponiveis_dataNula_lancaBadRequest() {
+        assertThatThrownBy(() -> service.listarSlotsDisponiveis(usuario.getId(), null, 60))
+                .isInstanceOf(BadRequestException.class);
+    }
+
+    @Test
+    void listarSlotsDisponiveis_duracaoMuitoPequena_lancaUnprocessable() {
+        assertThatThrownBy(() -> service.listarSlotsDisponiveis(usuario.getId(), dataFutura, 14))
+                .isInstanceOf(UnprocessableEntityException.class);
+    }
+
+    @Test
+    void listarSlotsDisponiveis_duracaoMuitoGrande_lancaUnprocessable() {
+        assertThatThrownBy(() -> service.listarSlotsDisponiveis(usuario.getId(), dataFutura, 481))
+                .isInstanceOf(UnprocessableEntityException.class);
+    }
+
+    @Test
+    void listarSlotsDisponiveis_usuarioNaoEncontrado_lancaNotFound() {
+        when(usuarioRepository.findById(usuario.getId())).thenReturn(Optional.empty());
+        assertThatThrownBy(() -> service.listarSlotsDisponiveis(usuario.getId(), dataFutura, 60))
+                .isInstanceOf(NotFoundException.class);
+    }
+
+    @Test
+    void listarSlotsDisponiveis_horarioFuncionamentoInvalido_lancaUnprocessable() {
+        Estabelecimento estabInvalido = new Estabelecimento();
+        estabInvalido.setId(99);
+        estabInvalido.setNome("X");
+        estabInvalido.setEndereco("Y");
+        estabInvalido.setInicioFuncionamento(LocalTime.of(22, 0));
+        estabInvalido.setFimFuncionamento(LocalTime.of(6, 0));
+
+        Usuario usuarioInvalido = criarUsuario(99, estabInvalido);
+        when(usuarioRepository.findById(99)).thenReturn(Optional.of(usuarioInvalido));
+
+        assertThatThrownBy(() -> service.listarSlotsDisponiveis(99, dataFutura, 60))
+                .isInstanceOf(UnprocessableEntityException.class);
+    }
+
+    @Test
+    void listarSlotsDisponiveis_todosNoPassado_retornaListaVazia() {
+        LocalDate ontem = LocalDate.now(Z).minusDays(1);
+        when(usuarioRepository.findById(usuario.getId())).thenReturn(Optional.of(usuario));
+
+        List<HorarioSlotResponseDto> livres =
+                service.listarSlotsDisponiveis(usuario.getId(), ontem, 60);
+
+        assertThat(livres).isEmpty();
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // listarDiasValidos – caminhos adicionais
+    // ─────────────────────────────────────────────────────────────
+
+    @Test
+    void listarDiasValidos_sabado_disponivelFalseESemChamadaAoRepositorio() {
+        LocalDate sabado = LocalDate.of(2026, 5, 23); // sábado
+        when(feriadosPort.buscarFeriados(sabado.getYear())).thenReturn(Set.of());
+
+        List<DiaValidoPeriodoResponseDto> result =
+                service.listarDiasValidos(usuario.getId(), sabado, sabado);
+
+        assertThat(result).hasSize(1);
+        assertThat(result.getFirst().disponivel()).isFalse();
+        verify(usuarioRepository, never()).findById(any());
+    }
+
+    @Test
+    void listarDiasValidos_domingo_disponivelFalse() {
+        LocalDate domingo = LocalDate.of(2026, 5, 24); // domingo
+        when(feriadosPort.buscarFeriados(domingo.getYear())).thenReturn(Set.of());
+
+        List<DiaValidoPeriodoResponseDto> result =
+                service.listarDiasValidos(usuario.getId(), domingo, domingo);
+
+        assertThat(result.getFirst().disponivel()).isFalse();
+    }
+
+    @Test
+    void listarDiasValidos_dataInicioNula_lancaBadRequest() {
+        assertThatThrownBy(() ->
+                service.listarDiasValidos(usuario.getId(), null, LocalDate.now(Z))
+        ).isInstanceOf(BadRequestException.class);
+    }
+
+    @Test
+    void listarDiasValidos_periodoInvertido_lancaUnprocessable() {
+        LocalDate inicio = LocalDate.now(Z).plusDays(5);
+        LocalDate fim = LocalDate.now(Z).plusDays(1);
+
+        assertThatThrownBy(() -> service.listarDiasValidos(usuario.getId(), inicio, fim))
+                .isInstanceOf(UnprocessableEntityException.class);
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // calcularTaxaOcupacao
+    // ─────────────────────────────────────────────────────────────
+
+    @Test
+    void calcularTaxaOcupacao_usuarioIdNulo_lancaBadRequest() {
+        assertThatThrownBy(() ->
+                service.calcularTaxaOcupacao(null, LocalDate.now(Z), LocalDate.now(Z).plusDays(5), 60)
+        ).isInstanceOf(BadRequestException.class);
+    }
+
+    @Test
+    void calcularTaxaOcupacao_dataInicioNula_lancaBadRequest() {
+        assertThatThrownBy(() ->
+                service.calcularTaxaOcupacao(usuario.getId(), null, LocalDate.now(Z), 60)
+        ).isInstanceOf(BadRequestException.class);
+    }
+
+    @Test
+    void calcularTaxaOcupacao_duracaoInvalida_lancaUnprocessable() {
+        assertThatThrownBy(() ->
+                service.calcularTaxaOcupacao(usuario.getId(), LocalDate.now(Z),
+                        LocalDate.now(Z).plusDays(1), 500)
+        ).isInstanceOf(UnprocessableEntityException.class);
+    }
+
+    @Test
+    void calcularTaxaOcupacao_usuarioNaoEncontrado_lancaNotFound() {
+        when(usuarioRepository.findById(usuario.getId())).thenReturn(Optional.empty());
+        assertThatThrownBy(() ->
+                service.calcularTaxaOcupacao(usuario.getId(), LocalDate.now(Z),
+                        LocalDate.now(Z).plusDays(1), 60)
+        ).isInstanceOf(NotFoundException.class);
+    }
+
+    @Test
+    void calcularTaxaOcupacao_horarioFuncionamentoInvalido_lancaUnprocessable() {
+        Estabelecimento estabInvalido = new Estabelecimento();
+        estabInvalido.setId(99);
+        estabInvalido.setNome("X");
+        estabInvalido.setEndereco("Y");
+        estabInvalido.setInicioFuncionamento(LocalTime.of(18, 0));
+        estabInvalido.setFimFuncionamento(LocalTime.of(8, 0));
+        Usuario u = criarUsuario(99, estabInvalido);
+        when(usuarioRepository.findById(99)).thenReturn(Optional.of(u));
+
+        assertThatThrownBy(() ->
+                service.calcularTaxaOcupacao(99, LocalDate.now(Z), LocalDate.now(Z).plusDays(1), 60)
+        ).isInstanceOf(UnprocessableEntityException.class);
+    }
+
+    @Test
+    void calcularTaxaOcupacao_sucesso_retornaTaxaCorreta() {
+        LocalDate inicio = LocalDate.of(2026, 6, 1);
+        LocalDate fim = LocalDate.of(2026, 6, 1); // 1 dia
+
+        // Estabelecimento: 6h–22h = 16 horas; dur=60 → 16 slots/dia; 1 dia → capacidade=16
+        when(usuarioRepository.findById(usuario.getId())).thenReturn(Optional.of(usuario));
+        when(agendamentoRepository.countByUsuarioIdAndDataBetweenAndStatusNotIn(
+                eq(usuario.getId()), eq(inicio), eq(fim), any()
+        )).thenReturn(8L);
+
+        TaxaOcupacaoResponseDto result =
+                service.calcularTaxaOcupacao(usuario.getId(), inicio, fim, 60);
+
+        assertThat(result.totalAgendamentos()).isEqualTo(8L);
+        assertThat(result.capacidadeMaxima()).isEqualTo(16L);
+        assertThat(result.taxaOcupacaoPercent()).isEqualTo(50.0);
+    }
+
+    @Test
+    void calcularTaxaOcupacao_capacidadeZero_retornaZeroTaxa() {
+        // Estabelecimento com 6h–22h = 16h, mas dur=480min (8h) → 16*60/480 = 2 slots
+        // Se sobrescrevermos com janela de 30 min e dur=60: slotsPorDia = 0
+        Estabelecimento estabCurto = new Estabelecimento();
+        estabCurto.setId(88);
+        estabCurto.setNome("Mini");
+        estabCurto.setEndereco("Z");
+        estabCurto.setInicioFuncionamento(LocalTime.of(10, 0));
+        estabCurto.setFimFuncionamento(LocalTime.of(10, 30)); // só 30 min
+        Usuario uCurto = criarUsuario(88, estabCurto);
+        when(usuarioRepository.findById(88)).thenReturn(Optional.of(uCurto));
+
+        LocalDate dia = LocalDate.of(2026, 6, 2);
+        TaxaOcupacaoResponseDto result = service.calcularTaxaOcupacao(88, dia, dia, 60);
+
+        assertThat(result.capacidadeMaxima()).isEqualTo(0L);
+        assertThat(result.taxaOcupacaoPercent()).isEqualTo(0.0);
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // helpers
+    // ─────────────────────────────────────────────────────────────
 
     private static LocalDate proximoDiaUtil(LocalDate aPartirDe) {
         LocalDate dia = aPartirDe;
