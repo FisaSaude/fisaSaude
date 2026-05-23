@@ -18,8 +18,7 @@ import br.com.fisasaude.agendamento.exception.BadRequestException;
 import br.com.fisasaude.agendamento.exception.ConflictException;
 import br.com.fisasaude.agendamento.exception.NotFoundException;
 import br.com.fisasaude.agendamento.exception.UnprocessableEntityException;
-import br.com.fisasaude.agendamento.feignclient.ApiFeriados;
-import br.com.fisasaude.agendamento.feignclient.FeriadoDto;
+import br.com.fisasaude.agendamento.service.port.FeriadosPort;
 import br.com.fisasaude.agendamento.mapper.AgendamentoMapper;
 import br.com.fisasaude.agendamento.model.entity.Agendamento;
 import br.com.fisasaude.agendamento.model.entity.Cliente;
@@ -42,6 +41,7 @@ import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -79,7 +79,7 @@ class AgendamentoServiceTest {
     private NotificacaoClient notificacaoClient;
 
     @Mock
-    private ApiFeriados apiFeriados;
+    private FeriadosPort feriadosPort;
 
     @InjectMocks
     private AgendamentoService service;
@@ -492,7 +492,7 @@ class AgendamentoServiceTest {
     @Test
     void listarDiasValidos_diaUtilComSlots_disponivelTrue() {
         LocalDate dia = proximoDiaUtil(LocalDate.now(Z).plusDays(2));
-        when(apiFeriados.listarFeriados(dia.getYear())).thenReturn(List.of());
+        when(feriadosPort.buscarFeriados(dia.getYear())).thenReturn(Set.of());
         when(usuarioRepository.findById(usuario.getId())).thenReturn(Optional.of(usuario));
         when(agendamentoRepository.countAgendamentosConflitantes(
                 eq(usuario.getId()),
@@ -513,8 +513,8 @@ class AgendamentoServiceTest {
     @Test
     void listarDiasValidos_diaFeriado_disponivelFalse() {
         LocalDate feriado = LocalDate.of(2026, 1, 1);
-        when(apiFeriados.listarFeriados(feriado.getYear()))
-                .thenReturn(List.of(new FeriadoDto(feriado, "Confraternizacao Universal", "national")));
+        when(feriadosPort.buscarFeriados(feriado.getYear()))
+                .thenReturn(Set.of(feriado));
 
         List<DiaValidoPeriodoResponseDto> resultado = service.listarDiasValidos(usuario.getId(), feriado, feriado);
 

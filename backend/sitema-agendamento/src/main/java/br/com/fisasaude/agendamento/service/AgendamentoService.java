@@ -15,9 +15,8 @@ import br.com.fisasaude.agendamento.exception.BadRequestException;
 import br.com.fisasaude.agendamento.exception.ConflictException;
 import br.com.fisasaude.agendamento.exception.NotFoundException;
 import br.com.fisasaude.agendamento.exception.UnprocessableEntityException;
-import br.com.fisasaude.agendamento.feignclient.ApiFeriados;
-import br.com.fisasaude.agendamento.feignclient.FeriadoDto;
 import br.com.fisasaude.agendamento.mapper.AgendamentoMapper;
+import br.com.fisasaude.agendamento.service.port.FeriadosPort;
 import br.com.fisasaude.agendamento.model.entity.Agendamento;
 import br.com.fisasaude.agendamento.model.entity.Cliente;
 import br.com.fisasaude.agendamento.model.entity.Servico;
@@ -61,7 +60,7 @@ public class AgendamentoService {
     private final AgendamentoMapper agendamentoMapper;
     private final ApplicationEventPublisher eventPublisher;
     private final NotificacaoClient notificacaoClient;
-    private final ApiFeriados apiFeriados;
+    private final FeriadosPort feriadosPort;
 
     public AgendamentoService(
             AgendamentoRepository agendamentoRepository,
@@ -71,7 +70,7 @@ public class AgendamentoService {
             AgendamentoMapper agendamentoMapper,
             ApplicationEventPublisher eventPublisher,
             NotificacaoClient notificacaoClient,
-            ApiFeriados apiFeriados
+            FeriadosPort feriadosPort
     ) {
         this.agendamentoRepository = agendamentoRepository;
         this.clienteRepository = clienteRepository;
@@ -80,7 +79,7 @@ public class AgendamentoService {
         this.agendamentoMapper = agendamentoMapper;
         this.eventPublisher = eventPublisher;
         this.notificacaoClient = notificacaoClient;
-        this.apiFeriados = apiFeriados;
+        this.feriadosPort = feriadosPort;
     }
 
     @Transactional
@@ -515,10 +514,7 @@ public class AgendamentoService {
 
         Set<LocalDate> feriados = new HashSet<>();
         for (int ano = dataInicio.getYear(); ano <= dataFim.getYear(); ano++) {
-            List<FeriadoDto> feriadosAno = apiFeriados.listarFeriados(ano);
-            for (FeriadoDto feriado : feriadosAno) {
-                feriados.add(feriado.date());
-            }
+            feriados.addAll(feriadosPort.buscarFeriados(ano));
         }
 
         List<DiaValidoPeriodoResponseDto> dias = new ArrayList<>();
