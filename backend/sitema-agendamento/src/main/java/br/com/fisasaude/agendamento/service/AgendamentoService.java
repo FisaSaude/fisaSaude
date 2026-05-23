@@ -3,7 +3,6 @@ package br.com.fisasaude.agendamento.service;
 import br.com.fisasaude.agendamento.dto.agendamento.request.AgendamentoBloquearDiaRequestDto;
 import br.com.fisasaude.agendamento.dto.agendamento.request.AgendamentoCreateRequestDto;
 import br.com.fisasaude.agendamento.dto.agendamento.request.AgendamentoRemarcarRequestDto;
-import br.com.fisasaude.agendamento.dto.agendamento.response.AgendamentoResumoPeriodoResponseDto;
 import br.com.fisasaude.agendamento.dto.agendamento.response.AgendamentoResponseDto;
 import br.com.fisasaude.agendamento.dto.agendamento.response.AgendamentoUsuarioPeriodoResponseDto;
 import br.com.fisasaude.agendamento.dto.agendamento.response.DiaValidoPeriodoResponseDto;
@@ -36,7 +35,6 @@ import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
-import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -83,31 +81,6 @@ public class AgendamentoService {
         this.eventPublisher = eventPublisher;
         this.notificacaoClient = notificacaoClient;
         this.apiFeriados = apiFeriados;
-    }
-
-    @Transactional(readOnly = true)
-    public AgendamentoResumoPeriodoResponseDto obterResumoPorStatusNoPeriodo(LocalDate dataInicio, LocalDate dataFim) {
-        validarPeriodo(dataInicio, dataFim);
-
-        long concluidos = agendamentoRepository.countByDataBetweenAndStatus(
-                dataInicio,
-                dataFim,
-                StatusAgendamentoEnum.CONCLUIDO
-        );
-        long agendados =
-                agendamentoRepository.countByDataBetweenAndStatus(
-                        dataInicio, dataFim, StatusAgendamentoEnum.AGENDADO)
-                        + agendamentoRepository.countByDataBetweenAndStatus(
-                                dataInicio, dataFim, StatusAgendamentoEnum.CONFIRMADO);
-        long cancelados = agendamentoRepository.countByDataBetweenAndStatus(
-                dataInicio,
-                dataFim,
-                StatusAgendamentoEnum.CANCELADO
-        );
-
-        long total = concluidos + agendados + cancelados;
-
-        return new AgendamentoResumoPeriodoResponseDto(concluidos, agendados, cancelados, total);
     }
 
     @Transactional

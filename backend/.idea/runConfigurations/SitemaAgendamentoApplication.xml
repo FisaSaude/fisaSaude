@@ -1,9 +1,0 @@
-<component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="SitemaAgendamentoApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot">
-    <module name="sitema-agendamento" />
-    <option name="SPRING_BOOT_MAIN_CLASS" value="br.com.fisasaude.agendamento.SitemaAgendamentoApplication" />
-    <method v="2">
-      <option name="Make" enabled="true" />
-    </method>
-  </configuration>
-</component>

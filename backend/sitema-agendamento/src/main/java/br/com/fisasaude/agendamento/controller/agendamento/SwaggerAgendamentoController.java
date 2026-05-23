@@ -7,11 +7,9 @@ import br.com.fisasaude.agendamento.dto.agendamento.response.AgendamentoResponse
 import br.com.fisasaude.agendamento.dto.agendamento.response.AgendamentoUsuarioPeriodoResponseDto;
 import br.com.fisasaude.agendamento.dto.agendamento.response.DiaValidoPeriodoResponseDto;
 import br.com.fisasaude.agendamento.dto.agendamento.response.HorarioSlotResponseDto;
-import br.com.fisasaude.agendamento.dto.agendamento.response.AgendamentoResumoPeriodoResponseDto;
 import br.com.fisasaude.agendamento.dto.agendamento.response.TaxaOcupacaoResponseDto;
 import br.com.fisasaude.agendamento.dto.agendamento.response.VerificacaoConflitoAgendamentoResponseDto;
 import br.com.fisasaude.agendamento.exception.ErrorResponse;
-import br.com.fisasaude.agendamento.feignclient.FeriadoDto;
 import br.com.fisasaude.agendamento.model.enums.StatusAgendamentoEnum;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -207,32 +205,6 @@ public interface SwaggerAgendamentoController {
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate data,
             @Parameter(description = "Duracao em minutos; padrao 60; entre 15 e 480")
             @RequestParam(required = false, defaultValue = "60") Integer duracaoMinutos
-    );
-
-    @Operation(summary = "Listar feriados por ano", description = "Integracao Brasil API / configuracao configurada pela aplicacao.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Feriados retornados com sucesso",
-                    content = @Content(array = @ArraySchema(schema = @Schema(implementation = FeriadoDto.class)))),
-            @ApiResponse(responseCode = "401", description = "Token ausente ou invalido"),
-            @ApiResponse(responseCode = "403", description = "Sem permissao")
-    })
-    ResponseEntity<List<FeriadoDto>> listarFeriados(
-            @Parameter(description = "Ano", example = "2026") @PathVariable Integer ano
-    );
-
-    @Operation(summary = "Resumo de agendamentos por status no periodo", description = "Totais de concluidos, agendados, cancelados e soma no intervalo.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Resumo calculado", content = @Content(schema = @Schema(implementation = AgendamentoResumoPeriodoResponseDto.class))),
-            @ApiResponse(responseCode = "400", description = "Parametros ausentes ou invalidos", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
-            @ApiResponse(responseCode = "401", description = "Token ausente ou invalido"),
-            @ApiResponse(responseCode = "403", description = "Sem permissao"),
-            @ApiResponse(responseCode = "422", description = "Periodo invalido", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
-    })
-    ResponseEntity<AgendamentoResumoPeriodoResponseDto> resumirStatusPorPeriodo(
-            @Parameter(description = "Inicio do periodo", example = "2026-01-01")
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataInicio,
-            @Parameter(description = "Fim do periodo", example = "2026-01-31")
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataFim
     );
 
     @Operation(

@@ -7,11 +7,9 @@ import br.com.fisasaude.agendamento.dto.agendamento.response.AgendamentoResponse
 import br.com.fisasaude.agendamento.dto.agendamento.response.AgendamentoUsuarioPeriodoResponseDto;
 import br.com.fisasaude.agendamento.dto.agendamento.response.DiaValidoPeriodoResponseDto;
 import br.com.fisasaude.agendamento.dto.agendamento.response.HorarioSlotResponseDto;
-import br.com.fisasaude.agendamento.dto.agendamento.response.AgendamentoResumoPeriodoResponseDto;
 import br.com.fisasaude.agendamento.dto.agendamento.response.TaxaOcupacaoResponseDto;
 import br.com.fisasaude.agendamento.dto.agendamento.response.VerificacaoConflitoAgendamentoResponseDto;
 import br.com.fisasaude.agendamento.feignclient.ApiFeriados;
-import br.com.fisasaude.agendamento.feignclient.FeriadoDto;
 import br.com.fisasaude.agendamento.model.enums.StatusAgendamentoEnum;
 import br.com.fisasaude.agendamento.service.AgendamentoService;
 import jakarta.validation.Valid;
@@ -112,19 +110,6 @@ public class AgendamentoController implements SwaggerAgendamentoController {
             @RequestParam(required = false, defaultValue = "60") Integer duracaoMinutos
     ) {
         return ResponseEntity.ok(agendamentoService.listarSlotsDisponiveis(usuarioId, data, duracaoMinutos));
-    }
-
-    @GetMapping("/feriados/{ano}")
-    public ResponseEntity<List<FeriadoDto>> listarFeriados(@PathVariable Integer ano) {
-        return ResponseEntity.ok(apiFeriados.listarFeriados(ano));
-    }
-
-    @GetMapping("/resumo-status")
-    public ResponseEntity<AgendamentoResumoPeriodoResponseDto> resumirStatusPorPeriodo(
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataInicio,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataFim
-    ) {
-        return ResponseEntity.ok(agendamentoService.obterResumoPorStatusNoPeriodo(dataInicio, dataFim));
     }
 
     @GetMapping("/usuario-periodo")

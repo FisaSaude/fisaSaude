@@ -1,9 +1,0 @@
-<component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="NotificacaoApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot">
-    <module name="fisasaude" />
-    <option name="SPRING_BOOT_MAIN_CLASS" value="br.com.fisasaude.notificacao.NotificacaoApplication" />
-    <method v="2">
-      <option name="Make" enabled="true" />
-    </method>
-  </configuration>
-</component>
