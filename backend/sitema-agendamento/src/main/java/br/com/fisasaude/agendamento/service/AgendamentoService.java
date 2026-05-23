@@ -1,6 +1,6 @@
 package br.com.fisasaude.agendamento.service;
 
-import br.com.fisasaude.agendamento.dto.agendamento.request.AgendamentoBloquearDiaRequestDto;
+import br.com.fisasaude.agendamento.dto.agendamento.request.AgendamentoBloquearPeriodoRequestDto;
 import br.com.fisasaude.agendamento.dto.agendamento.request.AgendamentoCreateRequestDto;
 import br.com.fisasaude.agendamento.dto.agendamento.request.AgendamentoRemarcarRequestDto;
 import br.com.fisasaude.agendamento.dto.agendamento.response.AgendamentoResponseDto;
@@ -298,28 +298,38 @@ public class AgendamentoService {
         log.debug("Tipo de resposta WhatsApp {} sem efeito no status para agendamento {}.", tipo, agendamentoId);
     }
 
-    public void bloquearDia(AgendamentoBloquearDiaRequestDto dto) {
+    public void bloquearPeriodo(AgendamentoBloquearPeriodoRequestDto dto) {
         if (dto == null) {
             throw new BadRequestException("Corpo da requisição não pode ser nulo");
         }
         Usuario usuario = usuarioRepository.findById(dto.usuarioId())
                 .orElseThrow(() -> new NotFoundException("Usuário não encontrado"));
+
         LocalDate data = dto.data();
-        // Verifica se já existe qualquer agendamento para o usuário no dia
-        long existentes = agendamentoRepository.countByDataAndUsuarioId(data, usuario.getId());
-        if (existentes > 0) {
-            throw new ConflictException("Já existem agendamentos para este usuário neste dia");
+        LocalTime horaInicio = dto.horaInicio();
+        LocalTime horaFim = dto.horaFim();
+
+        validarIntervaloHorario(horaInicio, horaFim);
+
+        long conflitos = agendamentoRepository.countAgendamentosConflitantes(
+                usuario.getId(),
+                data,
+                horaInicio,
+                horaFim,
+                null,
+                StatusAgendamentoEnum.CANCELADO
+        );
+        if (conflitos > 0) {
+            throw new ConflictException("Já existe agendamento não cancelado neste intervalo para o profissional");
         }
-        // Cria agendamento bloqueado cobrindo todo o expediente
-        LocalTime inicio = usuario.getEstabelecimento().getInicioFuncionamento();
-        LocalTime fim = usuario.getEstabelecimento().getFimFuncionamento();
-        LocalDateTime now = LocalDateTime.now(ZoneId.of("America/Sao_Paulo"));
+
+        LocalDateTime now = LocalDateTime.now(ZONA_APP);
         Agendamento bloqueio = new Agendamento();
         bloqueio.setData(data);
-        bloqueio.setHoraInicio(inicio);
-        bloqueio.setHoraFim(fim);
+        bloqueio.setHoraInicio(horaInicio);
+        bloqueio.setHoraFim(horaFim);
         bloqueio.setStatus(StatusAgendamentoEnum.BLOQUEADO);
-        bloqueio.setObservacoes("BLOQUEIO DE DIA INTEIRO");
+        bloqueio.setObservacoes("BLOQUEIO DE PERIODO");
         bloqueio.setCriadoEm(now);
         bloqueio.setAtualizadoEm(now);
         bloqueio.setCliente(null);

@@ -1,6 +1,6 @@
 package br.com.fisasaude.agendamento.controller.agendamento;
 
-import br.com.fisasaude.agendamento.dto.agendamento.request.AgendamentoBloquearDiaRequestDto;
+import br.com.fisasaude.agendamento.dto.agendamento.request.AgendamentoBloquearPeriodoRequestDto;
 import br.com.fisasaude.agendamento.dto.agendamento.request.AgendamentoCreateRequestDto;
 import br.com.fisasaude.agendamento.dto.agendamento.request.AgendamentoRemarcarRequestDto;
 import br.com.fisasaude.agendamento.dto.agendamento.response.AgendamentoResponseDto;
@@ -130,9 +130,9 @@ public class AgendamentoController implements SwaggerAgendamentoController {
         return ResponseEntity.ok(agendamentoService.listarDiasValidos(usuarioId, dataInicio, dataFim));
     }
 
-    @PostMapping("/bloquear-dia")
-    public ResponseEntity<Void> bloquearDia(@Valid @RequestBody AgendamentoBloquearDiaRequestDto dto) {
-        agendamentoService.bloquearDia(dto);
+    @PostMapping("/bloquear-periodo")
+    public ResponseEntity<Void> bloquearPeriodo(@Valid @RequestBody AgendamentoBloquearPeriodoRequestDto dto) {
+        agendamentoService.bloquearPeriodo(dto);
         return ResponseEntity.noContent().build();
     }
 

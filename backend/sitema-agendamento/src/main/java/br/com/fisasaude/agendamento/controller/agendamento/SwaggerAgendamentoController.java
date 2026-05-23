@@ -1,6 +1,6 @@
 package br.com.fisasaude.agendamento.controller.agendamento;
 
-import br.com.fisasaude.agendamento.dto.agendamento.request.AgendamentoBloquearDiaRequestDto;
+import br.com.fisasaude.agendamento.dto.agendamento.request.AgendamentoBloquearPeriodoRequestDto;
 import br.com.fisasaude.agendamento.dto.agendamento.request.AgendamentoCreateRequestDto;
 import br.com.fisasaude.agendamento.dto.agendamento.request.AgendamentoRemarcarRequestDto;
 import br.com.fisasaude.agendamento.dto.agendamento.response.AgendamentoResponseDto;
@@ -249,15 +249,17 @@ public interface SwaggerAgendamentoController {
     );
 
     @Operation(
-        summary = "Bloquear um dia inteiro para agendamentos",
-        description = "Cria um bloqueio de agenda para um dia inteiro para um usuário/profissional, impedindo novos agendamentos nesta data."
+        summary = "Bloquear um período de horário para agendamentos",
+        description = "Cria um bloqueio de agenda para um intervalo de horário específico de um usuário/profissional, impedindo novos agendamentos no período informado. Valida sobreposição com agendamentos não cancelados já existentes."
     )
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "204", description = "Dia bloqueado com sucesso"),
+        @ApiResponse(responseCode = "204", description = "Período bloqueado com sucesso"),
         @ApiResponse(responseCode = "400", description = "Dados inválidos", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
-        @ApiResponse(responseCode = "404", description = "Usuário não encontrado", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+        @ApiResponse(responseCode = "404", description = "Usuário não encontrado", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+        @ApiResponse(responseCode = "409", description = "Conflito de horário com agendamento existente", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+        @ApiResponse(responseCode = "422", description = "Intervalo de horário inválido", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
-    ResponseEntity<Void> bloquearDia(@Valid @RequestBody AgendamentoBloquearDiaRequestDto dto);
+    ResponseEntity<Void> bloquearPeriodo(@Valid @RequestBody AgendamentoBloquearPeriodoRequestDto dto);
 
     @Operation(
             summary = "Taxa de ocupação por periodo",

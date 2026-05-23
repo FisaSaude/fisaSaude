@@ -1,5 +1,5 @@
 meta {
-  name: Bloquear Dia
+  name: Bloquear Período
   type: http
   seq: 15
 }
@@ -17,21 +17,20 @@ auth:bearer {
 body:json {
   {
     "usuarioId": {{usuarioId}},
-    "data": "2026-06-20"
+    "data": "2026-05-25"
   }
 }
 
 docs {
   ## Bloquear Dia Inteiro
-
+  
   Cria um bloqueio de agenda para um dia inteiro para um profissional, impedindo novos agendamentos nessa data.
-
+  
   Cria registro de agenda com status `BLOQUEADO` cobrindo o expediente do estabelecimento.
-
+  
   **Campos obrigatórios:**
   - `usuarioId` — ID do profissional (positivo)
   - `data` — data a ser bloqueada (`yyyy-MM-dd`)
-
+  
   **Respostas:** 204 Sem conteúdo | 400 Dados inválidos | 404 Usuário não encontrado | 409 Já existem agendamentos no dia
 }
-
