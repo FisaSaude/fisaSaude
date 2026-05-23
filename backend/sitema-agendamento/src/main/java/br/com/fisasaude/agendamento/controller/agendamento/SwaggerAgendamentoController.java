@@ -209,7 +209,7 @@ public interface SwaggerAgendamentoController {
 
     @Operation(
             summary = "Listar agendamentos por usuario em um periodo",
-            description = "Retorna hora de inicio, nome do cliente, status e preco para o usuario no intervalo informado (inclusivo)."
+            description = "Retorna id, data, hora de inicio, hora de fim, nome do cliente (nulo para bloqueios), status e preco (nulo para bloqueios) para o usuario no intervalo informado (inclusivo). Inclui registros com clienteId e servicoId nulos (ex.: bloqueios de agenda)."
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Lista retornada com sucesso",

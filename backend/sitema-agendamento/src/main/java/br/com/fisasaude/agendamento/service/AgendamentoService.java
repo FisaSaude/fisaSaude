@@ -491,11 +491,13 @@ public class AgendamentoService {
                 .findByUsuarioIdAndDataBetweenOrderByDataAscHoraInicioAsc(usuarioId, dataInicio, dataFim)
                 .stream()
                 .map(a -> new AgendamentoUsuarioPeriodoResponseDto(
+                        a.getId(),
                         a.getData(),
                         a.getHoraInicio(),
-                        a.getCliente().getNome(),
+                        a.getHoraFim(),
+                        a.getCliente() != null ? a.getCliente().getNome() : null,
                         a.getStatus(),
-                        a.getServico().getPreco()
+                        a.getServico() != null ? a.getServico().getPreco() : null
                 ))
                 .toList();
     }

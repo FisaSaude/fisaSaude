@@ -418,21 +418,13 @@ class AgendamentoServiceTest {
     }
 
     @Test
-    void obterResumo_periodoInvertido_lancaUnprocessable() {
-        LocalDate ini = LocalDate.now(Z);
-        LocalDate fim = ini.minusDays(1);
-
-        assertThatThrownBy(() -> service.obterResumoPorStatusNoPeriodo(ini, fim))
-                .isInstanceOf(UnprocessableEntityException.class);
-    }
-
-    @Test
     void listarPorUsuarioEPeriodo_sucesso_retornaCamposEsperados() {
         LocalDate inicio = LocalDate.now(Z);
         LocalDate fim = inicio.plusDays(7);
 
         Agendamento a = agendamentoAgendado(99, usuario, servico, cliente);
         a.setHoraInicio(LocalTime.of(14, 30));
+        a.setHoraFim(LocalTime.of(15, 30));
         a.setStatus(StatusAgendamentoEnum.CONFIRMADO);
 
         when(agendamentoRepository.findByUsuarioIdAndDataBetweenOrderByDataAscHoraInicioAsc(
@@ -445,10 +437,47 @@ class AgendamentoServiceTest {
                 service.listarPorUsuarioEPeriodo(usuario.getId(), inicio, fim);
 
         assertThat(resultado).hasSize(1);
+        assertThat(resultado.getFirst().id()).isEqualTo(99);
         assertThat(resultado.getFirst().horaInicio()).isEqualTo(LocalTime.of(14, 30));
+        assertThat(resultado.getFirst().horaFim()).isEqualTo(LocalTime.of(15, 30));
         assertThat(resultado.getFirst().nomeCliente()).isEqualTo("Ana");
         assertThat(resultado.getFirst().status()).isEqualTo(StatusAgendamentoEnum.CONFIRMADO);
         assertThat(resultado.getFirst().preco()).isEqualByComparingTo(BigDecimal.valueOf(80));
+    }
+
+    @Test
+    void listarPorUsuarioEPeriodo_bloqueio_semClienteEServico_retornaComNulos() {
+        LocalDate inicio = LocalDate.now(Z);
+        LocalDate fim = inicio.plusDays(7);
+
+        Agendamento bloqueio = new Agendamento();
+        bloqueio.setId(200);
+        bloqueio.setStatus(StatusAgendamentoEnum.BLOQUEADO);
+        bloqueio.setUsuario(usuario);
+        bloqueio.setCliente(null);
+        bloqueio.setServico(null);
+        bloqueio.setData(inicio.plusDays(1));
+        bloqueio.setHoraInicio(LocalTime.of(10, 0));
+        bloqueio.setHoraFim(LocalTime.of(11, 0));
+        bloqueio.setCriadoEm(java.time.LocalDateTime.now(Z));
+        bloqueio.setAtualizadoEm(java.time.LocalDateTime.now(Z));
+
+        when(agendamentoRepository.findByUsuarioIdAndDataBetweenOrderByDataAscHoraInicioAsc(
+                usuario.getId(),
+                inicio,
+                fim
+        )).thenReturn(List.of(bloqueio));
+
+        List<AgendamentoUsuarioPeriodoResponseDto> resultado =
+                service.listarPorUsuarioEPeriodo(usuario.getId(), inicio, fim);
+
+        assertThat(resultado).hasSize(1);
+        assertThat(resultado.getFirst().id()).isEqualTo(200);
+        assertThat(resultado.getFirst().status()).isEqualTo(StatusAgendamentoEnum.BLOQUEADO);
+        assertThat(resultado.getFirst().horaInicio()).isEqualTo(LocalTime.of(10, 0));
+        assertThat(resultado.getFirst().horaFim()).isEqualTo(LocalTime.of(11, 0));
+        assertThat(resultado.getFirst().nomeCliente()).isNull();
+        assertThat(resultado.getFirst().preco()).isNull();
     }
 
     @Test

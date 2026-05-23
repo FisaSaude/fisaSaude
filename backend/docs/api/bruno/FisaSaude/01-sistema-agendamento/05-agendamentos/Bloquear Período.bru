@@ -5,7 +5,7 @@ meta {
 }
 
 post {
-  url: {{baseUrl}}/agendamentos/bloquear-dia
+  url: {{baseUrl}}/agendamentos/bloquear-periodo
   body: json
   auth: bearer
 }
@@ -17,7 +17,9 @@ auth:bearer {
 body:json {
   {
     "usuarioId": {{usuarioId}},
-    "data": "2026-05-25"
+    "data": "2026-05-28",
+    "horaInicio": "09:00:00",
+    "horaFim": "10:00:00"
   }
 }
 

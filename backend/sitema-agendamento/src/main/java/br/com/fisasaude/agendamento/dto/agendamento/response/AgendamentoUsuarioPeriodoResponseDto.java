@@ -8,10 +8,11 @@ import java.time.LocalTime;
 
 @Schema(description = "Resumo de agendamento por usuario em um periodo")
 public record AgendamentoUsuarioPeriodoResponseDto(
+        Integer id,
         LocalDate data,
         LocalTime horaInicio,
-        String nomeCliente,
+        LocalTime horaFim,
+        @Schema(nullable = true) String nomeCliente,
         StatusAgendamentoEnum status,
-        BigDecimal preco
+        @Schema(nullable = true) BigDecimal preco
 ) {}
-

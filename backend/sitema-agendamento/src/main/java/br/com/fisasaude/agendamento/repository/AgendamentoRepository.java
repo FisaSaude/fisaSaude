@@ -106,8 +106,8 @@ public interface AgendamentoRepository extends JpaRepository<Agendamento, Intege
 
     @Query("""
             SELECT DISTINCT a FROM Agendamento a
-            JOIN FETCH a.cliente
-            JOIN FETCH a.servico
+            LEFT JOIN FETCH a.cliente
+            LEFT JOIN FETCH a.servico
             WHERE a.usuario.id = :usuarioId
             AND a.data BETWEEN :inicio AND :fim
             ORDER BY a.data ASC, a.horaInicio ASC
