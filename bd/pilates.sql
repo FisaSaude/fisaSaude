@@ -50,7 +50,7 @@ CREATE TABLE usuario (
 CREATE TABLE cliente (
     id INT PRIMARY KEY AUTO_INCREMENT,
     nome VARCHAR(100) NOT NULL,
-    telefone_whatsapp VARCHAR(20) NOT NULL UNIQUE,
+    telefone_whatsapp VARCHAR(20) NOT NULL,
     whatsapp_ativo BOOLEAN DEFAULT TRUE,
     data_nascimento DATE NOT NULL,
     sexo ENUM('M', 'F', 'OUTRO') NOT NULL,
@@ -171,11 +171,11 @@ VALUES (1, 'Aula Experimental', 'pilates', 60, 0.00, TRUE),
        (4, 'Aula Semestral', 'pilates', 60, 950.00, TRUE);
 
 INSERT INTO cliente (id, nome, telefone_whatsapp, whatsapp_ativo, data_nascimento, sexo, foto_link)
-VALUES (1, 'Mariana Silva', '5511999000111', TRUE, '1990-04-12', 'F', NULL),
-       (2, 'Joao Pereira', '5511988776655', TRUE, '1985-11-23', 'M', NULL),
-       (3, 'Ana Souza', '5511977112233', TRUE, '1995-07-02', 'F', NULL),
-       (4, 'Carlos Mendes', '5511966334455', TRUE, '1978-02-14', 'M', NULL),
-       (5, 'Beatriz Costa', '5511955443322', TRUE, '2000-09-30', 'F', NULL);
+VALUES (1, 'Mariana Silva', '5511965643020', TRUE, '1990-04-12', 'F', NULL),
+       (2, 'Joao Pereira', '5511965643020', TRUE, '1985-11-23', 'M', NULL),
+       (3, 'Ana Souza', '5511965643020', TRUE, '1995-07-02', 'F', NULL),
+       (4, 'Carlos Mendes', '5511965643020', TRUE, '1978-02-14', 'M', NULL),
+       (5, 'Beatriz Costa', '5511965643020', TRUE, '2000-09-30', 'F', NULL);
 
 INSERT INTO despesa (id, nome, data_despesa, tipo, valor, estabelecimento_id)
 VALUES (1, 'Compra de colchonetes', '2026-01-15', 'Operacional', 350.00, 1),
