@@ -35,6 +35,14 @@ public class SecurityConfig {
             InternalApiTokenFilter internalApiTokenFilter)
             throws Exception {
         return httpSecurity
+                // 1. Configura o CORS para aceitar requisições do seu front-end
+                .cors(cors -> cors.configurationSource(request -> {
+                    var config = new org.springframework.web.cors.CorsConfiguration();
+                    config.setAllowedOrigins(java.util.List.of("http://127.0.0.1:5500", "http://localhost:5500")); // Portas comuns do Live Server
+                    config.setAllowedMethods(java.util.List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+                    config.setAllowedHeaders(java.util.List.of("*"));
+                    return config;
+                }))
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authorize -> authorize
