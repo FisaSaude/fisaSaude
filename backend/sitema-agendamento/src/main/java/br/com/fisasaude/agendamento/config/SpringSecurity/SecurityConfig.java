@@ -35,12 +35,24 @@ public class SecurityConfig {
             InternalApiTokenFilter internalApiTokenFilter)
             throws Exception {
         return httpSecurity
-                // 1. Configura o CORS para aceitar requisições do seu front-end
+                // 1. Configura o CORS incluindo as portas do seu front-end Vite
                 .cors(cors -> cors.configurationSource(request -> {
                     var config = new org.springframework.web.cors.CorsConfiguration();
-                    config.setAllowedOrigins(java.util.List.of("http://127.0.0.1:5500", "http://localhost:5500")); // Portas comuns do Live Server
+
+                    // Incluídas as portas 5173 e 5174 do Vite além das do Live Server
+                    config.setAllowedOrigins(java.util.List.of(
+                            "http://localhost:5173",
+                            "http://127.0.0.1:5173",
+                            "http://localhost:5174",
+                            "http://127.0.0.1:5174",
+                            "http://localhost:5500",
+                            "http://127.0.0.1:5500"
+                    ));
+
                     config.setAllowedMethods(java.util.List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
                     config.setAllowedHeaders(java.util.List.of("*"));
+                    config.setAllowCredentials(true); // Permite troca segura de credenciais/tokens
+
                     return config;
                 }))
                 .csrf(csrf -> csrf.disable())
