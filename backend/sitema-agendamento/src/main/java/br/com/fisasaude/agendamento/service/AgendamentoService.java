@@ -14,9 +14,9 @@ import br.com.fisasaude.agendamento.event.AgendamentoNotificacaoConfirmacaoEvent
 import br.com.fisasaude.agendamento.exception.BadRequestException;
 import br.com.fisasaude.agendamento.exception.ConflictException;
 import br.com.fisasaude.agendamento.exception.NotFoundException;
+import br.com.fisasaude.agendamento.integration.notificacao.NotificacaoClient;
 import br.com.fisasaude.agendamento.exception.UnprocessableEntityException;
 import br.com.fisasaude.agendamento.mapper.AgendamentoMapper;
-import br.com.fisasaude.agendamento.service.port.FeriadosPort;
 import br.com.fisasaude.agendamento.model.entity.Agendamento;
 import br.com.fisasaude.agendamento.model.entity.Cliente;
 import br.com.fisasaude.agendamento.model.entity.Servico;
@@ -27,17 +27,19 @@ import br.com.fisasaude.agendamento.repository.AgendamentoRepository;
 import br.com.fisasaude.agendamento.repository.ClienteRepository;
 import br.com.fisasaude.agendamento.repository.ServicoRepository;
 import br.com.fisasaude.agendamento.repository.UsuarioRepository;
+import br.com.fisasaude.agendamento.service.port.FeriadosPort;
 import java.time.DayOfWeek;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import br.com.fisasaude.agendamento.integration.notificacao.NotificacaoClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;
@@ -50,8 +52,18 @@ public class AgendamentoService {
     private static final Logger log = LoggerFactory.getLogger(AgendamentoService.class);
     private static final ZoneId ZONA_APP = ZoneId.of("America/Sao_Paulo");
     private static final int SLOT_STEP_MINUTES = 15;
+    private static final int DURACAO_PADRAO_MIN = 60;
     private static final int DURACAO_SLOT_MIN = 15;
     private static final int DURACAO_SLOT_MAX = 480;
+    private static final String MSG_CLIENTE_NAO_ENCONTRADO = "Cliente nao encontrado";
+    private static final String MSG_SERVICO_NAO_ENCONTRADO = "Servico nao encontrado";
+    private static final String MSG_USUARIO_NAO_ENCONTRADO = "Usuario nao encontrado";
+    private static final String MSG_AGENDAMENTO_NAO_ENCONTRADO = "Agendamento nao encontrado";
+    private static final String MSG_CONFLITO_INTERVALO =
+            "Ja existe agendamento nao cancelado neste intervalo para o profissional";
+    private static final String MSG_HORARIO_FUNCIONAMENTO_INVALIDO =
+            "Horario de funcionamento do estabelecimento invalido";
+    private static final String OBSERVACAO_BLOQUEIO_PERIODO = "BLOQUEIO DE PERIODO";
 
     private final AgendamentoRepository agendamentoRepository;
     private final ClienteRepository clienteRepository;
@@ -88,15 +100,9 @@ public class AgendamentoService {
             throw new BadRequestException("Corpo da requisicao nao pode ser nulo");
         }
 
-        Cliente cliente = clienteRepository
-                .findById(dto.clienteId())
-                .orElseThrow(() -> new NotFoundException("Cliente nao encontrado"));
-        Servico servico = servicoRepository
-                .findById(dto.servicoId())
-                .orElseThrow(() -> new NotFoundException("Servico nao encontrado"));
-        Usuario usuario = usuarioRepository
-                .findById(dto.usuarioId())
-                .orElseThrow(() -> new NotFoundException("Usuario nao encontrado"));
+        Cliente cliente = buscarClientePorId(dto.clienteId());
+        Servico servico = buscarServicoPorId(dto.servicoId());
+        Usuario usuario = buscarUsuarioPorId(dto.usuarioId());
 
         LocalDate data = dto.data();
         LocalTime horaInicio = dto.horaInicio();
@@ -104,71 +110,38 @@ public class AgendamentoService {
 
         validarIntervaloHorario(horaInicio, horaFim);
         validarInicioFuturo(data, horaInicio);
+        validarSemConflitoHorario(usuario.getId(), data, horaInicio, horaFim, null);
 
-        long conflitos = agendamentoRepository.countAgendamentosConflitantes(
-                dto.usuarioId(),
-                data,
-                horaInicio,
-                horaFim,
-                null,
-                StatusAgendamentoEnum.CANCELADO
-        );
-        if (conflitos > 0) {
-            throw new ConflictException("Ja existe agendamento nao cancelado neste intervalo para o profissional");
-        }
-
-        LocalDateTime now = LocalDateTime.now(ZONA_APP);
-
-        Agendamento a = new Agendamento();
-        a.setData(data);
-        a.setHoraInicio(horaInicio);
-        a.setHoraFim(horaFim);
-        a.setStatus(StatusAgendamentoEnum.AGENDADO);
-        a.setObservacoes(trimToNull(dto.observacoes()));
-        a.setCriadoEm(now);
-        a.setAtualizadoEm(now);
-        a.setCliente(cliente);
-        a.setServico(servico);
-        a.setUsuario(usuario);
-
-        Agendamento salvo = agendamentoRepository.save(a);
-        eventPublisher.publishEvent(new AgendamentoNotificacaoConfirmacaoEvent(salvo.getId()));
+        Agendamento agendamento = novoAgendamento(dto, cliente, servico, usuario);
+        Agendamento salvo = agendamentoRepository.save(agendamento);
+        publicarEventoConfirmacao(salvo.getId());
         return agendamentoMapper.toDto(salvo);
     }
 
     @Transactional(readOnly = true)
     public AgendamentoResponseDto buscarPorId(Integer id) {
         validarIdAgendamento(id);
-        Agendamento a = agendamentoRepository
-                .findByIdWithRelations(id)
-                .orElseThrow(() -> new NotFoundException("Agendamento nao encontrado"));
-        return agendamentoMapper.toDto(a);
+        return agendamentoMapper.toDto(buscarAgendamentoComRelacionamentosPorId(id));
     }
 
     @Transactional
     public AgendamentoResponseDto cancelar(Integer id) {
         validarIdAgendamento(id);
-        Agendamento a = agendamentoRepository
-                .findByIdWithRelations(id)
-                .orElseThrow(() -> new NotFoundException("Agendamento nao encontrado"));
-        exigeStatusAgendado(a);
+        Agendamento agendamento = buscarAgendamentoComRelacionamentosPorId(id);
+        exigeStatusAgendado(agendamento);
         notificacaoClient.descartarConfirmacaoElembreteParaAgendamento(id);
-        a.setStatus(StatusAgendamentoEnum.CANCELADO);
-        a.setAtualizadoEm(LocalDateTime.now(ZONA_APP));
-        return agendamentoMapper.toDto(agendamentoRepository.save(a));
+        atualizarStatus(agendamento, StatusAgendamentoEnum.CANCELADO);
+        return agendamentoMapper.toDto(agendamentoRepository.save(agendamento));
     }
 
     @Transactional
     public AgendamentoResponseDto concluir(Integer id) {
         validarIdAgendamento(id);
-        Agendamento a = agendamentoRepository
-                .findByIdWithRelations(id)
-                .orElseThrow(() -> new NotFoundException("Agendamento nao encontrado"));
-        exigeStatusAgendado(a);
+        Agendamento agendamento = buscarAgendamentoComRelacionamentosPorId(id);
+        exigeStatusAgendado(agendamento);
         notificacaoClient.descartarConfirmacaoElembreteParaAgendamento(id);
-        a.setStatus(StatusAgendamentoEnum.CONCLUIDO);
-        a.setAtualizadoEm(LocalDateTime.now(ZONA_APP));
-        return agendamentoMapper.toDto(agendamentoRepository.save(a));
+        atualizarStatus(agendamento, StatusAgendamentoEnum.CONCLUIDO);
+        return agendamentoMapper.toDto(agendamentoRepository.save(agendamento));
     }
 
     @Transactional
@@ -178,10 +151,8 @@ public class AgendamentoService {
             throw new BadRequestException("Corpo da requisicao nao pode ser nulo");
         }
 
-        Agendamento a = agendamentoRepository
-                .findByIdWithRelations(id)
-                .orElseThrow(() -> new NotFoundException("Agendamento nao encontrado"));
-        exigeStatusAgendado(a);
+        Agendamento agendamento = buscarAgendamentoComRelacionamentosPorId(id);
+        exigeStatusAgendado(agendamento);
 
         notificacaoClient.descartarConfirmacaoElembreteParaAgendamento(id);
 
@@ -192,45 +163,15 @@ public class AgendamentoService {
         validarIntervaloHorario(horaInicio, horaFim);
         validarInicioFuturo(data, horaInicio);
 
-        Usuario usuarioAlvo = a.getUsuario();
-        if (dto.usuarioId() != null) {
-            Usuario candidato = usuarioRepository
-                    .findById(dto.usuarioId())
-                    .orElseThrow(() -> new NotFoundException("Usuario nao encontrado"));
-            if (!mesmoEstabelecimento(a.getUsuario(), candidato)) {
-                throw new UnprocessableEntityException(
-                        "O novo usuario deve pertencer ao mesmo estabelecimento do agendamento atual"
-                );
-            }
-            usuarioAlvo = candidato;
-        }
+        Usuario usuarioAlvo = resolverUsuarioRemarcacao(agendamento, dto.usuarioId());
+        Servico servicoAlvo = resolverServicoRemarcacao(agendamento, dto.servicoId());
 
-        Servico servicoAlvo = a.getServico();
-        if (dto.servicoId() != null) {
-            servicoAlvo = servicoRepository.findById(dto.servicoId()).orElseThrow(() -> new NotFoundException("Servico nao encontrado"));
-        }
+        validarSemConflitoHorario(usuarioAlvo.getId(), data, horaInicio, horaFim, id);
 
-        long conflitos = agendamentoRepository.countAgendamentosConflitantes(
-                usuarioAlvo.getId(),
-                data,
-                horaInicio,
-                horaFim,
-                id,
-                StatusAgendamentoEnum.CANCELADO
-        );
-        if (conflitos > 0) {
-            throw new ConflictException("Ja existe agendamento nao cancelado neste intervalo para o profissional");
-        }
+        aplicarRemarcacao(agendamento, data, horaInicio, horaFim, usuarioAlvo, servicoAlvo);
 
-        a.setData(data);
-        a.setHoraInicio(horaInicio);
-        a.setHoraFim(horaFim);
-        a.setUsuario(usuarioAlvo);
-        a.setServico(servicoAlvo);
-        a.setAtualizadoEm(LocalDateTime.now(ZONA_APP));
-
-        Agendamento salvoRemarcacao = agendamentoRepository.save(a);
-        eventPublisher.publishEvent(new AgendamentoNotificacaoConfirmacaoEvent(salvoRemarcacao.getId()));
+        Agendamento salvoRemarcacao = agendamentoRepository.save(agendamento);
+        publicarEventoConfirmacao(salvoRemarcacao.getId());
         return agendamentoMapper.toDto(salvoRemarcacao);
     }
 
@@ -241,35 +182,22 @@ public class AgendamentoService {
             throw new BadRequestException("tipo e obrigatorio");
         }
 
-        Agendamento a = agendamentoRepository
-                .findById(agendamentoId)
-                .orElseThrow(() -> new NotFoundException("Agendamento nao encontrado"));
-
-        String status = null;
+        Agendamento agendamento = buscarAgendamentoPorId(agendamentoId);
+        String novoStatus = resolverStatusWhatsapp(tipo);
 
         if (tipo == RespostaWhatsappTipoEnum.SIM) {
-            status = StatusAgendamentoEnum.CONFIRMADO.name();
-        } else if (tipo == RespostaWhatsappTipoEnum.NAO) {
-            status = StatusAgendamentoEnum.CANCELADO.name();
-        }
-
-        if (status == null) {
-            throw new BadRequestException("tipo de resposta WhatsApp invalido para atualizacao de status");
-        }
-
-        if (tipo == RespostaWhatsappTipoEnum.SIM) {
-            if (a.getStatus() != StatusAgendamentoEnum.AGENDADO) {
-                if (a.getStatus() == StatusAgendamentoEnum.CONFIRMADO) {
+            if (agendamento.getStatus() != StatusAgendamentoEnum.AGENDADO) {
+                if (agendamento.getStatus() == StatusAgendamentoEnum.CONFIRMADO) {
                     log.debug("Agendamento {} ja CONFIRMADO; SIM ignorado (duplicidade).", agendamentoId);
                 } else {
                     log.debug(
                             "SIM sem efeito em agendamento {} (status {}).",
                             agendamentoId,
-                            a.getStatus());
+                            agendamento.getStatus());
                 }
                 return;
             }
-            int atualizadas = agendamentoRepository.atualizarStatusDireto(agendamentoId, status);
+            int atualizadas = agendamentoRepository.atualizarStatusDireto(agendamentoId, novoStatus);
             if (atualizadas > 0) {
                 notificacaoClient.descartarSomenteConfirmacaoParaAgendamento(agendamentoId);
                 log.info("Agendamento {} -> CONFIRMADO (resposta WhatsApp SIM).", agendamentoId);
@@ -277,26 +205,23 @@ public class AgendamentoService {
             return;
         }
 
-        if (tipo == RespostaWhatsappTipoEnum.NAO) {
-            if (a.getStatus() != StatusAgendamentoEnum.AGENDADO
-                    && a.getStatus() != StatusAgendamentoEnum.CONFIRMADO) {
-                log.debug(
-                        "NAO sem efeito em agendamento {} (status {}).",
-                        agendamentoId,
-                        a.getStatus());
-                return;
-            }
-            int atualizadas = agendamentoRepository.atualizarStatusDireto(agendamentoId, status);
-            if (atualizadas > 0) {
-                notificacaoClient.descartarConfirmacaoElembreteParaAgendamento(agendamentoId);
-                log.info("Agendamento {} -> CANCELADO (resposta WhatsApp NAO).", agendamentoId);
-            }
+        if (agendamento.getStatus() != StatusAgendamentoEnum.AGENDADO
+                && agendamento.getStatus() != StatusAgendamentoEnum.CONFIRMADO) {
+            log.debug(
+                    "NAO sem efeito em agendamento {} (status {}).",
+                    agendamentoId,
+                    agendamento.getStatus());
             return;
         }
 
-        log.debug("Tipo de resposta WhatsApp {} sem efeito no status para agendamento {}.", tipo, agendamentoId);
+        int atualizadas = agendamentoRepository.atualizarStatusDireto(agendamentoId, novoStatus);
+        if (atualizadas > 0) {
+            notificacaoClient.descartarConfirmacaoElembreteParaAgendamento(agendamentoId);
+            log.info("Agendamento {} -> CANCELADO (resposta WhatsApp NAO).", agendamentoId);
+        }
     }
 
+    @Transactional
     public void bloquearPeriodo(AgendamentoBloquearPeriodoRequestDto dto) {
         if (dto == null) {
             throw new BadRequestException("Corpo da requisição não pode ser nulo");
@@ -309,31 +234,9 @@ public class AgendamentoService {
         LocalTime horaFim = dto.horaFim();
 
         validarIntervaloHorario(horaInicio, horaFim);
+        validarSemConflitoHorario(usuario.getId(), data, horaInicio, horaFim, null, "Já existe agendamento não cancelado neste intervalo para o profissional");
 
-        long conflitos = agendamentoRepository.countAgendamentosConflitantes(
-                usuario.getId(),
-                data,
-                horaInicio,
-                horaFim,
-                null,
-                StatusAgendamentoEnum.CANCELADO
-        );
-        if (conflitos > 0) {
-            throw new ConflictException("Já existe agendamento não cancelado neste intervalo para o profissional");
-        }
-
-        LocalDateTime now = LocalDateTime.now(ZONA_APP);
-        Agendamento bloqueio = new Agendamento();
-        bloqueio.setData(data);
-        bloqueio.setHoraInicio(horaInicio);
-        bloqueio.setHoraFim(horaFim);
-        bloqueio.setStatus(StatusAgendamentoEnum.BLOQUEADO);
-        bloqueio.setObservacoes("BLOQUEIO DE PERIODO");
-        bloqueio.setCriadoEm(now);
-        bloqueio.setAtualizadoEm(now);
-        bloqueio.setCliente(null);
-        bloqueio.setServico(null);
-        bloqueio.setUsuario(usuario);
+        Agendamento bloqueio = novoBloqueioPeriodo(data, horaInicio, horaFim, usuario);
         agendamentoRepository.save(bloqueio);
     }
 
@@ -396,10 +299,7 @@ public class AgendamentoService {
             throw new BadRequestException("data e obrigatoria");
         }
         return agendamentoRepository.findAgendamentosParaLembrete(data, StatusAgendamentoEnum.CONFIRMADO).stream()
-                .map(a -> new AgendamentoLembreteResponseDto(
-                        a.getId(),
-                        a.getCliente().getTelefone(),
-                        a.getHoraInicio()))
+                .map(this::toLembreteResponse)
                 .toList();
     }
 
@@ -419,15 +319,8 @@ public class AgendamentoService {
         }
         validarIntervaloHorario(horaInicio, horaFim);
 
-        long n = agendamentoRepository.countAgendamentosConflitantes(
-                usuarioId,
-                data,
-                horaInicio,
-                horaFim,
-                excludeAgendamentoId,
-                StatusAgendamentoEnum.CANCELADO
-        );
-        return new VerificacaoConflitoAgendamentoResponseDto(n);
+        long quantidadeConflitos = contarConflitosHorario(usuarioId, data, horaInicio, horaFim, excludeAgendamentoId);
+        return new VerificacaoConflitoAgendamentoResponseDto(quantidadeConflitos);
     }
 
     @Transactional(readOnly = true)
@@ -438,41 +331,15 @@ public class AgendamentoService {
         if (data == null) {
             throw new BadRequestException("data e obrigatoria");
         }
-        int dur = duracaoMinutos != null ? duracaoMinutos : 60;
-        if (dur < DURACAO_SLOT_MIN || dur > DURACAO_SLOT_MAX) {
-            throw new UnprocessableEntityException(
-                    "duracaoMinutos deve estar entre " + DURACAO_SLOT_MIN + " e " + DURACAO_SLOT_MAX
-            );
-        }
+        int duracaoSlot = resolverDuracaoMinutos(duracaoMinutos);
 
-        Usuario u = usuarioRepository.findById(usuarioId).orElseThrow(() -> new NotFoundException("Usuario nao encontrado"));
-        LocalTime diaInicio = u.getEstabelecimento().getInicioFuncionamento();
-        LocalTime diaFim = u.getEstabelecimento().getFimFuncionamento();
+        Usuario usuario = buscarUsuarioPorId(usuarioId);
+        LocalTime inicioFuncionamento = usuario.getEstabelecimento().getInicioFuncionamento();
+        LocalTime fimFuncionamento = usuario.getEstabelecimento().getFimFuncionamento();
 
-        if (!diaInicio.isBefore(diaFim)) {
-            throw new UnprocessableEntityException("Horario de funcionamento do estabelecimento invalido");
-        }
+        validarHorarioFuncionamento(inicioFuncionamento, fimFuncionamento);
 
-        List<HorarioSlotResponseDto> resultado = new ArrayList<>();
-        for (LocalTime candidato = diaInicio; !candidato.plusMinutes(dur).isAfter(diaFim); candidato = candidato.plusMinutes(SLOT_STEP_MINUTES)) {
-            LocalTime hi = candidato;
-            LocalTime hf = candidato.plusMinutes(dur);
-            if (!inicioSlotNoFuturo(data, hi)) {
-                continue;
-            }
-            long c = agendamentoRepository.countAgendamentosConflitantes(
-                    usuarioId,
-                    data,
-                    hi,
-                    hf,
-                    null,
-                    StatusAgendamentoEnum.CANCELADO
-            );
-            if (c == 0) {
-                resultado.add(new HorarioSlotResponseDto(hi, hf));
-            }
-        }
-        return resultado;
+        return calcularSlotsDisponiveis(usuarioId, data, duracaoSlot, inicioFuncionamento, fimFuncionamento);
     }
 
     @Transactional(readOnly = true)
@@ -489,15 +356,7 @@ public class AgendamentoService {
         return agendamentoRepository
                 .findByUsuarioIdAndDataBetweenOrderByDataAscHoraInicioAsc(usuarioId, dataInicio, dataFim)
                 .stream()
-                .map(a -> new AgendamentoUsuarioPeriodoResponseDto(
-                        a.getId(),
-                        a.getData(),
-                        a.getHoraInicio(),
-                        a.getHoraFim(),
-                        a.getCliente() != null ? a.getCliente().getNome() : null,
-                        a.getStatus(),
-                        a.getServico() != null ? a.getServico().getPreco() : null
-                ))
+                .map(this::toAgendamentoUsuarioPeriodoResponse)
                 .toList();
     }
 
@@ -512,23 +371,11 @@ public class AgendamentoService {
         }
         validarPeriodo(dataInicio, dataFim);
 
-        Set<LocalDate> feriados = new HashSet<>();
-        for (int ano = dataInicio.getYear(); ano <= dataFim.getYear(); ano++) {
-            feriados.addAll(feriadosPort.buscarFeriados(ano));
-        }
+        Set<LocalDate> feriados = buscarFeriadosNoPeriodo(dataInicio, dataFim);
 
         List<DiaValidoPeriodoResponseDto> dias = new ArrayList<>();
         for (LocalDate data = dataInicio; !data.isAfter(dataFim); data = data.plusDays(1)) {
-            boolean fimDeSemana = data.getDayOfWeek() == DayOfWeek.SATURDAY
-                    || data.getDayOfWeek() == DayOfWeek.SUNDAY;
-            boolean ehFeriado = feriados.contains(data);
-
-            boolean disponivel = false;
-            if (!fimDeSemana && !ehFeriado) {
-                // Dia fica indisponivel quando o endpoint de slots retornaria lista vazia.
-                disponivel = !listarSlotsDisponiveis(usuarioId, data, 60).isEmpty();
-            }
-
+            boolean disponivel = diaEstaDisponivelParaAgendamento(usuarioId, data, feriados);
             dias.add(new DiaValidoPeriodoResponseDto(data, disponivel));
         }
 
@@ -547,31 +394,23 @@ public class AgendamentoService {
         }
         validarPeriodo(dataInicio, dataFim);
 
-        int dur = duracaoMinutos != null ? duracaoMinutos : 60;
-        if (dur < DURACAO_SLOT_MIN || dur > DURACAO_SLOT_MAX) {
-            throw new UnprocessableEntityException(
-                    "duracaoMinutos deve estar entre " + DURACAO_SLOT_MIN + " e " + DURACAO_SLOT_MAX
-            );
-        }
+        int duracaoSlot = resolverDuracaoMinutos(duracaoMinutos);
 
-        Usuario u = usuarioRepository.findById(usuarioId)
-                .orElseThrow(() -> new NotFoundException("Usuario nao encontrado"));
+        Usuario usuario = buscarUsuarioPorId(usuarioId);
 
-        LocalTime expedienteInicio = u.getEstabelecimento().getInicioFuncionamento();
-        LocalTime expedienteFim = u.getEstabelecimento().getFimFuncionamento();
+        LocalTime expedienteInicio = usuario.getEstabelecimento().getInicioFuncionamento();
+        LocalTime expedienteFim = usuario.getEstabelecimento().getFimFuncionamento();
 
-        if (!expedienteInicio.isBefore(expedienteFim)) {
-            throw new UnprocessableEntityException("Horario de funcionamento do estabelecimento invalido");
-        }
+        validarHorarioFuncionamento(expedienteInicio, expedienteFim);
 
-        long slotsPorDia = java.time.Duration.between(expedienteInicio, expedienteFim).toMinutes() / dur;
+        long slotsPorDia = Duration.between(expedienteInicio, expedienteFim).toMinutes() / duracaoSlot;
 
         long totalDias = dataInicio.datesUntil(dataFim.plusDays(1)).count();
         long capacidadeMaxima = totalDias * slotsPorDia;
 
         // Conta agendamentos efetivos (exclui CANCELADO e BLOQUEADO)
-        java.util.EnumSet<StatusAgendamentoEnum> statusExcluidos =
-                java.util.EnumSet.of(StatusAgendamentoEnum.CANCELADO, StatusAgendamentoEnum.BLOQUEADO);
+        EnumSet<StatusAgendamentoEnum> statusExcluidos =
+                EnumSet.of(StatusAgendamentoEnum.CANCELADO, StatusAgendamentoEnum.BLOQUEADO);
 
         long totalAgendamentos = agendamentoRepository.countByUsuarioIdAndDataBetweenAndStatusNotIn(
                 usuarioId, dataInicio, dataFim, statusExcluidos
@@ -581,7 +420,271 @@ public class AgendamentoService {
                 ? Math.round((double) totalAgendamentos / capacidadeMaxima * 10000.0) / 100.0
                 : 0.0;
 
-        return new TaxaOcupacaoResponseDto(dataInicio, dataFim, dur, totalAgendamentos, capacidadeMaxima, taxaOcupacao);
+        return new TaxaOcupacaoResponseDto(
+                dataInicio,
+                dataFim,
+                duracaoSlot,
+                totalAgendamentos,
+                capacidadeMaxima,
+                taxaOcupacao
+        );
+    }
+
+    private Cliente buscarClientePorId(Integer clienteId) {
+        return clienteRepository
+                .findById(clienteId)
+                .orElseThrow(() -> new NotFoundException(MSG_CLIENTE_NAO_ENCONTRADO));
+    }
+
+    private Servico buscarServicoPorId(Integer servicoId) {
+        return servicoRepository
+                .findById(servicoId)
+                .orElseThrow(() -> new NotFoundException(MSG_SERVICO_NAO_ENCONTRADO));
+    }
+
+    private Usuario buscarUsuarioPorId(Integer usuarioId) {
+        return usuarioRepository
+                .findById(usuarioId)
+                .orElseThrow(() -> new NotFoundException(MSG_USUARIO_NAO_ENCONTRADO));
+    }
+
+    private Agendamento buscarAgendamentoComRelacionamentosPorId(Integer agendamentoId) {
+        return agendamentoRepository
+                .findByIdWithRelations(agendamentoId)
+                .orElseThrow(() -> new NotFoundException(MSG_AGENDAMENTO_NAO_ENCONTRADO));
+    }
+
+    private Agendamento buscarAgendamentoPorId(Integer agendamentoId) {
+        return agendamentoRepository
+                .findById(agendamentoId)
+                .orElseThrow(() -> new NotFoundException(MSG_AGENDAMENTO_NAO_ENCONTRADO));
+    }
+
+    private Agendamento novoAgendamento(
+            AgendamentoCreateRequestDto dto,
+            Cliente cliente,
+            Servico servico,
+            Usuario usuario
+    ) {
+        LocalDateTime agora = agoraLocal();
+
+        Agendamento agendamento = new Agendamento();
+        agendamento.setData(dto.data());
+        agendamento.setHoraInicio(dto.horaInicio());
+        agendamento.setHoraFim(dto.horaFim());
+        agendamento.setStatus(StatusAgendamentoEnum.AGENDADO);
+        agendamento.setObservacoes(trimToNull(dto.observacoes()));
+        agendamento.setCriadoEm(agora);
+        agendamento.setAtualizadoEm(agora);
+        agendamento.setCliente(cliente);
+        agendamento.setServico(servico);
+        agendamento.setUsuario(usuario);
+        return agendamento;
+    }
+
+    private Agendamento novoBloqueioPeriodo(LocalDate data, LocalTime horaInicio, LocalTime horaFim, Usuario usuario) {
+        LocalDateTime agora = agoraLocal();
+
+        Agendamento bloqueio = new Agendamento();
+        bloqueio.setData(data);
+        bloqueio.setHoraInicio(horaInicio);
+        bloqueio.setHoraFim(horaFim);
+        bloqueio.setStatus(StatusAgendamentoEnum.BLOQUEADO);
+        bloqueio.setObservacoes(OBSERVACAO_BLOQUEIO_PERIODO);
+        bloqueio.setCriadoEm(agora);
+        bloqueio.setAtualizadoEm(agora);
+        bloqueio.setCliente(null);
+        bloqueio.setServico(null);
+        bloqueio.setUsuario(usuario);
+        return bloqueio;
+    }
+
+    private void aplicarRemarcacao(
+            Agendamento agendamento,
+            LocalDate data,
+            LocalTime horaInicio,
+            LocalTime horaFim,
+            Usuario usuario,
+            Servico servico
+    ) {
+        agendamento.setData(data);
+        agendamento.setHoraInicio(horaInicio);
+        agendamento.setHoraFim(horaFim);
+        agendamento.setUsuario(usuario);
+        agendamento.setServico(servico);
+        agendamento.setAtualizadoEm(agoraLocal());
+    }
+
+    private Usuario resolverUsuarioRemarcacao(Agendamento agendamento, Integer novoUsuarioId) {
+        if (novoUsuarioId == null) {
+            return agendamento.getUsuario();
+        }
+
+        Usuario candidato = buscarUsuarioPorId(novoUsuarioId);
+        if (!mesmoEstabelecimento(agendamento.getUsuario(), candidato)) {
+            throw new UnprocessableEntityException(
+                    "O novo usuario deve pertencer ao mesmo estabelecimento do agendamento atual"
+            );
+        }
+
+        return candidato;
+    }
+
+    private Servico resolverServicoRemarcacao(Agendamento agendamento, Integer novoServicoId) {
+        if (novoServicoId == null) {
+            return agendamento.getServico();
+        }
+
+        return buscarServicoPorId(novoServicoId);
+    }
+
+    private String resolverStatusWhatsapp(RespostaWhatsappTipoEnum tipo) {
+        if (tipo == RespostaWhatsappTipoEnum.SIM) {
+            return StatusAgendamentoEnum.CONFIRMADO.name();
+        }
+        if (tipo == RespostaWhatsappTipoEnum.NAO) {
+            return StatusAgendamentoEnum.CANCELADO.name();
+        }
+        throw new BadRequestException("tipo de resposta WhatsApp invalido para atualizacao de status");
+    }
+
+    private AgendamentoLembreteResponseDto toLembreteResponse(Agendamento agendamento) {
+        return new AgendamentoLembreteResponseDto(
+                agendamento.getId(),
+                agendamento.getCliente().getTelefone(),
+                agendamento.getHoraInicio()
+        );
+    }
+
+    private AgendamentoUsuarioPeriodoResponseDto toAgendamentoUsuarioPeriodoResponse(Agendamento agendamento) {
+        return new AgendamentoUsuarioPeriodoResponseDto(
+                agendamento.getId(),
+                agendamento.getData(),
+                agendamento.getHoraInicio(),
+                agendamento.getHoraFim(),
+                agendamento.getCliente() != null ? agendamento.getCliente().getNome() : null,
+                agendamento.getStatus(),
+                agendamento.getServico() != null ? agendamento.getServico().getPreco() : null
+        );
+    }
+
+    private Set<LocalDate> buscarFeriadosNoPeriodo(LocalDate dataInicio, LocalDate dataFim) {
+        Set<LocalDate> feriados = new HashSet<>();
+        for (int ano = dataInicio.getYear(); ano <= dataFim.getYear(); ano++) {
+            feriados.addAll(feriadosPort.buscarFeriados(ano));
+        }
+        return feriados;
+    }
+
+    private boolean diaEstaDisponivelParaAgendamento(Integer usuarioId, LocalDate data, Set<LocalDate> feriados) {
+        if (ehFimDeSemana(data) || feriados.contains(data)) {
+            return false;
+        }
+
+        // Dia fica indisponivel quando o endpoint de slots retornaria lista vazia.
+        return !listarSlotsDisponiveis(usuarioId, data, DURACAO_PADRAO_MIN).isEmpty();
+    }
+
+    private boolean ehFimDeSemana(LocalDate data) {
+        return data.getDayOfWeek() == DayOfWeek.SATURDAY || data.getDayOfWeek() == DayOfWeek.SUNDAY;
+    }
+
+    private List<HorarioSlotResponseDto> calcularSlotsDisponiveis(
+            Integer usuarioId,
+            LocalDate data,
+            int duracaoSlot,
+            LocalTime inicioFuncionamento,
+            LocalTime fimFuncionamento
+    ) {
+        List<HorarioSlotResponseDto> slotsDisponiveis = new ArrayList<>();
+        for (LocalTime horaCandidata = inicioFuncionamento;
+             !horaCandidata.plusMinutes(duracaoSlot).isAfter(fimFuncionamento);
+             horaCandidata = horaCandidata.plusMinutes(SLOT_STEP_MINUTES)) {
+            LocalTime horaInicio = horaCandidata;
+            LocalTime horaFim = horaCandidata.plusMinutes(duracaoSlot);
+
+            if (!inicioSlotNoFuturo(data, horaInicio)) {
+                continue;
+            }
+
+            if (slotEstaDisponivel(usuarioId, data, horaInicio, horaFim)) {
+                slotsDisponiveis.add(new HorarioSlotResponseDto(horaInicio, horaFim));
+            }
+        }
+        return slotsDisponiveis;
+    }
+
+    private boolean slotEstaDisponivel(Integer usuarioId, LocalDate data, LocalTime horaInicio, LocalTime horaFim) {
+        return contarConflitosHorario(usuarioId, data, horaInicio, horaFim, null) == 0;
+    }
+
+    private void publicarEventoConfirmacao(Integer agendamentoId) {
+        eventPublisher.publishEvent(new AgendamentoNotificacaoConfirmacaoEvent(agendamentoId));
+    }
+
+    private void atualizarStatus(Agendamento agendamento, StatusAgendamentoEnum novoStatus) {
+        agendamento.setStatus(novoStatus);
+        agendamento.setAtualizadoEm(agoraLocal());
+    }
+
+    private LocalDateTime agoraLocal() {
+        return LocalDateTime.now(ZONA_APP);
+    }
+
+    private void validarSemConflitoHorario(
+            Integer usuarioId,
+            LocalDate data,
+            LocalTime horaInicio,
+            LocalTime horaFim,
+            Integer agendamentoIgnoradoId
+    ) {
+        validarSemConflitoHorario(usuarioId, data, horaInicio, horaFim, agendamentoIgnoradoId, MSG_CONFLITO_INTERVALO);
+    }
+
+    private void validarSemConflitoHorario(
+            Integer usuarioId,
+            LocalDate data,
+            LocalTime horaInicio,
+            LocalTime horaFim,
+            Integer agendamentoIgnoradoId,
+            String mensagemConflito
+    ) {
+        if (contarConflitosHorario(usuarioId, data, horaInicio, horaFim, agendamentoIgnoradoId) > 0) {
+            throw new ConflictException(mensagemConflito);
+        }
+    }
+
+    private long contarConflitosHorario(
+            Integer usuarioId,
+            LocalDate data,
+            LocalTime horaInicio,
+            LocalTime horaFim,
+            Integer agendamentoIgnoradoId
+    ) {
+        return agendamentoRepository.countAgendamentosConflitantes(
+                usuarioId,
+                data,
+                horaInicio,
+                horaFim,
+                agendamentoIgnoradoId,
+                StatusAgendamentoEnum.CANCELADO
+        );
+    }
+
+    private int resolverDuracaoMinutos(Integer duracaoMinutos) {
+        int duracao = duracaoMinutos != null ? duracaoMinutos : DURACAO_PADRAO_MIN;
+        if (duracao < DURACAO_SLOT_MIN || duracao > DURACAO_SLOT_MAX) {
+            throw new UnprocessableEntityException(
+                    "duracaoMinutos deve estar entre " + DURACAO_SLOT_MIN + " e " + DURACAO_SLOT_MAX
+            );
+        }
+        return duracao;
+    }
+
+    private void validarHorarioFuncionamento(LocalTime inicioFuncionamento, LocalTime fimFuncionamento) {
+        if (!inicioFuncionamento.isBefore(fimFuncionamento)) {
+            throw new UnprocessableEntityException(MSG_HORARIO_FUNCIONAMENTO_INVALIDO);
+        }
     }
 
     private boolean mesmoEstabelecimento(Usuario atual, Usuario outro) {
