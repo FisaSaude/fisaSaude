@@ -19,11 +19,25 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class UsuarioService {
 
+    private static final int TAMANHO_MINIMO_SENHA = 8;
+    private static final String MSG_CORPO_REQUISICAO_NULO = "Corpo da requisicao nao pode ser nulo";
+    private static final String MSG_ID_INVALIDO = "Id invalido";
+    private static final String MSG_ESTABELECIMENTO_ID_INVALIDO = "estabelecimentoId invalido";
+    private static final String MSG_USUARIO_NAO_ENCONTRADO = "Usuario nao encontrado";
+    private static final String MSG_ESTABELECIMENTO_NAO_ENCONTRADO = "Estabelecimento nao encontrado";
+    private static final String MSG_EMAIL_JA_CADASTRADO = "Ja existe usuario com o email informado";
+    private static final String MSG_EMAIL_JA_CADASTRADO_OUTRO_USUARIO = "Ja existe outro usuario com o email informado";
+    private static final String MSG_SENHA_INVALIDA = "Senha deve ter no minimo 8 caracteres";
+
     private final UsuarioRepository usuarioRepository;
     private final EstabelecimentoRepository estabelecimentoRepository;
     private final UsuarioMapper usuarioMapper;
 
-    public UsuarioService(UsuarioRepository usuarioRepository, EstabelecimentoRepository estabelecimentoRepository, UsuarioMapper usuarioMapper) {
+    public UsuarioService(
+            UsuarioRepository usuarioRepository,
+            EstabelecimentoRepository estabelecimentoRepository,
+            UsuarioMapper usuarioMapper
+    ) {
         this.usuarioRepository = usuarioRepository;
         this.estabelecimentoRepository = estabelecimentoRepository;
         this.usuarioMapper = usuarioMapper;
@@ -34,16 +48,14 @@ public class UsuarioService {
         validarDto(dto);
 
         if (usuarioRepository.existsByEmail(dto.email())) {
-            throw new ConflictException("Ja existe usuario com o email informado");
+            throw new ConflictException(MSG_EMAIL_JA_CADASTRADO);
         }
 
         validarSenha(dto.senha());
 
         Estabelecimento estabelecimento = buscarEstabelecimentoPorId(dto.estabelecimentoId());
         Usuario usuario = usuarioMapper.toEntity(dto, estabelecimento);
-
-        Usuario salvo = usuarioRepository.save(usuario);
-        return usuarioMapper.toResponse(salvo);
+        return salvarERetornarResponse(usuario);
     }
 
     @Transactional(readOnly = true)
@@ -56,11 +68,7 @@ public class UsuarioService {
     @Transactional(readOnly = true)
     public UsuarioResponseDto buscarPorId(Integer id) {
         validarId(id);
-
-        Usuario usuario = usuarioRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Usuario nao encontrado"));
-
-        return usuarioMapper.toResponse(usuario);
+        return usuarioMapper.toResponse(buscarUsuarioPorId(id));
     }
 
     @Transactional
@@ -68,56 +76,59 @@ public class UsuarioService {
         validarId(id);
         validarDto(dto);
 
-        Usuario usuario = usuarioRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Usuario nao encontrado"));
+        Usuario usuario = buscarUsuarioPorId(id);
 
         if (usuarioRepository.existsByEmailAndIdNot(dto.email(), id)) {
-            throw new ConflictException("Ja existe outro usuario com o email informado");
+            throw new ConflictException(MSG_EMAIL_JA_CADASTRADO_OUTRO_USUARIO);
         }
 
         validarSenha(dto.senha());
 
         Estabelecimento estabelecimento = buscarEstabelecimentoPorId(dto.estabelecimentoId());
         usuarioMapper.updateEntity(usuario, dto, estabelecimento);
-
-        Usuario atualizado = usuarioRepository.save(usuario);
-        return usuarioMapper.toResponse(atualizado);
+        return salvarERetornarResponse(usuario);
     }
 
     @Transactional
     public void deletar(Integer id) {
         validarId(id);
-
-        Usuario usuario = usuarioRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Usuario nao encontrado"));
-
-        usuarioRepository.delete(usuario);
+        usuarioRepository.delete(buscarUsuarioPorId(id));
     }
 
     private Estabelecimento buscarEstabelecimentoPorId(Integer estabelecimentoId) {
         if (estabelecimentoId == null || estabelecimentoId <= 0) {
-            throw new BadRequestException("estabelecimentoId invalido");
+            throw new BadRequestException(MSG_ESTABELECIMENTO_ID_INVALIDO);
         }
 
         return estabelecimentoRepository.findById(estabelecimentoId)
-                .orElseThrow(() -> new NotFoundException("Estabelecimento nao encontrado"));
+                .orElseThrow(() -> new NotFoundException(MSG_ESTABELECIMENTO_NAO_ENCONTRADO));
+    }
+
+    private Usuario buscarUsuarioPorId(Integer usuarioId) {
+        return usuarioRepository.findById(usuarioId)
+                .orElseThrow(() -> new NotFoundException(MSG_USUARIO_NAO_ENCONTRADO));
+    }
+
+    private UsuarioResponseDto salvarERetornarResponse(Usuario usuario) {
+        Usuario usuarioSalvo = usuarioRepository.save(usuario);
+        return usuarioMapper.toResponse(usuarioSalvo);
     }
 
     private void validarId(Integer id) {
         if (id == null || id <= 0) {
-            throw new BadRequestException("Id invalido");
+            throw new BadRequestException(MSG_ID_INVALIDO);
         }
     }
 
     private void validarSenha(String senha) {
-        if (senha == null || senha.trim().length() < 8) {
-            throw new UnprocessableEntityException("Senha deve ter no minimo 8 caracteres");
+        if (senha == null || senha.trim().length() < TAMANHO_MINIMO_SENHA) {
+            throw new UnprocessableEntityException(MSG_SENHA_INVALIDA);
         }
     }
 
     private void validarDto(Object dto) {
         if (dto == null) {
-            throw new BadRequestException("Corpo da requisicao nao pode ser nulo");
+            throw new BadRequestException(MSG_CORPO_REQUISICAO_NULO);
         }
     }
 }
