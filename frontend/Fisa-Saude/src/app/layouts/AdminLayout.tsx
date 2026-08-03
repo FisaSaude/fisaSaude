@@ -18,7 +18,7 @@ export default function AdminLayout() {
     { icon: LayoutDashboard, label: 'Painel da Clínica', path: '/admin' },
     { icon: Calendar, label: 'Agenda', path: '/admin/agenda' },
     { icon: Users, label: 'Pacientes', path: '/admin/clientes' },
-    { icon: TrendingUp, label: 'Matrículas', path: '/admin/relacionamento' },
+    { icon: TrendingUp, label: 'Marketing', path: '/admin/relacionamento' },
   ];
 
   const handleLogout = () => {
