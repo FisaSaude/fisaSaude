@@ -1,7 +1,8 @@
 import { useState, FormEvent } from 'react';
-import { useNavigate } from 'react-router';
-import { LogIn, Eye, EyeOff, ShieldAlert, CheckCircle2 } from 'lucide-react';
+import { Link, useNavigate } from 'react-router';
+import { LogIn, Eye, EyeOff, ShieldAlert, CheckCircle2, ArrowLeft } from 'lucide-react';
 import axios from 'axios';
+import { FisaLogo } from '../../components/FisaLogo';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -64,10 +65,10 @@ export default function Login() {
     <div className="min-h-screen w-screen flex items-center justify-center bg-gray-50/50 p-4">
       <div className="w-full max-w-md bg-white rounded-2xl border border-gray-200 p-6 sm:p-8 shadow-xl space-y-6">
         
-        {/* Identidade Visual Simplificada */}
-        <div className="text-center space-y-2">
-          <div className="inline-flex w-12 h-12 bg-emerald-500 rounded-xl items-center justify-center text-white font-extrabold text-2xl shadow-md shadow-emerald-500/20">
-            FS
+        {/* Identidade Visual */}
+        <div className="text-center space-y-3">
+          <div className="flex justify-center">
+            <FisaLogo size="lg" />
           </div>
           <h1 className="text-2xl font-bold text-gray-900">Acesso ao Sistema</h1>
           <p className="text-xs text-gray-500">Insira suas credenciais para gerenciar a clínica FisaSaúde</p>
@@ -144,6 +145,14 @@ export default function Login() {
             )}
           </button>
         </form>
+
+        <Link
+          to="/"
+          className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-colors"
+        >
+          <ArrowLeft size={16} aria-hidden="true" />
+          Voltar para o site
+        </Link>
       </div>
     </div>
   );
