@@ -5,8 +5,10 @@ export const COMPANY = {
   description: 'Clínica especializada em Pilates e acompanhamento personalizado, oferecendo um ambiente acolhedor e profissional para pessoas que buscam melhorar sua qualidade de vida, prevenir lesões e alcançar mais saúde através do movimento.',
 
   contact: {
-    phone: '(11) 3456-7890',
-    whatsapp: '5511987654321',
+    phone: '(11) 95373-8194',
+    whatsapp: '5511953738194',
+    whatsappDisplay: '(11) 95373-8194',
+    supportName: 'Ana',
     email: 'contato@fisasaude.com.br',
     supportEmail: 'atendimento@fisasaude.com.br',
   },
