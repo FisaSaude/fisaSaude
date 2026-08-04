@@ -98,12 +98,12 @@ export default function LandingPage() {
 
       {/* Hero Section */}
       <main id="main-content">
-        <section className="relative overflow-hidden py-16 sm:py-20 lg:py-32" aria-labelledby="hero-heading">
+        <section className="relative overflow-hidden py-8 sm:py-10 lg:py-12" aria-labelledby="hero-heading">
           <div className="absolute inset-0 bg-gradient-to-br from-emerald-50 via-white to-teal-50/30" aria-hidden="true" />
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
-            <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+            <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
               {/* Left Content */}
-              <div className="space-y-8 text-center lg:text-left">
+              <div className="space-y-6 text-center lg:text-left">
                 <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full text-sm font-semibold border border-primary/20">
                   <Award size={16} />
                   Referência em Atendimento Multidisciplinar
