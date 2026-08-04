@@ -139,6 +139,14 @@ export default function Login() {
                 {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
+            <div className="mt-2 flex justify-end">
+              <button
+                type="button"
+                className="text-xs font-medium text-emerald-600 hover:text-emerald-700 hover:underline"
+              >
+                Esqueci minha senha
+              </button>
+            </div>
           </div>
 
           <button
