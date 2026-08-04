@@ -546,9 +546,9 @@ export default function LandingPage() {
               </div>
 
               {/* Map */}
-              <div className="relative rounded-2xl overflow-hidden shadow-xl ring-1 ring-border h-[500px]">
+              <div className="relative rounded-2xl overflow-hidden shadow-xl ring-1 ring-border h-[500px] bg-muted">
                 <iframe
-                  src={`https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3657.1976!2d${COMPANY.location.lng}!3d${COMPANY.location.lat}!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zM8KwMzMnNDEuMSJTIDQ2wrAzOScyMi4xIlc!5e0!3m2!1spt-BR!2sbr!4v1234567890123!5m2!1spt-BR!2sbr`}
+                  src={COMPANY.maps.embedUrl}
                   width="100%"
                   height="100%"
                   style={{ border: 0 }}
@@ -558,6 +558,15 @@ export default function LandingPage() {
                   title="Localização FISA Saúde"
                   className="w-full h-full"
                 />
+                <a
+                  href={COMPANY.maps.openUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="absolute top-3 left-3 z-10 inline-flex items-center gap-2 rounded-lg bg-white/95 px-3 py-2 text-sm font-semibold text-foreground shadow-md ring-1 ring-border hover:bg-white"
+                >
+                  <MapPin size={16} className="text-primary" aria-hidden="true" />
+                  Abrir no Maps
+                </a>
               </div>
             </div>
           </div>
