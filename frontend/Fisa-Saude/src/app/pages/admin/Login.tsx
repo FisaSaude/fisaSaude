@@ -2,8 +2,6 @@ import { useState, FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { LogIn, Eye, EyeOff, ShieldAlert, CheckCircle2, ArrowLeft } from 'lucide-react';
 import axios from 'axios';
-import { FisaLogo } from '../../components/FisaLogo';
-
 export default function Login() {
   const navigate = useNavigate();
   
@@ -63,12 +61,25 @@ export default function Login() {
 
   return (
     <div className="min-h-screen w-screen flex items-center justify-center bg-gray-50/50 p-4">
-      <div className="w-full max-w-md bg-white rounded-2xl border border-gray-200 p-6 sm:p-8 shadow-xl space-y-6">
-        
+      <div className="w-full max-w-md space-y-3">
+        <Link
+          to="/"
+          className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 transition-colors"
+        >
+          <ArrowLeft size={14} aria-hidden="true" />
+          Voltar para o site
+        </Link>
+
+        <div className="bg-white rounded-2xl border border-gray-200 p-6 sm:p-8 shadow-xl space-y-6">
         {/* Identidade Visual */}
         <div className="text-center space-y-3">
           <div className="flex justify-center">
-            <FisaLogo size="lg" />
+            <img
+              src="/logo-fisasaude-header.png"
+              alt="Logo Fisa Saúde - Fisioterapia e Pilates"
+              className="h-12 sm:h-14 w-auto object-contain"
+              decoding="async"
+            />
           </div>
           <h1 className="text-2xl font-bold text-gray-900">Acesso ao Sistema</h1>
           <p className="text-xs text-gray-500">Insira suas credenciais para gerenciar a clínica FisaSaúde</p>
@@ -145,14 +156,7 @@ export default function Login() {
             )}
           </button>
         </form>
-
-        <Link
-          to="/"
-          className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-colors"
-        >
-          <ArrowLeft size={16} aria-hidden="true" />
-          Voltar para o site
-        </Link>
+        </div>
       </div>
     </div>
   );
