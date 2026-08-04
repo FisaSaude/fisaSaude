@@ -110,7 +110,8 @@ export default function LandingPage() {
                 </div>
 
                 <h1 id="hero-heading" className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl text-foreground leading-[1.1] font-bold tracking-tight">
-                  Movimento, Saúde e
+                  Movimento,{' '}
+                  <span className="whitespace-nowrap">Saúde e</span>
                   <span className="block bg-gradient-to-r from-primary via-emerald-500 to-teal-500 bg-clip-text text-transparent">
                     Qualidade de Vida
                   </span>
