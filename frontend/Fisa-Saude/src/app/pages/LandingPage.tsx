@@ -212,11 +212,11 @@ export default function LandingPage() {
                 </h2>
 
                 <p className="text-lg text-muted-foreground leading-relaxed">
-                  A <strong className="text-foreground">FISA Saúde</strong> é especializada em Pilates e acompanhamento personalizado, oferecendo um ambiente acolhedor e profissional para pessoas que buscam melhorar sua qualidade de vida, prevenir lesões e alcançar mais saúde através do movimento.
+                  Na <strong className="text-foreground">Fisa Saúde</strong>, acreditamos que cuidar vai muito além de tratar sintomas. Cada pessoa que chega até nós traz uma história, desafios e objetivos únicos, por isso escolhemos olhar cada paciente de forma integral, respeitando sua individualidade e compreendendo que reabilitar é também acolher.
                 </p>
 
                 <p className="text-lg text-muted-foreground leading-relaxed">
-                  Nossa metodologia combina técnica, cuidado individualizado e equipamentos de última geração para proporcionar uma experiência única de transformação física e bem-estar.
+                  Nosso compromisso é unir excelência técnica, escuta atenta e um cuidado genuinamente humano, porque acreditamos que pequenos gestos também fazem parte do processo de saúde. Mais do que aliviar dores ou recuperar funções, queremos ajudar cada pessoa a conquistar autonomia, confiança e qualidade de vida. Cuidar, para nós, é enxergar a pessoa antes da condição que ela apresenta.
                 </p>
 
                 <div className="grid sm:grid-cols-2 gap-6 pt-6">
