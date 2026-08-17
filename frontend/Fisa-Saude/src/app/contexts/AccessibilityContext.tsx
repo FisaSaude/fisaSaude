@@ -1,4 +1,10 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from 'react';
 
 export interface AccessibilitySettings {
   // Visual
@@ -26,144 +32,328 @@ export interface AccessibilitySettings {
 
 interface AccessibilityContextType {
   settings: AccessibilitySettings;
+
   updateSetting: <K extends keyof AccessibilitySettings>(
     key: K,
     value: AccessibilitySettings[K]
   ) => void;
+
   resetSettings: () => void;
+
   isPanelOpen: boolean;
+
   togglePanel: () => void;
 }
 
 const defaultSettings: AccessibilitySettings = {
+  // Visual
   highContrast: false,
   fontSize: 'normal',
   dyslexiaFont: false,
   increasedReadability: false,
   highlightLinks: false,
+
+  // Auditiva
   visualIndicators: true,
   librasEnabled: false,
+
+  // Motora
   largerButtons: false,
   increasedSpacing: false,
   simplifiedNavigation: false,
   keyboardNavigation: true,
+
+  // Cognitiva
   simpleLanguage: false,
   reducedAnimations: false,
   showIconText: false,
 };
 
-const AccessibilityContext = createContext<AccessibilityContextType | undefined>(undefined);
+const AccessibilityContext =
+  createContext<AccessibilityContextType | undefined>(
+    undefined
+  );
 
-export function AccessibilityProvider({ children }: { children: ReactNode }) {
+export function AccessibilityProvider({
+  children,
+}: {
+  children: ReactNode;
+}) {
   const [isPanelOpen, setIsPanelOpen] = useState(false);
-  const [settings, setSettings] = useState<AccessibilitySettings>(() => {
-    const saved = localStorage.getItem('accessibility-settings');
-    return saved ? { ...defaultSettings, ...JSON.parse(saved) } : defaultSettings;
-  });
 
-  useEffect(() => {
-    localStorage.setItem('accessibility-settings', JSON.stringify(settings));
-    applySettings(settings);
-  }, [settings]);
+  /*
+   * =========================================================
+   * CARREGAR CONFIGURAÇÕES SALVAS
+   * =========================================================
+   */
 
-  const applySettings = (settings: AccessibilitySettings) => {
+  const [settings, setSettings] =
+    useState<AccessibilitySettings>(() => {
+      try {
+        const saved = localStorage.getItem(
+          'accessibility-settings'
+        );
+
+        if (saved) {
+          const parsedSettings = JSON.parse(saved);
+
+          return {
+            ...defaultSettings,
+            ...parsedSettings,
+          };
+        }
+      } catch (error) {
+        console.error(
+          'Erro ao carregar configurações de acessibilidade:',
+          error
+        );
+      }
+
+      return defaultSettings;
+    });
+
+  /*
+   * =========================================================
+   * APLICAR CONFIGURAÇÕES NO <HTML>
+   * =========================================================
+   */
+
+  const applySettings = (
+    currentSettings: AccessibilitySettings
+  ) => {
     const root = document.documentElement;
 
-    // High Contrast
-    if (settings.highContrast) {
-      root.classList.add('high-contrast');
-    } else {
-      root.classList.remove('high-contrast');
-    }
+    /*
+     * -------------------------------------------------------
+     * VISUAL
+     * -------------------------------------------------------
+     */
 
-    // Font Size
-    root.setAttribute('data-font-size', settings.fontSize);
-    const fontSizeMap = {
+    // Alto contraste
+    root.classList.toggle(
+      'high-contrast',
+      currentSettings.highContrast
+    );
+
+    // Fonte para dislexia
+    root.classList.toggle(
+      'dyslexia-font',
+      currentSettings.dyslexiaFont
+    );
+
+    // Legibilidade aumentada
+    root.classList.toggle(
+      'increased-readability',
+      currentSettings.increasedReadability
+    );
+
+    // Destacar links
+    root.classList.toggle(
+      'highlight-links',
+      currentSettings.highlightLinks
+    );
+
+    /*
+     * -------------------------------------------------------
+     * MOTORA
+     * -------------------------------------------------------
+     */
+
+    // Botões maiores
+    root.classList.toggle(
+      'larger-buttons',
+      currentSettings.largerButtons
+    );
+
+    // Espaçamento aumentado
+    root.classList.toggle(
+      'increased-spacing',
+      currentSettings.increasedSpacing
+    );
+
+    // Navegação simplificada
+    root.classList.toggle(
+      'simplified-navigation',
+      currentSettings.simplifiedNavigation
+    );
+
+    // Navegação por teclado
+    root.classList.toggle(
+      'keyboard-navigation',
+      currentSettings.keyboardNavigation
+    );
+
+    /*
+     * -------------------------------------------------------
+     * COGNITIVA
+     * -------------------------------------------------------
+     */
+
+    // Linguagem simples
+    root.classList.toggle(
+      'simple-language',
+      currentSettings.simpleLanguage
+    );
+
+    // Reduzir animações
+    root.classList.toggle(
+      'reduced-animations',
+      currentSettings.reducedAnimations
+    );
+
+    // Mostrar texto nos ícones
+    root.classList.toggle(
+      'show-icon-text',
+      currentSettings.showIconText
+    );
+
+    /*
+     * -------------------------------------------------------
+     * AUDITIVA
+     * -------------------------------------------------------
+     */
+
+    // Indicadores visuais
+    root.classList.toggle(
+      'visual-indicators',
+      currentSettings.visualIndicators
+    );
+
+    // Libras
+    root.classList.toggle(
+      'libras-enabled',
+      currentSettings.librasEnabled
+    );
+
+    /*
+     * -------------------------------------------------------
+     * TAMANHO DA FONTE
+     * -------------------------------------------------------
+     */
+
+    const fontSizeMap: Record<
+      AccessibilitySettings['fontSize'],
+      string
+    > = {
       small: '14px',
       normal: '16px',
       large: '18px',
       'x-large': '20px',
     };
-    root.style.setProperty('--base-font-size', fontSizeMap[settings.fontSize]);
 
-    // Dyslexia Font
-    if (settings.dyslexiaFont) {
-      root.classList.add('dyslexia-font');
-    } else {
-      root.classList.remove('dyslexia-font');
-    }
+    root.setAttribute(
+      'data-font-size',
+      currentSettings.fontSize
+    );
 
-    // Increased Readability
-    if (settings.increasedReadability) {
-      root.classList.add('increased-readability');
-    } else {
-      root.classList.remove('increased-readability');
-    }
-
-    // Highlight Links
-    if (settings.highlightLinks) {
-      root.classList.add('highlight-links');
-    } else {
-      root.classList.remove('highlight-links');
-    }
-
-    // Larger Buttons
-    if (settings.largerButtons) {
-      root.classList.add('larger-buttons');
-    } else {
-      root.classList.remove('larger-buttons');
-    }
-
-    // Increased Spacing
-    if (settings.increasedSpacing) {
-      root.classList.add('increased-spacing');
-    } else {
-      root.classList.remove('increased-spacing');
-    }
-
-    // Reduced Animations
-    if (settings.reducedAnimations) {
-      root.classList.add('reduced-animations');
-    } else {
-      root.classList.remove('reduced-animations');
-    }
-
-    // Show Icon Text
-    if (settings.showIconText) {
-      root.classList.add('show-icon-text');
-    } else {
-      root.classList.remove('show-icon-text');
-    }
+    root.style.setProperty(
+      '--base-font-size',
+      fontSizeMap[currentSettings.fontSize]
+    );
   };
 
-  const updateSetting = <K extends keyof AccessibilitySettings>(
+  /*
+   * =========================================================
+   * SALVAR E APLICAR AUTOMATICAMENTE
+   * =========================================================
+   */
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        'accessibility-settings',
+        JSON.stringify(settings)
+      );
+    } catch (error) {
+      console.error(
+        'Erro ao salvar configurações de acessibilidade:',
+        error
+      );
+    }
+
+    applySettings(settings);
+  }, [settings]);
+
+  /*
+   * =========================================================
+   * ATUALIZAR CONFIGURAÇÃO
+   * =========================================================
+   */
+
+  const updateSetting = <
+    K extends keyof AccessibilitySettings
+  >(
     key: K,
     value: AccessibilitySettings[K]
   ) => {
-    setSettings((prev) => ({ ...prev, [key]: value }));
+    setSettings((previousSettings) => ({
+      ...previousSettings,
+      [key]: value,
+    }));
   };
+
+  /*
+   * =========================================================
+   * RESTAURAR CONFIGURAÇÕES
+   * =========================================================
+   */
 
   const resetSettings = () => {
     setSettings(defaultSettings);
+
+    localStorage.removeItem(
+      'accessibility-settings'
+    );
   };
 
+  /*
+   * =========================================================
+   * ABRIR / FECHAR PAINEL
+   * =========================================================
+   */
+
   const togglePanel = () => {
-    setIsPanelOpen((prev) => !prev);
+    setIsPanelOpen((previous) => !previous);
   };
+
+  /*
+   * =========================================================
+   * PROVIDER
+   * =========================================================
+   */
 
   return (
     <AccessibilityContext.Provider
-      value={{ settings, updateSetting, resetSettings, isPanelOpen, togglePanel }}
+      value={{
+        settings,
+        updateSetting,
+        resetSettings,
+        isPanelOpen,
+        togglePanel,
+      }}
     >
       {children}
     </AccessibilityContext.Provider>
   );
 }
 
+/*
+ * =========================================================
+ * HOOK
+ * =========================================================
+ */
+
 export function useAccessibility() {
-  const context = useContext(AccessibilityContext);
+  const context = useContext(
+    AccessibilityContext
+  );
+
   if (!context) {
-    throw new Error('useAccessibility must be used within AccessibilityProvider');
+    throw new Error(
+      'useAccessibility must be used within AccessibilityProvider'
+    );
   }
+
   return context;
 }
+
