@@ -9,13 +9,19 @@ import {
   Check,
 } from 'lucide-react';
 
-import { useAccessibility } from '../contexts/AccessibilityContext';
+import {
+  useAccessibility,
+} from '../contexts/AccessibilityContext';
+
 import {
   useEffect,
-  useId,
   useRef,
   useState,
 } from 'react';
+
+/* =========================================================
+   SECTION
+   ========================================================= */
 
 interface SectionProps {
   icon: React.ElementType;
@@ -24,12 +30,6 @@ interface SectionProps {
   children: React.ReactNode;
   defaultOpen?: boolean;
 }
-
-/*
- * =========================================================
- * SEÇÃO DO PAINEL
- * =========================================================
- */
 
 function Section({
   icon: Icon,
@@ -40,15 +40,13 @@ function Section({
 }: SectionProps) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
-  const sectionId = useId();
-  const contentId = `${sectionId}-content`;
-  const titleId = `${sectionId}-title`;
+  const sectionId = `section-${title
+    .toLowerCase()
+    .replace(/\s+/g, '-')
+    .replace(/[^\w-]/g, '')}`;
 
   return (
-    <section
-      className="border-b border-border last:border-b-0"
-      aria-labelledby={titleId}
-    >
+    <div className="border-b border-border last:border-b-0">
       <button
         type="button"
         onClick={() => setIsOpen((previous) => !previous)}
@@ -67,8 +65,9 @@ function Section({
           focus-visible:ring-inset
         "
         aria-expanded={isOpen}
-        aria-controls={contentId}
+        aria-controls={sectionId}
       >
+        {/* Ícone */}
         <div
           className="
             w-10
@@ -85,15 +84,12 @@ function Section({
           <Icon
             className="text-primary"
             size={20}
-            aria-hidden="true"
           />
         </div>
 
+        {/* Título e descrição */}
         <div className="flex-1 min-w-0">
-          <h3
-            id={titleId}
-            className="font-semibold text-foreground mb-1"
-          >
+          <h3 className="font-semibold text-foreground mb-1">
             {title}
           </h3>
 
@@ -102,6 +98,7 @@ function Section({
           </p>
         </div>
 
+        {/* Seta */}
         <ChevronDown
           className={`
             text-muted-foreground
@@ -116,22 +113,19 @@ function Section({
 
       {isOpen && (
         <div
-          id={contentId}
+          id={sectionId}
           className="px-4 pb-4 space-y-3"
         >
           {children}
         </div>
       )}
-    </section>
+    </div>
   );
 }
 
-
-/*
- * =========================================================
- * OPÇÃO DE TOGGLE
- * =========================================================
- */
+/* =========================================================
+   TOGGLE OPTION
+   ========================================================= */
 
 interface ToggleOptionProps {
   label: string;
@@ -146,11 +140,8 @@ function ToggleOption({
   checked,
   onChange,
 }: ToggleOptionProps) {
-  const id = useId();
-  const descriptionId = `${id}-description`;
-
   return (
-    <div
+    <label
       className="
         flex
         items-start
@@ -158,46 +149,42 @@ function ToggleOption({
         p-3
         rounded-lg
         hover:bg-muted/30
+        cursor-pointer
         transition-colors
       "
     >
+      {/* Checkbox */}
       <div className="flex items-center h-6">
         <input
-          id={id}
           type="checkbox"
           checked={checked}
           onChange={(event) =>
             onChange(event.target.checked)
           }
-          className="sr-only peer"
-          aria-describedby={
-            description
-              ? descriptionId
-              : undefined
-          }
+          className="
+            sr-only
+            peer
+          "
+          aria-label={label}
         />
 
-        <label
-          htmlFor={id}
+        {/* Switch visual */}
+        <div
           className="
             relative
-            block
             w-11
             h-6
             bg-muted
             rounded-full
-            cursor-pointer
-            peer-focus-visible:outline-none
+            peer-focus:outline-none
             peer-focus-visible:ring-2
             peer-focus-visible:ring-primary
             peer-checked:bg-primary
             transition-colors
           "
-          aria-label={`${label}: ${
-            checked ? 'ativado' : 'desativado'
-          }`}
+          aria-hidden="true"
         >
-          <span
+          <div
             className={`
               absolute
               top-0.5
@@ -208,54 +195,44 @@ function ToggleOption({
               rounded-full
               shadow-sm
               transition-transform
-              ${checked ? 'translate-x-5' : 'translate-x-0'}
+              ${
+                checked
+                  ? 'translate-x-5'
+                  : 'translate-x-0'
+              }
             `}
-            aria-hidden="true"
           />
-        </label>
+        </div>
       </div>
 
+      {/* Texto */}
       <div className="flex-1 min-w-0">
-        <label
-          htmlFor={id}
-          className="
-            block
-            font-medium
-            text-foreground
-            cursor-pointer
-          "
-        >
+        <div className="font-medium text-foreground">
           {label}
-        </label>
+        </div>
 
         {description && (
-          <p
-            id={descriptionId}
-            className="
-              text-sm
-              text-muted-foreground
-              mt-0.5
-            "
-          >
+          <p className="text-sm text-muted-foreground mt-0.5">
             {description}
           </p>
         )}
       </div>
-    </div>
+    </label>
   );
 }
 
-
-/*
- * =========================================================
- * TAMANHO DA FONTE
- * =========================================================
- */
+/* =========================================================
+   FONT SIZE OPTION
+   ========================================================= */
 
 interface FontSizeOptionProps {
-  size: 'small' | 'normal' | 'large' | 'x-large';
+  size:
+    | 'small'
+    | 'normal'
+    | 'large'
+    | 'x-large';
+
   label: string;
-  description: string;
   selected: boolean;
   onClick: () => void;
 }
@@ -263,12 +240,9 @@ interface FontSizeOptionProps {
 function FontSizeOption({
   size,
   label,
-  description,
   selected,
   onClick,
 }: FontSizeOptionProps) {
-  const id = useId();
-
   const sizeMap = {
     small: 'text-sm',
     normal: 'text-base',
@@ -276,9 +250,17 @@ function FontSizeOption({
     'x-large': 'text-xl',
   };
 
+  const accessibleLabel = {
+    small: 'Tamanho de fonte pequeno',
+    normal: 'Tamanho de fonte normal',
+    large: 'Tamanho de fonte grande',
+    'x-large': 'Tamanho de fonte muito grande',
+  };
+
   return (
-    <label
-      htmlFor={id}
+    <button
+      type="button"
+      onClick={onClick}
       className={`
         flex
         items-center
@@ -288,7 +270,11 @@ function FontSizeOption({
         border-2
         transition-all
         min-h-[52px]
-        cursor-pointer
+
+        focus:outline-none
+        focus-visible:ring-2
+        focus-visible:ring-primary
+        focus-visible:ring-offset-2
 
         ${
           selected
@@ -296,36 +282,15 @@ function FontSizeOption({
             : 'border-border hover:border-primary/50 hover:bg-muted/30'
         }
       `}
+      aria-pressed={selected}
+      aria-label={accessibleLabel[size]}
     >
-      <div className="flex items-center gap-2">
-        <input
-          id={id}
-          type="radio"
-          name="accessibility-font-size"
-          value={size}
-          checked={selected}
-          onChange={onClick}
-          className="
-            sr-only
-            peer
-          "
-          aria-label={`${label}, ${description}`}
-        />
-
-        <span
-          className={`
-            font-medium
-            ${sizeMap[size]}
-          `}
-          aria-hidden="true"
-        >
-          {label}
-        </span>
-
-        <span className="sr-only">
-          {description}
-        </span>
-      </div>
+      <span
+        className={`font-medium ${sizeMap[size]}`}
+        aria-hidden="true"
+      >
+        {label}
+      </span>
 
       {selected && (
         <Check
@@ -334,16 +299,13 @@ function FontSizeOption({
           aria-hidden="true"
         />
       )}
-    </label>
+    </button>
   );
 }
 
-
-/*
- * =========================================================
- * PAINEL PRINCIPAL
- * =========================================================
- */
+/* =========================================================
+   ACCESSIBILITY PANEL
+   ========================================================= */
 
 export function AccessibilityPanel() {
   const {
@@ -353,39 +315,50 @@ export function AccessibilityPanel() {
     togglePanel,
   } = useAccessibility();
 
-  const panelRef = useRef<HTMLDivElement>(null);
+  const titleRef = useRef<HTMLHeadingElement>(null);
 
-  /*
-   * Guarda o elemento que tinha foco
-   * antes do painel abrir.
-   */
-  const previousFocusedElement =
+  const previouslyFocusedElement =
     useRef<HTMLElement | null>(null);
 
-  /*
-   * =======================================================
-   * FOCO INICIAL + ESC
-   * =======================================================
-   */
+  /* =======================================================
+     FOCO AO ABRIR
+     ======================================================= */
 
   useEffect(() => {
-    previousFocusedElement.current =
+    previouslyFocusedElement.current =
       document.activeElement as HTMLElement;
 
     /*
-     * Coloca o foco no painel.
+     * Pequeno atraso para garantir que o painel
+     * já esteja renderizado antes de receber o foco.
      */
     const timer = window.setTimeout(() => {
-      panelRef.current?.focus();
-    }, 0);
+      titleRef.current?.focus();
+    }, 50);
 
-    /*
-     * ESC fecha o painel.
-     */
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, []);
+
+  /* =======================================================
+     ESC FECHA O PAINEL
+     ======================================================= */
+
+  useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         event.preventDefault();
+
         togglePanel();
+
+        /*
+         * Devolve o foco para o elemento que abriu
+         * o painel.
+         */
+        setTimeout(() => {
+          previouslyFocusedElement.current?.focus();
+        }, 50);
       }
     };
 
@@ -395,8 +368,6 @@ export function AccessibilityPanel() {
     );
 
     return () => {
-      window.clearTimeout(timer);
-
       document.removeEventListener(
         'keydown',
         handleKeyDown
@@ -404,19 +375,17 @@ export function AccessibilityPanel() {
     };
   }, [togglePanel]);
 
-  /*
-   * =======================================================
-   * DEVOLVE O FOCO PARA O BOTÃO
-   * =======================================================
-   */
+  /* =======================================================
+     FECHAR E DEVOLVER FOCO
+     ======================================================= */
 
-  useEffect(() => {
-    return () => {
-      window.setTimeout(() => {
-        previousFocusedElement.current?.focus();
-      }, 0);
-    };
-  }, []);
+  const handleClose = () => {
+    togglePanel();
+
+    setTimeout(() => {
+      previouslyFocusedElement.current?.focus();
+    }, 50);
+  };
 
   return (
     <div
@@ -436,32 +405,13 @@ export function AccessibilityPanel() {
       "
       role="presentation"
     >
-
-      {/* ===================================================
-          FUNDO
-          =================================================== */}
-
-      <button
-        type="button"
-        className="
-          absolute
-          inset-0
-          cursor-default
-        "
-        aria-label="Fechar painel de acessibilidade"
-        onClick={togglePanel}
-        tabIndex={-1}
-      />
-
-      {/* ===================================================
-          PAINEL
-          =================================================== */}
+      {/* =================================================
+          MODAL
+          ================================================= */}
 
       <div
-        ref={panelRef}
         id="accessibility-panel"
         className="
-          relative
           bg-card
           w-full
           sm:max-w-2xl
@@ -479,30 +429,26 @@ export function AccessibilityPanel() {
         aria-modal="true"
         aria-labelledby="accessibility-title"
         aria-describedby="accessibility-description"
-        tabIndex={-1}
       >
-
         {/* =================================================
             HEADER
             ================================================= */}
 
-        <header
-          className="
-            flex
-            items-center
-            justify-between
-            p-6
-            border-b
-            border-border
-          "
-        >
+        <div className="flex items-center justify-between p-6 border-b border-border">
           <div>
             <h2
               id="accessibility-title"
+              ref={titleRef}
+              tabIndex={-1}
               className="
                 text-2xl
                 font-bold
                 text-foreground
+                focus:outline-none
+                focus-visible:ring-2
+                focus-visible:ring-primary
+                focus-visible:ring-offset-2
+                rounded
               "
             >
               Central de Acessibilidade
@@ -510,11 +456,7 @@ export function AccessibilityPanel() {
 
             <p
               id="accessibility-description"
-              className="
-                text-sm
-                text-muted-foreground
-                mt-1
-              "
+              className="text-sm text-muted-foreground mt-1"
             >
               Personalize sua experiência de navegação
             </p>
@@ -522,7 +464,7 @@ export function AccessibilityPanel() {
 
           <button
             type="button"
-            onClick={togglePanel}
+            onClick={handleClose}
             className="
               p-2
               hover:bg-muted
@@ -531,6 +473,7 @@ export function AccessibilityPanel() {
               focus:outline-none
               focus-visible:ring-2
               focus-visible:ring-primary
+              focus-visible:ring-offset-2
             "
             aria-label="Fechar painel de acessibilidade"
           >
@@ -539,8 +482,7 @@ export function AccessibilityPanel() {
               aria-hidden="true"
             />
           </button>
-        </header>
-
+        </div>
 
         {/* =================================================
             CONTEÚDO
@@ -552,7 +494,6 @@ export function AccessibilityPanel() {
             overflow-y-auto
           "
         >
-
           {/* =================================================
               VISUAL
               ================================================= */}
@@ -563,7 +504,6 @@ export function AccessibilityPanel() {
             description="Ajustes para melhorar a visualização do conteúdo"
             defaultOpen={true}
           >
-
             <ToggleOption
               label="Modo Alto Contraste"
               description="Aumenta o contraste entre textos e fundos"
@@ -576,31 +516,24 @@ export function AccessibilityPanel() {
               }
             />
 
-            <fieldset className="space-y-2">
-              <legend
-                className="
-                  block
-                  font-medium
-                  text-foreground
-                "
+            {/* Tamanho da fonte */}
+
+            <div className="space-y-2">
+              <label
+                id="font-size-label"
+                className="block font-medium text-foreground"
               >
                 Tamanho da Fonte
-              </legend>
+              </label>
 
               <div
-                className="
-                  grid
-                  grid-cols-2
-                  gap-2
-                "
-                role="radiogroup"
-                aria-label="Tamanho da fonte"
+                className="grid grid-cols-2 gap-2"
+                role="group"
+                aria-labelledby="font-size-label"
               >
-
                 <FontSizeOption
                   size="small"
                   label="A-"
-                  description="Fonte pequena"
                   selected={
                     settings.fontSize === 'small'
                   }
@@ -615,7 +548,6 @@ export function AccessibilityPanel() {
                 <FontSizeOption
                   size="normal"
                   label="A"
-                  description="Fonte normal"
                   selected={
                     settings.fontSize === 'normal'
                   }
@@ -630,7 +562,6 @@ export function AccessibilityPanel() {
                 <FontSizeOption
                   size="large"
                   label="A+"
-                  description="Fonte grande"
                   selected={
                     settings.fontSize === 'large'
                   }
@@ -645,7 +576,6 @@ export function AccessibilityPanel() {
                 <FontSizeOption
                   size="x-large"
                   label="A++"
-                  description="Fonte muito grande"
                   selected={
                     settings.fontSize === 'x-large'
                   }
@@ -656,9 +586,8 @@ export function AccessibilityPanel() {
                     )
                   }
                 />
-
               </div>
-            </fieldset>
+            </div>
 
             <ToggleOption
               label="Fonte para Dislexia"
@@ -699,9 +628,7 @@ export function AccessibilityPanel() {
                 )
               }
             />
-
           </Section>
-
 
           {/* =================================================
               AUDITIVA
@@ -712,7 +639,6 @@ export function AccessibilityPanel() {
             title="Acessibilidade Auditiva"
             description="Recursos visuais para comunicação"
           >
-
             <ToggleOption
               label="Indicadores Visuais"
               description="Mostra alertas visuais para notificações e sons"
@@ -740,9 +666,7 @@ export function AccessibilityPanel() {
                 )
               }
             />
-
           </Section>
-
 
           {/* =================================================
               MOTORA
@@ -753,7 +677,6 @@ export function AccessibilityPanel() {
             title="Acessibilidade Motora"
             description="Facilita a interação e navegação"
           >
-
             <ToggleOption
               label="Botões Maiores"
               description="Aumenta o tamanho dos botões e áreas clicáveis"
@@ -809,9 +732,7 @@ export function AccessibilityPanel() {
                 )
               }
             />
-
           </Section>
-
 
           {/* =================================================
               COGNITIVA
@@ -822,7 +743,6 @@ export function AccessibilityPanel() {
             title="Acessibilidade Cognitiva"
             description="Simplifica o entendimento do conteúdo"
           >
-
             <ToggleOption
               label="Linguagem Simples"
               description="Usa termos mais simples e diretos"
@@ -864,25 +784,14 @@ export function AccessibilityPanel() {
                 )
               }
             />
-
           </Section>
-
         </div>
-
 
         {/* =================================================
             FOOTER
             ================================================= */}
 
-        <footer
-          className="
-            p-4
-            border-t
-            border-border
-            bg-muted/30
-          "
-        >
-
+        <div className="p-4 border-t border-border bg-muted/30">
           <button
             type="button"
             onClick={resetSettings}
@@ -903,11 +812,11 @@ export function AccessibilityPanel() {
               focus:outline-none
               focus-visible:ring-2
               focus-visible:ring-primary
+              focus-visible:ring-offset-2
               min-h-[48px]
             "
             aria-label="Restaurar configurações padrão de acessibilidade"
           >
-
             <RotateCcw
               size={20}
               aria-hidden="true"
@@ -916,11 +825,8 @@ export function AccessibilityPanel() {
             <span>
               Restaurar Padrão
             </span>
-
           </button>
-
-        </footer>
-
+        </div>
       </div>
     </div>
   );
