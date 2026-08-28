@@ -581,7 +581,7 @@ export default function LandingPage() {
             {/* Logo e Descrição */}
             <div className="lg:col-span-1">
               <div className="mb-6">
-                <FisaLogo size="lg" />
+                <FisaLogo size="lg" tone="onDark" />
               </div>
               <p className="text-slate-300 leading-relaxed text-sm mb-6">
                 Instituição de referência em atendimento multidisciplinar, promovendo saúde e bem-estar com excelência.
