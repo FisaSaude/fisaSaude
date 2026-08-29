@@ -148,19 +148,20 @@ export default function LandingPage() {
             <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
               {/* Left Content */}
               <div className="space-y-6 text-center lg:text-left">
-                <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full text-sm font-semibold border border-primary/20">
+                <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full text-sm font-medium border border-primary/20">
                   <Award size={16} />
-                  Clínica de pilates e fisioterapia no Tatuapé
+                  Clínica de pilates e fisioterapia
                 </div>
 
-                <h1 id="hero-heading" className="text-3xl sm:text-4xl lg:text-5xl text-foreground leading-tight font-bold tracking-tight">
-                  <span className="bg-gradient-to-r from-primary via-emerald-500 to-teal-500 bg-clip-text text-transparent">
-                    Pilates no Tatuapé
+                <h1 id="hero-heading" className="text-3xl sm:text-4xl lg:text-5xl text-foreground leading-[1.2] font-semibold tracking-tight">
+                  Movimento com propósito.
+                  <span className="block bg-gradient-to-r from-primary via-emerald-500 to-teal-500 bg-clip-text text-transparent">
+                    Cuidado com o seu corpo.
                   </span>
                 </h1>
 
-                <p className="text-lg sm:text-xl text-muted-foreground leading-relaxed max-w-2xl mx-auto lg:mx-0">
-                  Na Zona Leste de SP, a Fisa Saúde cuida da sua reabilitação, postura e bem-estar com pilates e fisioterapia de perto, sem pressa e com acompanhamento real.
+                <p className="text-base sm:text-lg text-muted-foreground leading-relaxed max-w-xl mx-auto lg:mx-0">
+                  Pilates e fisioterapia com atenção individual, foco em prevenção, reabilitação e bem-estar.
                 </p>
 
                 <div className="flex flex-col sm:flex-row gap-5 sm:gap-6">
