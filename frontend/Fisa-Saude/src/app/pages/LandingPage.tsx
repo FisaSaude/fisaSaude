@@ -162,8 +162,10 @@ export default function LandingPage() {
                 <div className="relative rounded-3xl overflow-hidden shadow-2xl ring-1 ring-border">
                   <ImageWithFallback
                     src={heroImage1}
-                    alt="Aula de Pilates na FISA Saúde"
+                    alt="Aula de pilates na Fisa Saúde"
                     className="w-full h-[400px] lg:h-[600px] object-cover"
+                    loading="eager"
+                    fetchPriority="high"
                   />
                 </div>
 
@@ -192,8 +194,9 @@ export default function LandingPage() {
                 <div className="relative rounded-3xl overflow-hidden shadow-2xl ring-1 ring-border">
                   <ImageWithFallback
                     src={aboutImage}
-                    alt="Atendimento personalizado de Pilates na FISA Saúde"
+                    alt="Atendimento de fisioterapia e pilates na Fisa Saúde"
                     className="w-full h-[400px] lg:h-[500px] object-cover"
+                    loading="lazy"
                   />
                 </div>
               </div>
