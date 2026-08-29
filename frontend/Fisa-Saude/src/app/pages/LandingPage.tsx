@@ -1,8 +1,18 @@
-import { Menu, X, Phone, MapPin, Instagram, Facebook, Mail, CheckCircle, Star, ArrowRight, Award, Users, Heart, Shield } from 'lucide-react';
+import { Menu, X, Phone, MapPin, Instagram, Facebook, Mail, CheckCircle, Star, ArrowRight, Award, Users, Heart, Shield, Info } from 'lucide-react';
 import { useState } from 'react';
 import { ImageWithFallback } from '../components/figma/ImageWithFallback';
 import { FisaLogo } from '../components/FisaLogo';
 import { COMPANY } from '../constants/company';
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '../components/ui/dialog';
 
 // Imagens reais da FISA Saúde
 import heroImage1 from '../../imports/Captura_de_tela_de_2026-05-31_19-26-55.png';
@@ -110,15 +120,15 @@ export default function LandingPage() {
                 </div>
 
                 <h1 id="hero-heading" className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl text-foreground leading-[1.1] font-bold tracking-tight">
-                  Movimento,{' '}
-                  <span className="whitespace-nowrap">Saúde e</span>
+                  Pilates e Fisioterapia{' '}
+                  <span className="whitespace-nowrap">no Tatuapé</span>
                   <span className="block bg-gradient-to-r from-primary via-emerald-500 to-teal-500 bg-clip-text text-transparent">
-                    Qualidade de Vida
+                    São Paulo - SP
                   </span>
                 </h1>
 
                 <p className="text-lg sm:text-xl text-muted-foreground leading-relaxed max-w-2xl mx-auto lg:mx-0">
-                  Agende suas aulas de Pilates de forma simples e rápida. A FISA Saúde oferece atendimento personalizado para promover bem-estar, prevenção e reabilitação física.
+                  Agende suas aulas de Pilates e sessões de fisioterapia de forma simples e rápida. A FISA Saúde, na Zona Leste de São Paulo, oferece atendimento personalizado para promover bem-estar, prevenção e reabilitação física.
                 </p>
 
                 <div className="flex flex-col sm:flex-row gap-4">
@@ -162,24 +172,67 @@ export default function LandingPage() {
                 <div className="relative rounded-3xl overflow-hidden shadow-2xl ring-1 ring-border">
                   <ImageWithFallback
                     src={heroImage1}
-                    alt="Aula de pilates na Fisa Saúde"
+                    alt="Clínica de pilates no Tatuapé"
                     className="w-full h-[400px] lg:h-[600px] object-cover"
                     loading="eager"
                     fetchPriority="high"
                   />
                 </div>
 
-                {/* Floating Badge */}
-                <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 lg:left-auto lg:translate-x-0 lg:-left-8 bg-white rounded-2xl p-6 shadow-2xl ring-1 ring-border max-w-[280px]">
-                  <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 bg-gradient-to-br from-primary to-emerald-600 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
-                      <Shield className="text-white" size={28} />
-                    </div>
-                    <div>
-                      <div className="text-sm text-muted-foreground font-medium">Certificada</div>
-                      <div className="text-xl text-foreground font-bold">ISO 9001:2015</div>
-                    </div>
-                  </div>
+                {/* Floating Badge — posição inalterada; escala só no botão interno */}
+                <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 lg:left-auto lg:translate-x-0 lg:-left-8 max-w-[280px]">
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <button
+                        type="button"
+                        title="Clique para saber mais"
+                        aria-label="Certificada ISO 9001:2015. Clique para saber mais"
+                        className="w-full bg-white rounded-2xl p-6 shadow-2xl ring-1 ring-border cursor-pointer text-left transition-[transform,box-shadow] duration-200 ease-in-out hover:scale-[1.03] hover:shadow-[0_25px_50px_-12px_rgba(0,0,0,0.28)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className="w-14 h-14 bg-gradient-to-br from-primary to-emerald-600 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
+                            <Shield className="text-white" size={28} aria-hidden="true" />
+                          </div>
+                          <div>
+                            <div className="text-sm text-muted-foreground font-medium">Certificada</div>
+                            <div className="text-xl text-foreground font-bold flex items-center gap-1.5">
+                              ISO 9001:2015
+                              <Info className="text-muted-foreground flex-shrink-0" size={16} aria-hidden="true" />
+                            </div>
+                          </div>
+                        </div>
+                      </button>
+                    </DialogTrigger>
+                    <DialogContent className="bg-white rounded-[12px] max-w-[500px] sm:max-w-[500px] p-6 border-0">
+                      <DialogHeader>
+                        <DialogTitle className="pr-8 text-left text-xl leading-snug">
+                          ISO 9001:2015 – Sistema de Gestão da Qualidade
+                        </DialogTitle>
+                        <DialogDescription className="text-left text-base text-muted-foreground leading-relaxed">
+                          A ISO 9001:2015 é uma certificação internacional que garante que a empresa segue padrões rigorosos de qualidade, organização de processos e melhoria contínua. Isso significa mais segurança, eficiência e confiança para os clientes.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <ul className="list-disc pl-5 space-y-2 text-foreground text-sm">
+                        <li>Padronização de processos</li>
+                        <li>Foco na satisfação do cliente</li>
+                        <li>Melhoria contínua</li>
+                        <li>Gestão eficiente</li>
+                      </ul>
+                      <p className="text-xs text-muted-foreground">
+                        Certificação reconhecida internacionalmente
+                      </p>
+                      <DialogFooter>
+                        <DialogClose asChild>
+                          <button
+                            type="button"
+                            className="bg-gradient-to-r from-primary to-emerald-600 text-white px-5 py-2.5 rounded-xl font-semibold text-sm hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                          >
+                            Fechar
+                          </button>
+                        </DialogClose>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
                 </div>
               </div>
             </div>
@@ -194,7 +247,7 @@ export default function LandingPage() {
                 <div className="relative rounded-3xl overflow-hidden shadow-2xl ring-1 ring-border">
                   <ImageWithFallback
                     src={aboutImage}
-                    alt="Atendimento de fisioterapia e pilates na Fisa Saúde"
+                    alt="Fisioterapia no Tatuapé São Paulo"
                     className="w-full h-[400px] lg:h-[500px] object-cover"
                     loading="lazy"
                   />
@@ -215,7 +268,7 @@ export default function LandingPage() {
                 </h2>
 
                 <p className="text-lg text-muted-foreground leading-relaxed">
-                  Na <strong className="text-foreground">Fisa Saúde</strong>, acreditamos que cuidar vai muito além de tratar sintomas. Cada pessoa que chega até nós traz uma história, desafios e objetivos únicos, por isso escolhemos olhar cada paciente de forma integral, respeitando sua individualidade e compreendendo que reabilitar é também acolher.
+                  Na <strong className="text-foreground">Fisa Saúde</strong>, no Tatuapé, acreditamos que cuidar vai muito além de tratar sintomas. Cada pessoa que chega até nós traz uma história, desafios e objetivos únicos, por isso escolhemos olhar cada paciente de forma integral, respeitando sua individualidade e compreendendo que reabilitar é também acolher.
                 </p>
 
                 <p className="text-lg text-muted-foreground leading-relaxed">
@@ -277,7 +330,11 @@ export default function LandingPage() {
                 Nossos Serviços de Pilates
               </h2>
               <p className="text-lg text-muted-foreground">
-                Atendimento personalizado com foco em suas necessidades individuais, promovendo saúde e bem-estar através do movimento.
+                Atendimento personalizado com foco em suas necessidades individuais, promovendo saúde e bem-estar através do movimento. Quem procura fisioterapia no Tatuapé encontra aqui avaliação cuidadosa para dores, pós-operatório, lesões e prevenção — perto de quem vive na Zona Leste de São Paulo.
+              </p>
+              <h3 className="text-xl font-bold text-foreground mt-8 mb-3">Quando procurar fisioterapia</h3>
+              <p className="text-lg text-muted-foreground">
+                Procure fisioterapia quando a dor persiste, a mobilidade diminui ou você precisa de reabilitação segura. Nossa equipe em São Paulo - SP combina pilates terapêutico e fisioterapia para recuperar função e qualidade de vida no dia a dia.
               </p>
             </div>
 
@@ -316,6 +373,9 @@ export default function LandingPage() {
               <h2 id="diferenciais-heading" className="text-3xl sm:text-4xl lg:text-5xl text-foreground font-bold mb-6">
                 Benefícios do Pilates
               </h2>
+              <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
+                O pilates no Tatuapé ajuda a fortalecer o corpo com baixo impacto, melhorar a postura e aliviar tensões do cotidiano. Na Fisa Saúde, os exercícios são adaptados à sua condição, com acompanhamento próximo para quem busca mais disposição na Zona Leste de São Paulo.
+              </p>
             </div>
 
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
@@ -467,7 +527,7 @@ export default function LandingPage() {
               Agende sua Aula
             </h2>
             <p className="text-lg sm:text-xl text-white/90 mb-10 max-w-2xl mx-auto leading-relaxed">
-              Comece agora sua jornada rumo a mais saúde, movimento e qualidade de vida com a FISA Saúde.
+              Comece agora sua jornada rumo a mais saúde, movimento e qualidade de vida com a FISA Saúde, sua clínica de pilates e fisioterapia no Tatuapé.
             </p>
             <button
               onClick={handleWhatsAppClick}
@@ -490,10 +550,10 @@ export default function LandingPage() {
                 Localização
               </div>
               <h2 id="contato-heading" className="text-3xl sm:text-4xl lg:text-5xl text-foreground font-bold mb-6">
-                Venha nos visitar
+                Onde estamos
               </h2>
               <p className="text-lg text-muted-foreground">
-                Estamos localizados em um dos endereços mais privilegiados de São Paulo.
+                Atendemos na região do Tatuapé, Zona Leste de São Paulo, com fácil acesso para moradores próximos.
               </p>
             </div>
 
@@ -587,7 +647,7 @@ export default function LandingPage() {
                 <FisaLogo size="lg" tone="onDark" />
               </div>
               <p className="text-slate-300 leading-relaxed text-sm mb-6">
-                Instituição de referência em atendimento multidisciplinar, promovendo saúde e bem-estar com excelência.
+                Clínica de pilates e fisioterapia no Tatuapé, Zona Leste de São Paulo, promovendo saúde e bem-estar com excelência.
               </p>
               <div className="flex gap-3">
                 <a
