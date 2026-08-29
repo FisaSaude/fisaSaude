@@ -11,7 +11,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '../components/ui/dialog';
 import {
   Accordion,
@@ -30,6 +29,7 @@ import pilatesImage3 from '../../imports/WhatsApp_Image_2026-05-31_at_19.26.18.j
 
 export default function LandingPage() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isoOpen, setIsoOpen] = useState(false);
 
   const handleWhatsAppClick = (preset?: string) => {
     const message = encodeURIComponent(
@@ -147,13 +147,13 @@ export default function LandingPage() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
             <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
               {/* Left Content */}
-              <div className="space-y-6 text-center lg:text-left">
+              <div className="space-y-6 text-center lg:text-left pb-16 lg:pb-0">
                 <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full text-sm font-medium border border-primary/20">
                   <Award size={16} />
                   Clínica de pilates e fisioterapia
                 </div>
 
-                <h1 id="hero-heading" className="text-3xl sm:text-4xl lg:text-5xl text-foreground leading-[1.2] font-semibold tracking-tight">
+                <h1 id="hero-heading" className="text-[1.65rem] sm:text-4xl lg:text-5xl text-foreground leading-snug font-semibold tracking-tight">
                   Movimento com propósito.
                   <span className="block bg-gradient-to-r from-primary via-emerald-500 to-teal-500 bg-clip-text text-transparent">
                     Cuidado com o seu corpo.
@@ -221,71 +221,82 @@ export default function LandingPage() {
 
               {/* Right Image */}
               <div className="relative order-first lg:order-last">
-                <div className="relative rounded-3xl overflow-hidden shadow-2xl ring-1 ring-border">
+                <div className="relative rounded-2xl lg:rounded-3xl overflow-hidden shadow-2xl ring-1 ring-border">
                   <ImageWithFallback
                     src={heroImage1}
                     alt="Clínica de pilates no Tatuapé"
-                    className="w-full h-[400px] lg:h-[600px] object-cover"
+                    className="w-full h-[240px] sm:h-[320px] lg:h-[600px] object-cover"
                     loading="eager"
                     fetchPriority="high"
                   />
                 </div>
 
-                {/* Floating Badge — posição inalterada; escala só no botão interno */}
-                <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 lg:left-auto lg:translate-x-0 lg:-left-8 max-w-[280px]">
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <button
-                        type="button"
-                        title="Clique para saber mais"
-                        aria-label="Certificada ISO 9001:2015. Clique para saber mais"
-                        className="w-full bg-white rounded-2xl p-6 shadow-2xl ring-1 ring-border cursor-pointer text-left transition-[transform,box-shadow] duration-200 ease-in-out hover:scale-[1.03] hover:shadow-[0_25px_50px_-12px_rgba(0,0,0,0.28)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-                      >
-                        <div className="flex items-center gap-4">
-                          <div className="w-14 h-14 bg-gradient-to-br from-primary to-emerald-600 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
-                            <Shield className="text-white" size={28} aria-hidden="true" />
-                          </div>
-                          <div>
-                            <div className="text-sm text-muted-foreground font-medium">Certificada</div>
-                            <div className="text-xl text-foreground font-bold flex items-center gap-1.5">
-                              ISO 9001:2015
-                              <Info className="text-muted-foreground flex-shrink-0" size={16} aria-hidden="true" />
-                            </div>
+                <Dialog open={isoOpen} onOpenChange={setIsoOpen}>
+                  <button
+                    type="button"
+                    onClick={() => setIsoOpen(true)}
+                    title="Clique para saber mais"
+                    aria-label="Certificada ISO 9001:2015. Clique para saber mais"
+                    className="lg:hidden mt-3 mx-auto flex items-center gap-1.5 rounded-full border border-border bg-white px-3 py-1.5 text-xs text-muted-foreground shadow-sm"
+                  >
+                    <Shield className="text-primary" size={14} aria-hidden="true" />
+                    ISO 9001
+                    <Info size={12} aria-hidden="true" />
+                  </button>
+
+                  <div className="hidden lg:block absolute -bottom-6 left-auto translate-x-0 -left-8 max-w-[280px]">
+                    <button
+                      type="button"
+                      onClick={() => setIsoOpen(true)}
+                      title="Clique para saber mais"
+                      aria-label="Certificada ISO 9001:2015. Clique para saber mais"
+                      className="w-full bg-white rounded-2xl p-6 shadow-2xl ring-1 ring-border cursor-pointer text-left transition-[transform,box-shadow] duration-200 ease-in-out hover:scale-[1.03] hover:shadow-[0_25px_50px_-12px_rgba(0,0,0,0.28)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="w-14 h-14 bg-gradient-to-br from-primary to-emerald-600 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
+                          <Shield className="text-white" size={28} aria-hidden="true" />
+                        </div>
+                        <div>
+                          <div className="text-sm text-muted-foreground font-medium">Certificada</div>
+                          <div className="text-xl text-foreground font-bold flex items-center gap-1.5">
+                            ISO 9001:2015
+                            <Info className="text-muted-foreground flex-shrink-0" size={16} aria-hidden="true" />
                           </div>
                         </div>
-                      </button>
-                    </DialogTrigger>
-                    <DialogContent className="bg-white rounded-[12px] max-w-[500px] sm:max-w-[500px] p-6 border-0">
-                      <DialogHeader>
-                        <DialogTitle className="pr-8 text-left text-xl leading-snug">
-                          ISO 9001:2015, Sistema de Gestão da Qualidade
-                        </DialogTitle>
-                        <DialogDescription className="text-left text-base text-muted-foreground leading-relaxed">
-                          A ISO 9001:2015 é uma certificação internacional que garante que a empresa segue padrões rigorosos de qualidade, organização de processos e melhoria contínua. Isso significa mais segurança, eficiência e confiança para os clientes.
-                        </DialogDescription>
-                      </DialogHeader>
-                      <ul className="list-disc pl-5 space-y-2 text-foreground text-sm">
-                        <li>Padronização de processos</li>
-                        <li>Foco na satisfação do cliente</li>
-                        <li>Melhoria contínua</li>
-                        <li>Gestão eficiente</li>
-                      </ul>
-                      <p className="text-xs text-muted-foreground">
-                        Certificação reconhecida internacionalmente
-                      </p>
-                      <DialogFooter>
-                        <DialogClose asChild>
-                          <button
-                            type="button"
-                            className="bg-gradient-to-r from-primary to-emerald-600 text-white px-5 py-2.5 rounded-xl font-semibold text-sm hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-                          >
-                            Fechar
-                          </button>
-                        </DialogClose>
-                      </DialogFooter>
-                    </DialogContent>
-                  </Dialog>
-                </div>
+                      </div>
+                    </button>
+                  </div>
+
+                  <DialogContent className="bg-white rounded-[12px] max-w-[500px] sm:max-w-[500px] p-6 border-0">
+                    <DialogHeader>
+                      <DialogTitle className="pr-8 text-left text-xl leading-snug">
+                        ISO 9001:2015, Sistema de Gestão da Qualidade
+                      </DialogTitle>
+                      <DialogDescription className="text-left text-base text-muted-foreground leading-relaxed">
+                        A ISO 9001:2015 é uma certificação internacional que garante que a empresa segue padrões rigorosos de qualidade, organização de processos e melhoria contínua. Isso significa mais segurança, eficiência e confiança para os clientes.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <ul className="list-disc pl-5 space-y-2 text-foreground text-sm">
+                      <li>Padronização de processos</li>
+                      <li>Foco na satisfação do cliente</li>
+                      <li>Melhoria contínua</li>
+                      <li>Gestão eficiente</li>
+                    </ul>
+                    <p className="text-xs text-muted-foreground">
+                      Certificação reconhecida internacionalmente
+                    </p>
+                    <DialogFooter>
+                      <DialogClose asChild>
+                        <button
+                          type="button"
+                          className="bg-gradient-to-r from-primary to-emerald-600 text-white px-5 py-2.5 rounded-xl font-semibold text-sm hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                        >
+                          Fechar
+                        </button>
+                      </DialogClose>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
               </div>
             </div>
           </div>
