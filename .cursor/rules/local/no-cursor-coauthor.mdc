@@ -1,0 +1,29 @@
+---
+description: Proibido Co-authored-by Cursor em qualquer commit
+alwaysApply: true
+---
+
+# Proibido: co-autor Cursor
+
+É **proibido** atribuir commits (ou PRs) ao Cursor. O GitHub mostra "85ED and cursoragent" quando a mensagem tem trailer ou o committer não é o desenvolvedor.
+
+## Nunca fazer
+
+- Não incluir `Co-authored-by: Cursor <cursoragent@cursor.com>`
+- Não incluir qualquer `Co-authored-by:` com cursor, cursoragent ou cursor.com
+- Não usar `--trailer` / `git interpret-trailers` com Cursor
+- Não alterar `GIT_AUTHOR_*` / `GIT_COMMITTER_*` para o Cursor
+- Depois de `git commit`, se o trailer aparecer: reescrever a mensagem **sem** o trailer antes do push (o ambiente às vezes injeta sozinho)
+
+## Sempre fazer
+
+- Autor e committer = Git local do desenvolvedor (`85ED` / e-mail dele)
+- Mensagem só com o texto do commit, sem trailers de IA
+- Conferir: `git log -1 --format='%an %ae%n%cn %ce%n%B'`
+
+## Configuração Cursor (obrigatório)
+
+- IDE: **Cursor Settings → Agent → Attribution** desligado (commits e PRs)
+- CLI: `~/.cursor/cli-config.json` → `attribution.attributeCommitsToAgent: false` e `attributePRsToAgent: false`
+
+Se o Cursor injetar o trailer mesmo assim, o hook em `.githooks/prepare-commit-msg` deve removê-lo. Ativar no repo: `git config core.hooksPath .githooks`

@@ -1,0 +1,8 @@
+#!/bin/sh
+# Remove trailers de co-autor do Cursor injetados pelo editor/agent.
+msg_file="$1"
+[ -f "$msg_file" ] || exit 0
+tmp="${msg_file}.tmp"
+grep -v -E '^Co-authored-by:.*[Cc]ursor' "$msg_file" | grep -v -E '^Co-authored-by:.*cursoragent@cursor\.com' > "$tmp" || true
+mv "$tmp" "$msg_file"
+exit 0
