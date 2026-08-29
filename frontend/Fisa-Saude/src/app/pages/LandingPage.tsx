@@ -71,11 +71,11 @@ export default function LandingPage() {
                 href={COMPANY.social.instagram}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="px-3 py-3 min-h-[44px] text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-all flex items-center gap-2 font-medium"
-                aria-label="Veja o dia a dia no Instagram"
+                className="p-3 min-h-[44px] min-w-[44px] text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-all flex items-center justify-center"
+                aria-label="Instagram da Fisa Saúde"
+                title="Instagram"
               >
-                <Instagram size={18} aria-hidden="true" />
-                <span className="hidden xl:inline">Instagram</span>
+                <Instagram size={20} aria-hidden="true" />
               </a>
               <a
                 href="/admin/login"
@@ -164,19 +164,19 @@ export default function LandingPage() {
                   Na Zona Leste de SP, a Fisa Saúde cuida da sua reabilitação, postura e bem-estar com pilates e fisioterapia de perto, sem pressa e com acompanhamento real.
                 </p>
 
-                <div className="flex flex-col sm:flex-row gap-4">
+                <div className="flex flex-col sm:flex-row gap-5 sm:gap-6">
                   <button
                     onClick={() =>
                       handleWhatsAppClick(
                         'Olá! Quero agendar uma aula experimental de pilates na Fisa Saúde, no Tatuapé.',
                       )
                     }
-                    className="group bg-gradient-to-r from-primary to-emerald-600 hover:from-primary/90 hover:to-emerald-700 text-white px-8 py-4 min-h-[52px] rounded-xl transition-all shadow-xl hover:shadow-2xl hover:scale-105 active:scale-95 flex items-center justify-center gap-2 font-semibold text-lg"
+                    className="group bg-gradient-to-b from-primary to-emerald-700 text-white px-8 py-4 min-h-[52px] rounded-[14px] font-medium tracking-wide text-lg shadow-[0_8px_24px_-8px_rgba(5,150,105,0.45)] transition-all duration-300 ease-in-out hover:scale-[1.02] hover:from-emerald-700 hover:to-emerald-800 hover:shadow-[0_10px_28px_-8px_rgba(5,150,105,0.5)] active:scale-[0.99] flex items-center justify-center gap-2.5"
                     aria-label="Agendar aula experimental pelo WhatsApp"
                   >
-                    <Phone size={22} aria-hidden="true" />
+                    <Phone size={20} aria-hidden="true" />
                     <span>Agendar aula experimental</span>
-                    <ArrowRight size={22} className="group-hover:translate-x-1 transition-transform" aria-hidden="true" />
+                    <ArrowRight size={18} className="opacity-90 transition-transform duration-300 ease-in-out group-hover:translate-x-0.5" aria-hidden="true" />
                   </button>
                   <button
                     type="button"
@@ -185,7 +185,7 @@ export default function LandingPage() {
                         'Olá! Quero agendar uma avaliação de fisioterapia na Fisa Saúde, no Tatuapé.',
                       )
                     }
-                    className="bg-white hover:bg-accent text-foreground px-8 py-4 min-h-[52px] rounded-xl border-2 border-border hover:border-primary/30 transition-all flex items-center justify-center font-semibold text-lg shadow-sm hover:scale-105 active:scale-95"
+                    className="bg-transparent text-foreground px-8 py-4 min-h-[52px] rounded-[14px] font-medium tracking-wide text-lg border border-primary/35 hover:bg-primary/[0.06] hover:border-primary/55 transition-all duration-300 ease-in-out hover:scale-[1.02] active:scale-[0.99] flex items-center justify-center"
                     aria-label="Agendar avaliação pelo WhatsApp"
                   >
                     Agendar avaliação
