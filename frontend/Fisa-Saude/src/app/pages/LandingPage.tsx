@@ -161,7 +161,7 @@ export default function LandingPage() {
                 </h1>
 
                 <p className="text-lg sm:text-xl text-muted-foreground leading-relaxed max-w-2xl mx-auto lg:mx-0">
-                  Na Zona Leste de SP, a Fisa Saúde cuida da sua reabilitação, postura e bem-estar com pilates e fisioterapia de perto — sem pressa e com acompanhamento real.
+                  Na Zona Leste de SP, a Fisa Saúde cuida da sua reabilitação, postura e bem-estar com pilates e fisioterapia de perto, sem pressa e com acompanhamento real.
                 </p>
 
                 <div className="flex flex-col sm:flex-row gap-4">
@@ -258,7 +258,7 @@ export default function LandingPage() {
                     <DialogContent className="bg-white rounded-[12px] max-w-[500px] sm:max-w-[500px] p-6 border-0">
                       <DialogHeader>
                         <DialogTitle className="pr-8 text-left text-xl leading-snug">
-                          ISO 9001:2015 – Sistema de Gestão da Qualidade
+                          ISO 9001:2015, Sistema de Gestão da Qualidade
                         </DialogTitle>
                         <DialogDescription className="text-left text-base text-muted-foreground leading-relaxed">
                           A ISO 9001:2015 é uma certificação internacional que garante que a empresa segue padrões rigorosos de qualidade, organização de processos e melhoria contínua. Isso significa mais segurança, eficiência e confiança para os clientes.
@@ -382,7 +382,7 @@ export default function LandingPage() {
                 Nossos Serviços de Pilates
               </h2>
               <p className="text-lg text-muted-foreground">
-                Atendimento personalizado com foco em suas necessidades individuais, promovendo saúde e bem-estar através do movimento. Quem procura fisioterapia no Tatuapé SP encontra aqui avaliação cuidadosa para dores, pós-operatório, lesões e prevenção — perto de quem vive na Zona Leste de SP.
+                Atendimento personalizado com foco em suas necessidades individuais, promovendo saúde e bem-estar através do movimento. Quem procura fisioterapia no Tatuapé SP encontra aqui avaliação cuidadosa para dores, pós-operatório, lesões e prevenção, perto de quem vive na Zona Leste de SP.
               </p>
               <h3 className="text-xl font-bold text-foreground mt-8 mb-3">Quando procurar fisioterapia</h3>
               <p className="text-lg text-muted-foreground">
@@ -501,7 +501,7 @@ export default function LandingPage() {
             </h2>
             <div className="space-y-4 text-muted-foreground leading-relaxed text-lg">
               <p>
-                Quem busca pilates na região do Tatuapé encontra na Fisa Saúde um espaço para fortalecer o corpo com segurança, melhorar a postura e reduzir dores do dia a dia — com turmas reduzidas e atendimento individual quando necessário.
+                Quem busca pilates na região do Tatuapé encontra na Fisa Saúde um espaço para fortalecer o corpo com segurança, melhorar a postura e reduzir dores do dia a dia, com turmas reduzidas e atendimento individual quando necessário.
               </p>
               <p>
                 Também oferecemos fisioterapia em São Paulo, na Zona Leste de SP, para reabilitação, pós-operatório e prevenção de lesões. O objetivo é simples: você se mover melhor, com acompanhamento de profissionais que conhecem a sua rotina.
@@ -638,7 +638,7 @@ export default function LandingPage() {
               <AccordionItem value="valor">
                 <AccordionTrigger className="text-base">Qual o valor do pilates e da fisioterapia?</AccordionTrigger>
                 <AccordionContent className="text-muted-foreground text-base">
-                  Os valores dependem da frequência e do tipo de sessão. Peça a tabela atualizada no WhatsApp — é o jeito mais rápido de receber a informação certa.
+                  Os valores dependem da frequência e do tipo de sessão. Peça a tabela atualizada no WhatsApp, que é o jeito mais rápido de receber a informação certa.
                 </AccordionContent>
               </AccordionItem>
               <AccordionItem value="fisio">

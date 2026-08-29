@@ -20,7 +20,7 @@ export const COMPANY = {
     city: 'São Paulo',
     state: 'SP',
     zipCode: '03310-000',
-    full: 'Rua Itapura, 1182 – Tatuapé – São Paulo/SP',
+    full: 'Rua Itapura, 1182, Tatuapé, São Paulo/SP',
   },
 
   location: {
