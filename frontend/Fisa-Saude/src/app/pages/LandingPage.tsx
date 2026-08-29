@@ -153,10 +153,9 @@ export default function LandingPage() {
                   Clínica de pilates e fisioterapia no Tatuapé
                 </div>
 
-                <h1 id="hero-heading" className="text-4xl sm:text-5xl lg:text-6xl text-foreground leading-[1.15] font-bold tracking-tight">
-                  Pilates no Tatuapé em São Paulo{' '}
-                  <span className="block bg-gradient-to-r from-primary via-emerald-500 to-teal-500 bg-clip-text text-transparent">
-                    para se mover com segurança
+                <h1 id="hero-heading" className="text-3xl sm:text-4xl lg:text-5xl text-foreground leading-tight font-bold tracking-tight">
+                  <span className="bg-gradient-to-r from-primary via-emerald-500 to-teal-500 bg-clip-text text-transparent">
+                    Pilates no Tatuapé
                   </span>
                 </h1>
 
