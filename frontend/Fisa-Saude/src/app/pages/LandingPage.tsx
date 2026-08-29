@@ -12,7 +12,12 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '../components/ui/dialog';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '../components/ui/accordion';
 
 // Imagens reais da FISA Saúde
 import heroImage1 from '../../imports/Captura_de_tela_de_2026-05-31_19-26-55.png';
@@ -25,8 +30,10 @@ import pilatesImage3 from '../../imports/WhatsApp_Image_2026-05-31_at_19.26.18.j
 export default function LandingPage() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  const handleWhatsAppClick = () => {
-    const message = encodeURIComponent("Olá! Gostaria de saber mais sobre os serviços da FISA Saúde.");
+  const handleWhatsAppClick = (preset?: string) => {
+    const message = encodeURIComponent(
+      preset ?? 'Olá! Gostaria de saber mais sobre os serviços da FISA Saúde.',
+    );
     window.open(`https://wa.me/${COMPANY.contact.whatsapp}?text=${message}`, '_blank');
   };
 
@@ -56,9 +63,22 @@ export default function LandingPage() {
               <a href="#depoimentos" className="px-4 py-3 min-h-[44px] text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-all flex items-center font-medium">
                 Depoimentos
               </a>
+              <a href="#faq" className="px-4 py-3 min-h-[44px] text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-all flex items-center font-medium">
+                Dúvidas
+              </a>
+              <a
+                href={COMPANY.social.instagram}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-3 py-3 min-h-[44px] text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-all flex items-center gap-2 font-medium"
+                aria-label="Veja o dia a dia no Instagram"
+              >
+                <Instagram size={18} aria-hidden="true" />
+                <span className="hidden xl:inline">Instagram</span>
+              </a>
               <a
                 href="/admin/login"
-                className="ml-4 bg-gradient-to-r from-primary to-emerald-600 hover:from-primary/90 hover:to-emerald-700 text-white px-6 py-3 min-h-[44px] rounded-xl transition-all shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 flex items-center gap-2 font-semibold focus:outline-2 focus:outline-offset-2 focus:outline-primary"
+                className="ml-2 bg-gradient-to-r from-primary to-emerald-600 hover:from-primary/90 hover:to-emerald-700 text-white px-6 py-3 min-h-[44px] rounded-xl transition-all shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 flex items-center gap-2 font-semibold focus:outline-2 focus:outline-offset-2 focus:outline-primary"
                 aria-label="Fazer login"
               >
                 <span>Login</span>
@@ -93,6 +113,19 @@ export default function LandingPage() {
                 <a href="#depoimentos" className="px-4 py-3 min-h-[44px] text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors flex items-center font-medium" onClick={() => setIsMenuOpen(false)}>
                   Depoimentos
                 </a>
+                <a href="#faq" className="px-4 py-3 min-h-[44px] text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors flex items-center font-medium" onClick={() => setIsMenuOpen(false)}>
+                  Dúvidas
+                </a>
+                <a
+                  href={COMPANY.social.instagram}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-4 py-3 min-h-[44px] text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors flex items-center gap-2 font-medium"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <Instagram size={18} aria-hidden="true" />
+                  Veja o dia a dia no Instagram
+                </a>
                 <a
                   href="/admin/login"
                   className="mt-2 bg-gradient-to-r from-primary to-emerald-600 text-white px-6 py-3 min-h-[44px] rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 font-semibold focus:outline-2 focus:outline-offset-2 focus:outline-primary"
@@ -116,39 +149,57 @@ export default function LandingPage() {
               <div className="space-y-6 text-center lg:text-left">
                 <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full text-sm font-semibold border border-primary/20">
                   <Award size={16} />
-                  Referência em Atendimento Multidisciplinar
+                  Clínica de pilates e fisioterapia no Tatuapé
                 </div>
 
-                <h1 id="hero-heading" className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl text-foreground leading-[1.1] font-bold tracking-tight">
-                  Pilates e Fisioterapia{' '}
-                  <span className="whitespace-nowrap">no Tatuapé</span>
+                <h1 id="hero-heading" className="text-4xl sm:text-5xl lg:text-6xl text-foreground leading-[1.15] font-bold tracking-tight">
+                  Pilates no Tatuapé em São Paulo{' '}
                   <span className="block bg-gradient-to-r from-primary via-emerald-500 to-teal-500 bg-clip-text text-transparent">
-                    São Paulo - SP
+                    para se mover com segurança
                   </span>
                 </h1>
 
                 <p className="text-lg sm:text-xl text-muted-foreground leading-relaxed max-w-2xl mx-auto lg:mx-0">
-                  Agende suas aulas de Pilates e sessões de fisioterapia de forma simples e rápida. A FISA Saúde, na Zona Leste de São Paulo, oferece atendimento personalizado para promover bem-estar, prevenção e reabilitação física.
+                  Na Zona Leste de SP, a Fisa Saúde cuida da sua reabilitação, postura e bem-estar com pilates e fisioterapia de perto — sem pressa e com acompanhamento real.
                 </p>
 
                 <div className="flex flex-col sm:flex-row gap-4">
                   <button
-                    onClick={handleWhatsAppClick}
+                    onClick={() =>
+                      handleWhatsAppClick(
+                        'Olá! Quero agendar uma aula experimental de pilates na Fisa Saúde, no Tatuapé.',
+                      )
+                    }
                     className="group bg-gradient-to-r from-primary to-emerald-600 hover:from-primary/90 hover:to-emerald-700 text-white px-8 py-4 min-h-[52px] rounded-xl transition-all shadow-xl hover:shadow-2xl hover:scale-105 active:scale-95 flex items-center justify-center gap-2 font-semibold text-lg"
-                    aria-label="Agendar aula pelo WhatsApp"
+                    aria-label="Agendar aula experimental pelo WhatsApp"
                   >
                     <Phone size={22} aria-hidden="true" />
-                    <span>Agendar Aula</span>
+                    <span>Agendar aula experimental</span>
                     <ArrowRight size={22} className="group-hover:translate-x-1 transition-transform" aria-hidden="true" />
                   </button>
-                  <a
-                    href="#sobre"
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleWhatsAppClick(
+                        'Olá! Quero agendar uma avaliação de fisioterapia na Fisa Saúde, no Tatuapé.',
+                      )
+                    }
                     className="bg-white hover:bg-accent text-foreground px-8 py-4 min-h-[52px] rounded-xl border-2 border-border hover:border-primary/30 transition-all flex items-center justify-center font-semibold text-lg shadow-sm hover:scale-105 active:scale-95"
-                    aria-label="Conhecer a clínica"
+                    aria-label="Agendar avaliação pelo WhatsApp"
                   >
-                    Conhecer a Clínica
-                  </a>
+                    Agendar avaliação
+                  </button>
                 </div>
+
+                <a
+                  href={COMPANY.maps.profileUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center lg:justify-start gap-2 text-sm text-muted-foreground hover:text-foreground"
+                >
+                  <Star className="text-amber-400 fill-amber-400" size={16} aria-hidden="true" />
+                  Veja as avaliações reais da Fisa Saúde no Google
+                </a>
 
                 {/* Stats */}
                 <div className="grid grid-cols-3 gap-6 sm:gap-8 pt-8 border-t border-border">
@@ -330,7 +381,7 @@ export default function LandingPage() {
                 Nossos Serviços de Pilates
               </h2>
               <p className="text-lg text-muted-foreground">
-                Atendimento personalizado com foco em suas necessidades individuais, promovendo saúde e bem-estar através do movimento. Quem procura fisioterapia no Tatuapé encontra aqui avaliação cuidadosa para dores, pós-operatório, lesões e prevenção — perto de quem vive na Zona Leste de São Paulo.
+                Atendimento personalizado com foco em suas necessidades individuais, promovendo saúde e bem-estar através do movimento. Quem procura fisioterapia no Tatuapé SP encontra aqui avaliação cuidadosa para dores, pós-operatório, lesões e prevenção — perto de quem vive na Zona Leste de SP.
               </p>
               <h3 className="text-xl font-bold text-foreground mt-8 mb-3">Quando procurar fisioterapia</h3>
               <p className="text-lg text-muted-foreground">
@@ -374,7 +425,7 @@ export default function LandingPage() {
                 Benefícios do Pilates
               </h2>
               <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-                O pilates no Tatuapé ajuda a fortalecer o corpo com baixo impacto, melhorar a postura e aliviar tensões do cotidiano. Na Fisa Saúde, os exercícios são adaptados à sua condição, com acompanhamento próximo para quem busca mais disposição na Zona Leste de São Paulo.
+                O pilates na região do Tatuapé ajuda a fortalecer o corpo com baixo impacto, melhorar a postura e aliviar tensões do cotidiano. Na Fisa Saúde, no bairro Tatuapé, os exercícios são adaptados à sua condição, com acompanhamento próximo para quem busca mais disposição na Zona Leste de SP.
               </p>
             </div>
 
@@ -442,6 +493,28 @@ export default function LandingPage() {
           </div>
         </section>
 
+        <section className="py-16 sm:py-20 lg:py-24 bg-white" aria-labelledby="seo-local-heading">
+          <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h2 id="seo-local-heading" className="text-3xl sm:text-4xl text-foreground font-bold mb-8">
+              Clínica de pilates em São Paulo, no Tatuapé
+            </h2>
+            <div className="space-y-4 text-muted-foreground leading-relaxed text-lg">
+              <p>
+                Quem busca pilates na região do Tatuapé encontra na Fisa Saúde um espaço para fortalecer o corpo com segurança, melhorar a postura e reduzir dores do dia a dia — com turmas reduzidas e atendimento individual quando necessário.
+              </p>
+              <p>
+                Também oferecemos fisioterapia em São Paulo, na Zona Leste de SP, para reabilitação, pós-operatório e prevenção de lesões. O objetivo é simples: você se mover melhor, com acompanhamento de profissionais que conhecem a sua rotina.
+              </p>
+              <p>
+                Somos uma clínica de pilates na zona leste, com endereço fixo na Rua Itapura, no bairro Tatuapé. Fácil acesso para quem mora ou trabalha em Tatuapé SP e prefere cuidar da saúde perto de casa.
+              </p>
+              <p>
+                Se a dúvida é por onde começar, agende uma aula experimental ou uma avaliação. No WhatsApp alinhamos horário, objetivo e o formato mais adequado para você.
+              </p>
+            </div>
+          </div>
+        </section>
+
         {/* Depoimentos Section */}
         <section id="depoimentos" className="py-16 sm:py-20 lg:py-24 bg-gradient-to-b from-emerald-50/50 to-white" aria-labelledby="depoimentos-heading">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -453,6 +526,15 @@ export default function LandingPage() {
               <h2 id="depoimentos-heading" className="text-3xl sm:text-4xl lg:text-5xl text-foreground font-bold mb-6">
                 O que dizem nossos pacientes
               </h2>
+              <a
+                href={COMPANY.maps.profileUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground"
+              >
+                <Star className="text-amber-400 fill-amber-400" size={18} aria-hidden="true" />
+                Veja as avaliações reais da Fisa Saúde no Google
+              </a>
             </div>
 
             <div className="grid md:grid-cols-3 gap-6 sm:gap-8">
@@ -519,23 +601,88 @@ export default function LandingPage() {
           </div>
         </section>
 
+        <section id="faq" className="py-16 sm:py-20 lg:py-24 bg-white" aria-labelledby="faq-heading">
+          <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-10">
+              <h2 id="faq-heading" className="text-3xl sm:text-4xl lg:text-5xl text-foreground font-bold mb-4">
+                Dúvidas frequentes
+              </h2>
+              <p className="text-lg text-muted-foreground">
+                Respostas rápidas sobre pilates no Tatuapé, fisioterapia e agendamento.
+              </p>
+            </div>
+            <Accordion type="single" collapsible className="w-full text-left">
+              <AccordionItem value="onde">
+                <AccordionTrigger className="text-base">Onde fica a clínica de pilates no Tatuapé?</AccordionTrigger>
+                <AccordionContent className="text-muted-foreground text-base">
+                  Na Rua Itapura, 1182, Tatuapé, Zona Leste de São Paulo. Abra o perfil no{' '}
+                  <a href={COMPANY.maps.profileUrl} target="_blank" rel="noopener noreferrer" className="text-primary font-medium hover:underline">
+                    Google Maps
+                  </a>
+                  {' '}para traçar a rota.
+                </AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="experimental">
+                <AccordionTrigger className="text-base">Vocês têm aula experimental de pilates?</AccordionTrigger>
+                <AccordionContent className="text-muted-foreground text-base">
+                  Sim. Agende pelo WhatsApp uma aula experimental para conhecer o espaço, o método e a equipe antes de iniciar o plano.
+                </AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="convenio">
+                <AccordionTrigger className="text-base">A Fisa Saúde atende convênio?</AccordionTrigger>
+                <AccordionContent className="text-muted-foreground text-base">
+                  O atendimento é particular. Fale com a recepção no WhatsApp para confirmar valores e formas de pagamento.
+                </AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="valor">
+                <AccordionTrigger className="text-base">Qual o valor do pilates e da fisioterapia?</AccordionTrigger>
+                <AccordionContent className="text-muted-foreground text-base">
+                  Os valores dependem da frequência e do tipo de sessão. Peça a tabela atualizada no WhatsApp — é o jeito mais rápido de receber a informação certa.
+                </AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="fisio">
+                <AccordionTrigger className="text-base">Fazem fisioterapia na Zona Leste?</AccordionTrigger>
+                <AccordionContent className="text-muted-foreground text-base">
+                  Sim. Atendemos fisioterapia e reabilitação no Tatuapé, com foco em dores, postura, pós-operatório e retorno seguro ao movimento.
+                </AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="avaliacao">
+                <AccordionTrigger className="text-base">Como agendar uma avaliação de fisioterapia?</AccordionTrigger>
+                <AccordionContent className="text-muted-foreground text-base">
+                  Use o botão Agendar avaliação ou mande uma mensagem no WhatsApp. Indicamos o melhor horário na clínica.
+                </AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="horario">
+                <AccordionTrigger className="text-base">Qual o horário de atendimento?</AccordionTrigger>
+                <AccordionContent className="text-muted-foreground text-base">
+                  {COMPANY.schedule.weekdays}. {COMPANY.schedule.saturday}. Domingo fechado.
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
+          </div>
+        </section>
+
         {/* CTA Section */}
         <section className="py-16 sm:py-20 lg:py-24 bg-gradient-to-br from-primary via-emerald-500 to-teal-500 relative overflow-hidden">
           <div className="absolute inset-0 bg-grid-white/5" aria-hidden="true" />
           <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 relative text-center">
             <h2 className="text-3xl sm:text-4xl lg:text-5xl text-white font-bold mb-6">
-              Agende sua Aula
+              Agende sua aula experimental
             </h2>
             <p className="text-lg sm:text-xl text-white/90 mb-10 max-w-2xl mx-auto leading-relaxed">
-              Comece agora sua jornada rumo a mais saúde, movimento e qualidade de vida com a FISA Saúde, sua clínica de pilates e fisioterapia no Tatuapé.
+              Comece no Tatuapé com pilates ou avaliação de fisioterapia. A equipe da Fisa Saúde responde no WhatsApp.
             </p>
             <button
-              onClick={handleWhatsAppClick}
+              onClick={() =>
+                handleWhatsAppClick(
+                  'Olá! Quero agendar uma aula experimental de pilates na Fisa Saúde, no Tatuapé.',
+                )
+              }
               className="group bg-white hover:bg-gray-50 text-primary px-8 py-4 min-h-[52px] rounded-xl transition-all shadow-2xl hover:shadow-3xl hover:scale-105 active:scale-95 flex items-center justify-center gap-2 font-semibold text-lg mx-auto"
-              aria-label="Agendar aula pelo WhatsApp"
+              aria-label="Agendar aula experimental pelo WhatsApp"
             >
               <Phone size={22} aria-hidden="true" />
-              <span>Agendar Aula Agora</span>
+              <span>Falar no WhatsApp</span>
               <ArrowRight size={22} className="group-hover:translate-x-1 transition-transform" aria-hidden="true" />
             </button>
           </div>
@@ -553,7 +700,7 @@ export default function LandingPage() {
                 Onde estamos
               </h2>
               <p className="text-lg text-muted-foreground">
-                Atendemos na região do Tatuapé, Zona Leste de São Paulo, com fácil acesso para moradores próximos.
+                Atendemos no bairro Tatuapé, Zona Leste de SP, com fácil acesso para moradores próximos.
               </p>
             </div>
 
@@ -623,7 +770,7 @@ export default function LandingPage() {
                   className="w-full h-full"
                 />
                 <a
-                  href={COMPANY.maps.openUrl}
+                  href={COMPANY.maps.profileUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="absolute top-3 left-3 z-10 inline-flex items-center gap-2 rounded-lg bg-white/95 px-3 py-2 text-sm font-semibold text-foreground shadow-md ring-1 ring-border hover:bg-white"
@@ -647,7 +794,7 @@ export default function LandingPage() {
                 <FisaLogo size="lg" tone="onDark" />
               </div>
               <p className="text-slate-300 leading-relaxed text-sm mb-6">
-                Clínica de pilates e fisioterapia no Tatuapé, Zona Leste de São Paulo, promovendo saúde e bem-estar com excelência.
+                Clínica de pilates na zona leste, no bairro Tatuapé SP, promovendo saúde e bem-estar com excelência.
               </p>
               <div className="flex gap-3">
                 <a

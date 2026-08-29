@@ -34,6 +34,7 @@ export const COMPANY = {
       'https://www.google.com/maps?q=Rua+Itapura,+1182+-+Tatuap%C3%A9,+S%C3%A3o+Paulo+-+SP,+03310-000&hl=pt-BR&z=16&output=embed',
     openUrl:
       'https://www.google.com/maps/search/?api=1&query=Rua+Itapura,+1182+-+Tatuap%C3%A9,+S%C3%A3o+Paulo+-+SP,+03310-000',
+    profileUrl: 'https://maps.app.goo.gl/JoXJNamS7CfiDqbN7',
   },
 
   social: {
