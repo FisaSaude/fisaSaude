@@ -93,9 +93,9 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="h-full w-full lg:overflow-hidden flex flex-col min-h-0">
-      <div className="flex-1 h-full lg:overflow-hidden p-4 sm:p-5 lg:p-6 flex flex-col min-h-0">
-        <div className="max-w-7xl mx-auto w-full flex-1 flex flex-col min-h-0 space-y-4 lg:space-y-5">
+    <div className="w-full lg:h-full lg:overflow-hidden flex flex-col lg:min-h-0">
+      <div className="flex-1 lg:h-full lg:overflow-hidden p-4 sm:p-5 lg:p-6 flex flex-col lg:min-h-0">
+        <div className="max-w-7xl mx-auto w-full flex-1 flex flex-col lg:min-h-0 space-y-4 lg:space-y-5">
           
           {/* Header - Reduzido o espaçamento */}
           <div className="flex-shrink-0">
@@ -167,11 +167,11 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Main Content Grid - Travado na tela com flex-1 e min-h-0 */}
-          <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-5 min-h-0 h-full w-full">
+          {/* Main Content Grid - Travado na tela apenas no desktop (lg), no mobile a página cresce e rola via <main> */}
+          <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-5 lg:min-h-0 lg:h-full w-full">
             {/* Today's Schedule */}
-            <div className="lg:col-span-2 flex flex-col h-full min-h-0">
-              <div className="bg-card rounded-xl shadow-sm border border-border flex flex-col h-full min-h-0 overflow-hidden">
+            <div className="lg:col-span-2 flex flex-col lg:h-full lg:min-h-0">
+              <div className="bg-card rounded-xl shadow-sm border border-border flex flex-col lg:h-full lg:min-h-0 lg:overflow-hidden">
                 <div className="p-4 border-b border-border flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 flex-shrink-0">
                   <div>
                     <h2 className="text-lg font-bold text-foreground">Agenda do Dia</h2>
@@ -188,8 +188,8 @@ export default function Dashboard() {
                   </button>
                 </div>
                 
-                {/* Lista de horários com scroll interno e independente */}
-                <div className="flex-1 divide-y divide-border overflow-y-auto min-h-0">
+                {/* Lista de horários com scroll interno e independente (apenas no desktop) */}
+                <div className="flex-1 divide-y divide-border lg:overflow-y-auto lg:min-h-0">
                   {todaySchedule.map((item, index) => (
                     <div key={index} className="p-3 hover:bg-accent/40 transition-colors">
                       <div className="flex items-center gap-3">
@@ -238,7 +238,7 @@ export default function Dashboard() {
             </div>
 
             {/* Sidebar Direita */}
-            <div className="flex flex-col h-full min-h-0 space-y-4">
+            <div className="flex flex-col lg:h-full lg:min-h-0 space-y-4">
               {/* Quick Actions */}
               <div className="bg-card rounded-xl p-4 shadow-sm border border-border flex-shrink-0">
                 <h3 className="text-sm font-bold text-foreground mb-3">Ações Rápidas</h3>
@@ -260,10 +260,10 @@ export default function Dashboard() {
                 </div>
               </div>
 
-              {/* Recent Activity - Agora com flex-1 e scroll interno autônomo */}
-              <div className="bg-card rounded-xl p-4 shadow-sm border border-border flex-1 flex flex-col min-h-0 overflow-hidden">
+              {/* Recent Activity - Agora com flex-1 e scroll interno autônomo (apenas no desktop) */}
+              <div className="bg-card rounded-xl p-4 shadow-sm border border-border flex-1 flex flex-col lg:min-h-0 lg:overflow-hidden">
                 <h3 className="text-sm font-bold text-foreground mb-3 flex-shrink-0">Atividades Recentes</h3>
-                <div className="flex-1 space-y-3.5 overflow-y-auto min-h-0 pr-1">
+                <div className="flex-1 space-y-3.5 lg:overflow-y-auto lg:min-h-0 pr-1">
                   {recentActivity.map((activity, index) => {
                     const iconMap = {
                       success: CheckCircle2,

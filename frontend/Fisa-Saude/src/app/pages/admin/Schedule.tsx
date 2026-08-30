@@ -271,7 +271,7 @@ export default function Schedule() {
   ];
 
   return (
-    <div className="h-full w-full lg:overflow-hidden flex flex-col min-h-0 bg-background relative">
+    <div className="w-full lg:h-full lg:overflow-hidden flex flex-col lg:min-h-0 bg-background relative">
       
       {/* POP-UP (TOAST) DE SUCESSO COESIVO */}
       {showSuccessToast && (
@@ -281,8 +281,8 @@ export default function Schedule() {
         </div>
       )}
 
-      <div className="flex-1 h-full lg:overflow-hidden p-4 sm:p-5 lg:p-6 flex flex-col min-h-0">
-        <div className="max-w-[1600px] w-full flex-1 flex flex-col min-h-0 space-y-4">
+      <div className="flex-1 lg:h-full lg:overflow-hidden p-4 sm:p-5 lg:p-6 flex flex-col lg:min-h-0">
+        <div className="max-w-[1600px] w-full flex-1 flex flex-col lg:min-h-0 space-y-4">
           
           {/* Header */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 flex-shrink-0">
@@ -340,23 +340,23 @@ export default function Schedule() {
             </div>
           </div>
 
-          {/* Grid de Visualização */}
-          <div className="flex-1 flex flex-col lg:flex-row gap-5 min-h-0 h-full w-full">
-            <div className={`flex-1 h-full min-h-0 bg-white border border-gray-200 rounded-xl shadow-sm ${view === 'month' ? 'overflow-hidden p-0' : 'overflow-y-auto p-4'}`}>
+          {/* Grid de Visualização (split view fixo apenas no desktop) */}
+          <div className="flex-1 flex flex-col lg:flex-row gap-5 lg:min-h-0 lg:h-full w-full">
+            <div className={`flex-1 lg:h-full lg:min-h-0 bg-white border border-gray-200 rounded-xl shadow-sm ${view === 'month' ? 'lg:overflow-hidden p-0' : 'lg:overflow-y-auto p-4'}`}>
               
               {loading ? (
                 <div className="flex justify-center items-center h-full w-full">
                   <div className="w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
                 </div>
               ) : view === 'month' ? (
-                <div className="h-full w-full flex flex-col min-h-0">
+                <div className="w-full flex flex-col lg:h-full lg:min-h-0">
                   <div className="grid grid-cols-7 bg-gray-50 border-b border-gray-200 text-center py-2 flex-shrink-0">
                     {['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB'].map((d) => (
                       <span key={d} className="text-[10px] font-bold text-gray-500 tracking-wider">{d}</span>
                     ))}
                   </div>
                   
-                  <div className="flex-1 grid grid-cols-7 grid-rows-5 min-h-0">
+                  <div className="grid grid-cols-7 grid-rows-5 min-h-[420px] lg:flex-1 lg:min-h-0">
                     {getDaysInMonthGrid().map((day, idx) => {
                       if (day === null) return <div key={`empty-${idx}`} className="border-b border-r border-gray-100 bg-gray-50/30" />;
                       
@@ -392,7 +392,7 @@ export default function Schedule() {
 
             {/* Linha do Tempo Operacional por Dia */}
             {(view === 'day' || window.innerWidth > 1024) && (
-              <div className="w-full lg:w-[480px] xl:w-[520px] bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col h-full min-h-0 overflow-hidden">
+              <div className="w-full lg:w-[480px] xl:w-[520px] bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col lg:h-full lg:min-h-0 lg:overflow-hidden">
                 <div className="p-4 border-b border-gray-200 bg-gray-50/50 flex items-center justify-between flex-shrink-0">
                   <div className="text-sm font-bold text-gray-900 flex items-center gap-2">
                     Horários do Dia
@@ -400,7 +400,7 @@ export default function Schedule() {
                   </div>
                 </div>
 
-                <div className="flex-1 divide-y divide-gray-100 overflow-y-auto min-h-0 p-3 space-y-2">
+                <div className="flex-1 divide-y divide-gray-100 lg:overflow-y-auto lg:min-h-0 p-3 space-y-2">
                   {timeSlots.map((time) => {
                     const booking = daySchedule.find(b => b.horaInicio.substring(0, 5) === time);
                     const isOccupied = !!booking;
