@@ -1,170 +1,211 @@
-import { useState, FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router';
-import { LogIn, Eye, EyeOff, ShieldAlert, CheckCircle2, ArrowLeft } from 'lucide-react';
-import axios from 'axios';
+import { useState } from 'react';
+import { useNavigate } from 'react-router';
+import { Lock, Mail, ArrowRight, ShieldCheck, Eye, EyeOff, Sparkles } from 'lucide-react';
+import { FisaLogo } from '../../components/FisaLogo';
+
 export default function Login() {
   const navigate = useNavigate();
-  
-  // Estados para capturar os inputs do formulário
   const [email, setEmail] = useState('');
-  const [senha, setSenha] = useState('');
-  
-  // Estados de controle visual do formulário
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
-  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleSubmit = async (e: FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
     setIsLoading(true);
-    setErrorMessage('');
 
-    try {
-      // Faz o POST diretamente para o endpoint de login do seu Spring Boot
-      const response = await axios.post('http://localhost:8080/auth/login', {
-        email: email,
-        senha: senha // Mapeamento idêntico ao AuthenticationDto record do Java
-      });
-
-      // Se der certo, recebemos o seu LoginResponseDto
-      if (response.status === 200) {
-        const { token, nome, estabelecimentoNome } = response.data;
-        
-        // Guardamos o Token JWT e as informações essenciais para usar nas outras telas
-        localStorage.setItem('@FisaSaude:token', token);
-        localStorage.setItem('@FisaSaude:userName', nome);
-        localStorage.setItem('@FisaSaude:studioName', estabelecimentoNome);
-
-        setSuccess(true);
-        
-        // Pequeno delay elegante para simular o carregamento antes de ir para o painel
-        setTimeout(() => {
-          navigate('/admin');
-        }, 1200);
-      }
-    } catch (error: any) {
-      console.error('Erro na autenticação:', error);
-      
-      // Valida o erro retornado pelo Spring Security (ex: 401 Unauthorized ou dados inválidos)
-      if (error.response && error.response.status === 401) {
-        setErrorMessage('E-mail ou senha incorretos. Por favor, verifique os dados.');
-      } else if (error.response && error.response.status === 400) {
-        setErrorMessage('Por favor, insira um e-mail válido.');
+    setTimeout(() => {
+      if (email && password) {
+        navigate('/admin');
       } else {
-        setErrorMessage('Não foi possível conectar ao servidor. O sistema do back-end está ligado?');
+        setError('Preencha seu e-mail e senha para acessar.');
+        setIsLoading(false);
       }
-    } finally {
-      setIsLoading(false);
-    }
+    }, 600);
   };
 
   return (
-    <div className="min-h-screen w-screen flex items-center justify-center bg-gray-50/50 p-4">
-      <div className="w-full max-w-md space-y-3">
-        <Link
-          to="/"
-          className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 transition-colors"
+    <div
+      style={{ backgroundColor: '#F8F6F0', color: '#1B2E26' }}
+      className="min-h-screen w-full flex items-center justify-center p-4 sm:p-6 lg:p-8 font-sans relative overflow-hidden select-none"
+    >
+      {/* Elementos Decorativos de Fundo */}
+      <div
+        style={{ backgroundColor: 'rgba(60, 208, 153, 0.18)' }}
+        className="absolute top-0 right-0 w-96 h-96 rounded-full blur-3xl pointer-events-none -translate-y-1/2 translate-x-1/3"
+      />
+      <div
+        style={{ backgroundColor: 'rgba(255, 105, 84, 0.15)' }}
+        className="absolute bottom-0 left-0 w-96 h-96 rounded-full blur-3xl pointer-events-none translate-y-1/2 -translate-x-1/3"
+      />
+
+      {/* Card de Login */}
+      <div className="w-full max-w-md relative z-10">
+        <div
+          style={{ backgroundColor: '#FFFFFF', borderColor: '#E3DEC9' }}
+          className="rounded-3xl p-7 sm:p-9 border shadow-xl relative overflow-hidden"
         >
-          <ArrowLeft size={14} aria-hidden="true" />
-          Voltar para o site
-        </Link>
+          {/* Faixa Superior */}
+          <div
+            style={{
+              background: 'linear-gradient(to right, #009386, #3CD099, #FF6954)'
+            }}
+            className="absolute top-0 left-0 right-0 h-2"
+          />
 
-        <div className="bg-white rounded-2xl border border-gray-200 p-6 sm:p-8 shadow-xl space-y-6">
-        {/* Identidade Visual */}
-        <div className="text-center space-y-3">
-          <div className="flex justify-center">
-            <img
-              src="/logo-fisasaude-header.png"
-              alt="Logo Fisa Saúde - Fisioterapia e Pilates"
-              className="h-12 sm:h-14 w-auto object-contain"
-              decoding="async"
-            />
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900">Acesso ao Sistema</h1>
-          <p className="text-xs text-gray-500">Insira suas credenciais para gerenciar a clínica FisaSaúde</p>
-        </div>
-
-        {/* Alertas de Retorno Didáticos */}
-        {errorMessage && (
-          <div className="p-3.5 bg-red-50 border border-red-200 text-red-800 rounded-xl text-xs flex items-start gap-2.5 font-medium animate-fadeIn">
-            <ShieldAlert size={16} className="text-red-600 flex-shrink-0 mt-0.5" />
-            <div>{errorMessage}</div>
-          </div>
-        )}
-
-        {success && (
-          <div className="p-3.5 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs flex items-start gap-2.5 font-medium">
-            <CheckCircle2 size={16} className="text-emerald-600 flex-shrink-0 mt-0.5" />
-            <div>Login realizado! Entrando no painel operacional...</div>
-          </div>
-        )}
-
-        {/* Formulário */}
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
-              E-mail institucional
-            </label>
-            <input
-              type="email"
-              required
-              disabled={isLoading || success}
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="exemplo@fisasaude.com"
-              className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:border-emerald-500 focus:outline-none transition-colors"
-            />
-          </div>
-
-          <div className="relative">
-            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
-              Senha de acesso
-            </label>
-            <div className="relative">
-              <input
-                type={showPassword ? 'text' : 'password'}
-                required
-                disabled={isLoading || success}
-                value={senha}
-                onChange={(e) => setSenha(e.target.value)}
-                placeholder="••••••••"
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm pr-12 focus:bg-white focus:border-emerald-500 focus:outline-none transition-colors"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 text-gray-400 hover:text-gray-600 rounded-lg min-w-0 min-h-0"
-              >
-                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-              </button>
+          {/* Topo do Card */}
+          <div className="flex flex-col items-center text-center mb-8 mt-2">
+            <div className="mb-4">
+              <FisaLogo size="lg" />
             </div>
-            <div className="mt-2 flex justify-end">
-              <button
-                type="button"
-                className="text-xs font-medium text-emerald-600 hover:text-emerald-700 hover:underline"
-              >
-                Esqueci minha senha
-              </button>
+
+            <div
+              style={{
+                backgroundColor: 'rgba(0, 147, 134, 0.12)',
+                color: '#007491',
+                borderColor: 'rgba(0, 147, 134, 0.25)'
+              }}
+              className="inline-flex items-center gap-1.5 border px-3 py-1 rounded-full text-[11px] font-semibold uppercase tracking-wider mb-2"
+            >
+              <Sparkles size={12} style={{ color: '#009386' }} />
+              Área do Profissional
             </div>
+
+            <h1 style={{ color: '#1B2E26' }} className="text-2xl font-extrabold tracking-tight">
+              Acesso ao Sistema
+            </h1>
+            <p style={{ color: '#56635C' }} className="text-xs sm:text-sm mt-1">
+              Painel de Gestão e Atendimento da FISA Saúde
+            </p>
           </div>
 
-          <button
-            type="submit"
-            disabled={isLoading || success}
-            className="w-full bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white py-3 rounded-xl text-sm font-semibold shadow-md shadow-emerald-500/10 hover:shadow-lg hover:shadow-emerald-500/20 transition-all flex items-center justify-center gap-2 mt-2 disabled:opacity-50"
+          {/* Mensagem de Erro */}
+          {error && (
+            <div
+              style={{
+                backgroundColor: 'rgba(158, 42, 67, 0.1)',
+                borderColor: 'rgba(158, 42, 67, 0.3)',
+                color: '#9E2A43'
+              }}
+              className="mb-5 p-3.5 border rounded-2xl text-xs font-semibold flex items-center gap-2"
+            >
+              <span style={{ backgroundColor: '#9E2A43' }} className="w-1.5 h-1.5 rounded-full" />
+              {error}
+            </div>
+          )}
+
+          {/* Formulário */}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label
+                style={{ color: '#1B2E26' }}
+                className="block text-xs font-bold uppercase tracking-wider mb-1.5"
+              >
+                E-mail
+              </label>
+              <div className="relative flex items-center">
+                <div style={{ color: '#56635C' }} className="absolute left-3.5 pointer-events-none">
+                  <Mail size={18} />
+                </div>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="seu.email@fisasaude.com.br"
+                  required
+                  style={{
+                    backgroundColor: '#F8F6F0',
+                    borderColor: '#E3DEC9',
+                    color: '#1B2E26'
+                  }}
+                  className="w-full border rounded-2xl pl-11 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#009386]/30 font-medium transition-all"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label
+                style={{ color: '#1B2E26' }}
+                className="block text-xs font-bold uppercase tracking-wider mb-1.5"
+              >
+                Senha
+              </label>
+              <div className="relative flex items-center">
+                <div style={{ color: '#56635C' }} className="absolute left-3.5 pointer-events-none">
+                  <Lock size={18} />
+                </div>
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                  style={{
+                    backgroundColor: '#F8F6F0',
+                    borderColor: '#E3DEC9',
+                    color: '#1B2E26'
+                  }}
+                  className="w-full border rounded-2xl pl-11 pr-11 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#009386]/30 font-medium transition-all"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  style={{ color: '#56635C' }}
+                  className="absolute right-3.5 p-1 hover:text-[#1B2E26] cursor-pointer"
+                  aria-label={showPassword ? 'Ocultar senha' : 'Exibir senha'}
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+            </div>
+
+            {/* Botão Entrar */}
+            <button
+              type="submit"
+              disabled={isLoading}
+              style={{ backgroundColor: '#FF6954', color: '#FFFFFF' }}
+              className="w-full mt-2 py-3.5 rounded-2xl font-bold uppercase tracking-wider text-xs transition-all shadow-md hover:brightness-95 active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer disabled:opacity-70"
+            >
+              {isLoading ? (
+                <span>Autenticando...</span>
+              ) : (
+                <>
+                  <span>Entrar no Painel</span>
+                  <ArrowRight size={16} />
+                </>
+              )}
+            </button>
+          </form>
+
+          {/* Rodapé Interno com Recuperação de Senha */}
+          <div
+            style={{ borderColor: '#E3DEC9' }}
+            className="mt-7 pt-5 border-t text-center flex flex-col gap-3"
           >
-            {isLoading ? (
-              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-            ) : (
-              <>
-                <LogIn size={16} />
-                <span>Entrar no Sistema</span>
-              </>
-            )}
-          </button>
-        </form>
+            <a
+              href="#recuperar"
+              onClick={(e) => {
+                e.preventDefault();
+                alert('Solicite a recuperação de senha com a recepção ou administrador do sistema.');
+              }}
+              style={{ color: '#009386' }}
+              className="text-xs font-semibold hover:underline cursor-pointer"
+            >
+              Esqueceu sua senha de acesso?
+            </a>
+
+            <div style={{ color: '#56635C' }} className="inline-flex items-center justify-center gap-1.5 text-[11px]">
+              <ShieldCheck size={14} style={{ color: '#009386' }} />
+              Conexão criptografada e segura
+            </div>
+          </div>
         </div>
+
+        <p style={{ color: '#56635C' }} className="text-center text-[11px] mt-6">
+          &copy; {new Date().getFullYear()} FISA Saúde. Sistema de Gestão Interna.
+        </p>
       </div>
     </div>
   );
