@@ -47,11 +47,7 @@ import {
 
 // Imagens reais da FISA Saúde
 import heroImage1 from '../../imports/hero_section.jpeg';
-import heroImage2 from '../../imports/Captura_de_tela_de_2026-05-31_19-27-13.png';
 import aboutImage from '../../imports/pilates_03.png';
-import pilatesImage1 from '../../imports/WhatsApp_Image_2026-05-31_at_19.26.17.jpeg';
-import pilatesImage2 from '../../imports/WhatsApp_Image_2026-05-31_at_19.26.17__2_.jpeg';
-import pilatesImage3 from '../../imports/WhatsApp_Image_2026-05-31_at_19.26.18.jpeg';
 
 export default function LandingPage() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
