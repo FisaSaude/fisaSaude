@@ -1,359 +1,424 @@
-import { Plus, Search, MoreVertical, Phone, Mail, X, User } from 'lucide-react';
-import { useState } from 'react';
-import { useNavigate } from 'react-router';
+import {
+  Plus,
+  Search,
+  User,
+  ArrowUpDown,
+  ChevronRight,
+  X
+} from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { api } from '../../services/api';
+import ClientProfile, { ClienteResponseDto, SexoEnum } from './ClientProfile';
+
+const normalizeDate = (val: any): string => {
+  if (!val) return '';
+  if (Array.isArray(val)) {
+    const y = String(val[0]);
+    const m = String(val[1]).padStart(2, '0');
+    const d = String(val[2]).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+  const str = String(val);
+  return str.includes('T') ? str.split('T')[0] : str.substring(0, 10);
+};
+
+const formatDateBR = (val: any): string => {
+  const iso = normalizeDate(val);
+  if (!iso || iso.length < 10) return '';
+  const [y, m, d] = iso.split('-');
+  return `${d}/${m}/${y}`;
+};
 
 export default function Clients() {
-  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
+  const [clients, setClients] = useState<ClienteResponseDto[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedClient, setSelectedClient] = useState<ClienteResponseDto | null>(null);
   const [showNewClientModal, setShowNewClientModal] = useState(false);
-  const [formStep, setFormStep] = useState<'simple' | 'complete'>('simple');
+  const [sortAsc, setSortAsc] = useState(true);
 
-  const clients = [
-    { id: 1, name: 'Ana Paula Silva', phone: '(11) 98888-1111', email: 'ana@email.com', plan: 'Mensal', status: 'active' },
-    { id: 2, name: 'Carlos Eduardo', phone: '(11) 98888-2222', email: 'carlos@email.com', plan: 'Semestral', status: 'active' },
-    { id: 3, name: 'Juliana Santos', phone: '(11) 98888-3333', email: 'juliana@email.com', plan: 'Mensal', status: 'active' },
-    { id: 4, name: 'Roberto Lima', phone: '(11) 98888-4444', email: 'roberto@email.com', plan: 'Avulso', status: 'active' },
-    { id: 5, name: 'Marina Costa', phone: '(11) 98888-5555', email: 'marina@email.com', plan: 'Semestral', status: 'inactive' },
-  ];
+  const [formData, setFormData] = useState({
+    nome: '',
+    telefone: '',
+    dataNascimento: '',
+    sexo: 'F' as SexoEnum,
+    fotoLink: ''
+  });
 
-  const filteredClients = searchTerm
-    ? clients.filter(c => c.name.toLowerCase().includes(searchTerm.toLowerCase()))
-    : clients;
+  const carregarClientes = async () => {
+    try {
+      setLoading(true);
+      const res = await api.get('/clientes');
+      const data = Array.isArray(res.data) ? res.data : res.data?.content || [];
+      setClients(data);
+    } catch (err) {
+      console.error('Erro ao buscar clientes:', err);
+      setClients([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    carregarClientes();
+  }, []);
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let val = e.target.value.replace(/\D/g, '');
+    if (val.length > 11) val = val.substring(0, 11);
+
+    if (val.length > 6) {
+      val = `(${val.substring(0, 2)}) ${val.substring(2, 7)}-${val.substring(7)}`;
+    } else if (val.length > 2) {
+      val = `(${val.substring(0, 2)}) ${val.substring(2)}`;
+    }
+    setFormData({ ...formData, telefone: val });
+  };
+
+  const handleCriarCliente = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    const nomeLimpo = formData.nome.trim();
+    const telefoneNumeros = formData.telefone.replace(/\D/g, '');
+
+    if (!nomeLimpo) {
+      alert('Informe o nome do paciente.');
+      return;
+    }
+
+    if (telefoneNumeros.length < 10 || telefoneNumeros.length > 11) {
+      alert('Informe um número de telefone com DDD válido.');
+      return;
+    }
+
+    if (!formData.dataNascimento) {
+      alert('Data de nascimento é obrigatória.');
+      return;
+    }
+
+    const payload = {
+      nome: nomeLimpo,
+      telefone: telefoneNumeros,
+      whatsappAtivo: true,
+      dataNascimento: formData.dataNascimento,
+      sexo: formData.sexo,
+      fotoLink: formData.fotoLink.trim() ? formData.fotoLink.trim() : null
+    };
+
+    console.log('Payload enviado para o Spring Boot:', payload);
+
+    try {
+      await api.post('/clientes', payload);
+
+      setShowNewClientModal(false);
+      setFormData({
+        nome: '',
+        telefone: '',
+        dataNascimento: '',
+        sexo: 'F' as SexoEnum,
+        fotoLink: ''
+      });
+
+      await carregarClientes();
+      alert('Paciente cadastrado com sucesso!');
+    } catch (err: any) {
+      console.error('Detalhe do erro no Spring Boot:', err.response?.data || err);
+
+      const res = err.response?.data;
+      let mensagem = 'Erro ao cadastrar paciente.';
+
+      if (res) {
+        if (Array.isArray(res.errors) && res.errors.length > 0) {
+          mensagem = res.errors.map((e: any) => e.defaultMessage || e.message || e).join(' | ');
+        } else if (res.message) {
+          mensagem = res.message;
+        } else if (res.mensagem) {
+          mensagem = res.mensagem;
+        } else if (res.error) {
+          mensagem = res.error;
+        }
+      }
+
+      alert(`Falha no cadastro: ${mensagem}`);
+    }
+  };
+
+  const filteredClients = useMemo(() => {
+    return clients
+      .filter((c) =>
+        c.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        c.telefone?.includes(searchTerm)
+      )
+      .sort((a, b) => {
+        return sortAsc
+          ? a.nome.localeCompare(b.nome)
+          : b.nome.localeCompare(a.nome);
+      });
+  }, [clients, searchTerm, sortAsc]);
+
+  const hoje = new Date().toISOString().split('T')[0];
 
   return (
-    <div className="h-full lg:overflow-hidden">
-      <div className="h-full lg:overflow-y-auto p-4 lg:p-8">
-        <div className="max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="mb-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-          <div>
-            <h1 className="text-3xl text-gray-900 mb-2">Clientes</h1>
-            <p className="text-gray-600">Gerencie sua base de clientes</p>
+    <div className="h-full flex flex-col bg-[#F8F6F0] text-[#1B2E26] overflow-hidden relative">
+      {/* Top Header */}
+      <div className="p-4 sm:p-6 lg:px-8 border-b border-[#E3DEC9] bg-white flex flex-col md:flex-row md:items-center md:justify-between gap-4 flex-shrink-0">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-2xl bg-[#009386]/10 border border-[#009386]/20 flex items-center justify-center text-[#009386]">
+            <User size={20} />
           </div>
-          <button 
-            onClick={() => setShowNewClientModal(true)}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="text-xl sm:text-2xl font-black text-[#1B2E26]">Lista de Pacientes</h1>
+              <span className="bg-[#009386]/10 text-[#009386] border border-[#009386]/20 text-xs px-2.5 py-0.5 rounded-full font-bold">
+                {filteredClients.length} total
+              </span>
+            </div>
+            <p className="text-xs text-[#56635C]">Gerenciamento e histórico de atendimentos</p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <div className="relative flex-1 sm:w-72">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#56635C]" size={16} />
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Buscar por nome ou WhatsApp..."
+              className="w-full pl-10 pr-4 py-2 bg-[#F8F6F0] border border-[#E3DEC9] rounded-xl text-xs font-medium focus:bg-white focus:outline-none focus:border-[#009386] transition-all"
+            />
+          </div>
+
+          <button
+            onClick={() => setSortAsc(!sortAsc)}
+            className="p-2.5 bg-white border border-[#E3DEC9] hover:bg-[#F8F6F0] rounded-xl text-[#56635C] hover:text-[#1B2E26] transition-colors cursor-pointer flex items-center gap-1.5 text-xs font-semibold shadow-xs"
+            title="Ordenar Alfabeticamente"
           >
-            <Plus size={18} />
-            Novo Cliente
+            <ArrowUpDown size={15} />
+            <span className="hidden sm:inline">{sortAsc ? 'A - Z' : 'Z - A'}</span>
+          </button>
+
+          <button
+            onClick={() => setShowNewClientModal(true)}
+            className="bg-[#009386] hover:bg-[#007491] text-white px-4 py-2.5 rounded-xl transition-all shadow-sm flex items-center gap-2 font-bold text-xs cursor-pointer"
+          >
+            <Plus size={16} /> Novo Paciente
           </button>
         </div>
+      </div>
 
-        {/* Search */}
-        <div className="relative">
-          <div className="absolute left-4 top-1/2 -translate-y-1/2">
-            <Search className="text-gray-400" size={20} />
+      {/* Grid Principal + Drawer Lateral */}
+      <div className="flex-1 flex overflow-hidden p-4 sm:p-6 lg:p-8 gap-6">
+        <div className="flex-1 bg-white rounded-3xl border border-[#E3DEC9] shadow-xs flex flex-col overflow-hidden">
+          <div className="px-6 py-4 border-b border-[#E3DEC9] bg-[#F8F6F0]/60 flex items-center justify-between">
+            <div className="text-xs font-bold text-[#56635C] uppercase tracking-wider">
+              {filteredClients.length} Registros Encontrados
+            </div>
           </div>
-          <input
-            type="text"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Buscar cliente por nome..."
-            className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-lg focus:border-emerald-500 focus:outline-none transition-colors"
-          />
-        </div>
-      </div>
 
-      {/* Stats */}
-      <div className="grid sm:grid-cols-3 gap-4 mb-6">
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-          <div className="text-2xl text-gray-900 mb-1">32</div>
-          <div className="text-sm text-gray-600">Clientes Ativos</div>
-        </div>
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-          <div className="text-2xl text-gray-900 mb-1">5</div>
-          <div className="text-sm text-gray-600">Novos este Mês</div>
-        </div>
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-          <div className="text-2xl text-gray-900 mb-1">3</div>
-          <div className="text-sm text-gray-600">Inativos</div>
-        </div>
-      </div>
-
-      {/* Clients List */}
-      {filteredClients.length > 0 ? (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs text-gray-600 uppercase tracking-wider">
-                    Cliente
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs text-gray-600 uppercase tracking-wider">
-                    Contato
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs text-gray-600 uppercase tracking-wider">
-                    Plano
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs text-gray-600 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs text-gray-600 uppercase tracking-wider">
-                    Ações
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {filteredClients.map((client) => (
-                  <tr 
-                    key={client.id} 
-                    className="hover:bg-gray-50 transition-colors cursor-pointer"
-                    onClick={() => navigate(`/admin/clientes/${client.id}`)}
-                  >
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center">
-                          <span className="text-emerald-600">{client.name[0]}</span>
-                        </div>
-                        <div className="text-gray-900">{client.name}</div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm text-gray-900">{client.phone}</div>
-                      <div className="text-xs text-gray-600">{client.email}</div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="text-sm text-gray-900">{client.plan}</span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={`
-                        text-xs px-3 py-1 rounded-full
-                        ${client.status === 'active' 
-                          ? 'bg-green-100 text-green-700' 
-                          : 'bg-gray-100 text-gray-700'
-                        }
-                      `}>
-                        {client.status === 'active' ? 'Ativo' : 'Inativo'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <button 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                        }}
-                        className="text-gray-400 hover:text-gray-600"
-                      >
-                        <MoreVertical size={20} />
-                      </button>
-                    </td>
+          <div className="flex-1 overflow-y-auto">
+            {loading ? (
+              <div className="flex justify-center items-center h-64 w-full">
+                <div className="w-8 h-8 border-4 border-[#009386] border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : filteredClients.length > 0 ? (
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr className="border-b border-[#E3DEC9] text-[11px] font-extrabold uppercase text-[#56635C] tracking-wider text-left bg-white sticky top-0">
+                    <th className="px-6 py-3.5">Nome do Paciente</th>
+                    <th className="px-6 py-3.5">WhatsApp / Telefone</th>
+                    <th className="px-6 py-3.5">Data Nasc.</th>
+                    <th className="px-6 py-3.5">Gênero</th>
+                    <th className="px-6 py-3.5">Status WhatsApp</th>
+                    <th className="px-6 py-3.5 text-right">Ação</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-[#E3DEC9]/60 text-xs">
+                  {filteredClients.map((client) => {
+                    const isSelected = selectedClient?.id === client.id;
+                    return (
+                      <tr
+                        key={client.id}
+                        onClick={() => setSelectedClient(client)}
+                        className={`transition-colors cursor-pointer hover:bg-[#F8F6F0]/70 ${isSelected ? 'bg-[#009386]/5 border-l-4 border-l-[#009386]' : ''
+                          }`}
+                      >
+                        <td className="px-6 py-3.5">
+                          <div className="flex items-center gap-3">
+                            {client.fotoLink ? (
+                              <img
+                                src={client.fotoLink}
+                                alt={client.nome}
+                                className="w-9 h-9 rounded-full object-cover border border-[#009386]/20 shadow-xs"
+                              />
+                            ) : (
+                              <div className="w-9 h-9 rounded-full bg-[#009386]/10 text-[#009386] font-bold flex items-center justify-center text-xs flex-shrink-0 border border-[#009386]/20 shadow-xs">
+                                {client.nome?.charAt(0).toUpperCase()}
+                              </div>
+                            )}
+                            <div className="font-bold text-[#1B2E26] truncate max-w-[200px] sm:max-w-[240px]">
+                              {client.nome}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-3.5 font-semibold text-[#1B2E26]">
+                          {client.telefone || 'Sem telefone'}
+                        </td>
+                        <td className="px-6 py-3.5 font-medium text-[#56635C]">
+                          {formatDateBR(client.dataNascimento) || '-'}
+                        </td>
+                        <td className="px-6 py-3.5 font-medium text-[#56635C]">
+                          {client.sexo === 'F' ? 'Feminino' : client.sexo === 'M' ? 'Masculino' : client.sexo || '-'}
+                        </td>
+                        <td className="px-6 py-3.5">
+                          <span
+                            className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wide border ${client.whatsappAtivo !== false
+                                ? 'bg-[#3CD099]/15 text-[#0E2820] border-[#3CD099]/30'
+                                : 'bg-[#FF6954]/10 text-[#D94F3C] border-[#FF6954]/30'
+                              }`}
+                          >
+                            {client.whatsappAtivo !== false ? 'Ativo' : 'Inativo'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-3.5 text-right">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedClient(client);
+                            }}
+                            className="p-1.5 hover:bg-[#EBE5D3]/60 rounded-lg text-[#56635C] hover:text-[#009386] transition-colors cursor-pointer"
+                          >
+                            <ChevronRight size={16} />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            ) : (
+              <div className="p-12 text-center text-sm text-[#56635C]">
+                Nenhum paciente cadastrado no momento.
+              </div>
+            )}
           </div>
         </div>
-      ) : (
-        <div className="bg-white rounded-xl p-12 shadow-sm border border-gray-200 text-center">
-          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Search className="text-gray-400" size={32} />
-          </div>
-          <h3 className="text-xl text-gray-900 mb-2">Nenhum cliente encontrado</h3>
-          <p className="text-gray-600 mb-6">
-            {searchTerm ? 'Tente buscar com outro termo' : 'Comece adicionando seu primeiro cliente'}
-          </p>
-          {!searchTerm && (
-            <button 
-              onClick={() => setShowNewClientModal(true)}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-lg transition-colors inline-flex items-center gap-2"
-            >
-              <Plus size={18} />
-              Novo Cliente
-            </button>
-          )}
-        </div>
-      )}
 
-      {/* New Client Modal */}
+        {/* Modal / Drawer Lateral */}
+        {selectedClient && (
+          <ClientProfile
+            client={selectedClient}
+            onClose={() => setSelectedClient(null)}
+          />
+        )}
+      </div>
+
+      {/* Modal Cadastro de Paciente */}
       {showNewClientModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
-            {/* Modal Header */}
-            <div className="p-6 border-b border-gray-200 flex items-center justify-between sticky top-0 bg-white">
-              <h2 className="text-xl text-gray-900">
-                {formStep === 'simple' ? 'Novo Cliente - Dados Básicos' : 'Novo Cliente - Dados Completos'}
-              </h2>
-              <button 
-                onClick={() => {
-                  setShowNewClientModal(false);
-                  setFormStep('simple');
-                }}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+          onClick={() => setShowNewClientModal(false)}
+        >
+          <form
+            onSubmit={handleCriarCliente}
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white rounded-3xl max-w-lg w-full max-h-[90vh] overflow-y-auto border border-[#E3DEC9] shadow-2xl"
+          >
+            <div className="p-6 border-b border-[#E3DEC9] flex items-center justify-between sticky top-0 bg-white z-10">
+              <h2 className="text-xl font-bold text-[#1B2E26]">Cadastrar Novo Paciente</h2>
+              <button
+                type="button"
+                onClick={() => setShowNewClientModal(false)}
+                className="p-2 hover:bg-[#F8F6F0] rounded-xl text-[#56635C] cursor-pointer"
               >
                 <X size={20} />
               </button>
             </div>
 
-            {/* Modal Content */}
-            <div className="p-6">
-              {formStep === 'simple' ? (
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm text-gray-700 mb-2">
-                      Nome Completo *
-                    </label>
-                    <div className="relative">
-                      <div className="absolute left-4 top-1/2 -translate-y-1/2">
-                        <User className="text-gray-400" size={20} />
-                      </div>
-                      <input
-                        type="text"
-                        placeholder="Digite o nome completo"
-                        className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-lg focus:border-emerald-500 focus:outline-none transition-colors"
-                      />
-                    </div>
-                  </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-[#1B2E26] uppercase mb-1.5">Nome Completo *</label>
+                <input
+                  type="text"
+                  required
+                  maxLength={100}
+                  value={formData.nome}
+                  onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
+                  placeholder="Nome do paciente"
+                  className="w-full px-4 py-3 bg-[#F8F6F0] border border-[#E3DEC9] rounded-2xl focus:bg-white focus:border-[#009386] focus:outline-none text-sm font-medium"
+                />
+              </div>
 
-                  <div>
-                    <label className="block text-sm text-gray-700 mb-2">
-                      WhatsApp *
-                    </label>
-                    <div className="relative">
-                      <div className="absolute left-4 top-1/2 -translate-y-1/2">
-                        <Phone className="text-gray-400" size={20} />
-                      </div>
-                      <input
-                        type="tel"
-                        placeholder="(11) 99999-9999"
-                        className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-lg focus:border-emerald-500 focus:outline-none transition-colors"
-                      />
-                    </div>
-                  </div>
+              <div>
+                <label className="block text-xs font-bold text-[#1B2E26] uppercase mb-1.5">Telefone / WhatsApp (com DDD) *</label>
+                <input
+                  type="tel"
+                  required
+                  maxLength={15}
+                  value={formData.telefone}
+                  onChange={handlePhoneChange}
+                  placeholder="(11) 99999-9999"
+                  className="w-full px-4 py-3 bg-[#F8F6F0] border border-[#E3DEC9] rounded-2xl focus:bg-white focus:border-[#009386] focus:outline-none text-sm font-medium"
+                />
+              </div>
 
-                  <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-lg">
-                    <p className="text-sm text-blue-900">
-                      Você pode adicionar mais informações depois no perfil do cliente.
-                    </p>
-                  </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-[#1B2E26] uppercase mb-1.5">Data de Nascimento *</label>
+                  <input
+                    type="date"
+                    required
+                    max={hoje}
+                    value={formData.dataNascimento}
+                    onChange={(e) => setFormData({ ...formData, dataNascimento: e.target.value })}
+                    className="w-full px-4 py-3 bg-[#F8F6F0] border border-[#E3DEC9] rounded-2xl focus:bg-white focus:border-[#009386] focus:outline-none text-sm font-medium"
+                  />
                 </div>
-              ) : (
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm text-gray-700 mb-2">
-                      Email
-                    </label>
-                    <div className="relative">
-                      <div className="absolute left-4 top-1/2 -translate-y-1/2">
-                        <Mail className="text-gray-400" size={20} />
-                      </div>
-                      <input
-                        type="email"
-                        placeholder="email@exemplo.com"
-                        className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-lg focus:border-emerald-500 focus:outline-none transition-colors"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm text-gray-700 mb-2">
-                      Data de Nascimento
-                    </label>
-                    <input
-                      type="date"
-                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-emerald-500 focus:outline-none transition-colors"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm text-gray-700 mb-2">
-                      Plano
-                    </label>
-                    <select className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-emerald-500 focus:outline-none transition-colors">
-                      <option value="">Selecione um plano</option>
-                      <option value="mensal">Mensal</option>
-                      <option value="semestral">Semestral</option>
-                      <option value="avulso">Avulso</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm text-gray-700 mb-2">
-                      Horário Fixo (opcional)
-                    </label>
-                    <div className="grid grid-cols-2 gap-4">
-                      <select className="px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-emerald-500 focus:outline-none transition-colors">
-                        <option value="">Dia da semana</option>
-                        <option value="segunda">Segunda</option>
-                        <option value="terca">Terça</option>
-                        <option value="quarta">Quarta</option>
-                        <option value="quinta">Quinta</option>
-                        <option value="sexta">Sexta</option>
-                      </select>
-                      <select className="px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-emerald-500 focus:outline-none transition-colors">
-                        <option value="">Horário</option>
-                        <option value="08:00">08:00</option>
-                        <option value="09:00">09:00</option>
-                        <option value="10:00">10:00</option>
-                        <option value="11:00">11:00</option>
-                        <option value="14:00">14:00</option>
-                        <option value="15:00">15:00</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm text-gray-700 mb-2">
-                      Observações
-                    </label>
-                    <textarea
-                      rows={3}
-                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-emerald-500 focus:outline-none transition-colors resize-none"
-                      placeholder="Restrições, objetivos, observações médicas..."
-                    />
-                  </div>
+                <div>
+                  <label className="block text-xs font-bold text-[#1B2E26] uppercase mb-1.5">Gênero *</label>
+                  <select
+                    value={formData.sexo}
+                    onChange={(e) => setFormData({ ...formData, sexo: e.target.value as SexoEnum })}
+                    className="w-full px-4 py-3 bg-[#F8F6F0] border border-[#E3DEC9] rounded-2xl focus:bg-white focus:border-[#009386] focus:outline-none text-sm font-medium"
+                  >
+                    <option value="F">Feminino</option>
+                    <option value="M">Masculino</option>
+                    <option value="OUTRO">Outro</option>
+                  </select>
                 </div>
-              )}
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-[#1B2E26] uppercase mb-1.5">Foto (Link opcional)</label>
+                <input
+                  type="url"
+                  maxLength={255}
+                  value={formData.fotoLink}
+                  onChange={(e) => setFormData({ ...formData, fotoLink: e.target.value })}
+                  placeholder="https://..."
+                  className="w-full px-4 py-3 bg-[#F8F6F0] border border-[#E3DEC9] rounded-2xl focus:bg-white focus:border-[#009386] focus:outline-none text-sm font-medium"
+                />
+              </div>
             </div>
 
-            {/* Modal Footer */}
-            <div className="p-6 border-t border-gray-200 flex gap-3">
-              {formStep === 'simple' ? (
-                <>
-                  <button 
-                    onClick={() => {
-                      setShowNewClientModal(false);
-                      setFormStep('simple');
-                    }}
-                    className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-3 rounded-lg transition-colors"
-                  >
-                    Cancelar
-                  </button>
-                  <button 
-                    onClick={() => setFormStep('complete')}
-                    className="flex-1 bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg transition-colors"
-                  >
-                    Cadastro Completo
-                  </button>
-                  <button className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-lg transition-colors">
-                    Salvar
-                  </button>
-                </>
-              ) : (
-                <>
-                  <button 
-                    onClick={() => setFormStep('simple')}
-                    className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-3 rounded-lg transition-colors"
-                  >
-                    Voltar
-                  </button>
-                  <button 
-                    onClick={() => {
-                      setShowNewClientModal(false);
-                      setFormStep('simple');
-                    }}
-                    className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-lg transition-colors"
-                  >
-                    Criar Cliente
-                  </button>
-                </>
-              )}
+            <div className="p-6 border-t border-[#E3DEC9] flex gap-3">
+              <button
+                type="button"
+                onClick={() => setShowNewClientModal(false)}
+                className="flex-1 bg-[#EBE5D3]/60 hover:bg-[#EBE5D3] text-[#1B2E26] px-4 py-3 rounded-xl font-bold text-xs uppercase tracking-wider cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                className="flex-1 bg-[#009386] hover:bg-[#007491] text-white px-4 py-3 rounded-xl font-bold text-xs uppercase tracking-wider cursor-pointer shadow-md"
+              >
+                Salvar Paciente
+              </button>
             </div>
-          </div>
+          </form>
         </div>
       )}
-        </div>
-      </div>
     </div>
   );
 }

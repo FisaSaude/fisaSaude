@@ -96,7 +96,7 @@ export default function Dashboard() {
     <div className="w-full lg:h-full lg:overflow-hidden flex flex-col lg:min-h-0">
       <div className="flex-1 lg:h-full lg:overflow-hidden p-4 sm:p-5 lg:p-6 flex flex-col lg:min-h-0">
         <div className="max-w-7xl mx-auto w-full flex-1 flex flex-col lg:min-h-0 space-y-4 lg:space-y-5">
-          
+
           {/* Header - Reduzido o espaçamento */}
           <div className="flex-shrink-0">
             <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-1">
@@ -133,13 +133,12 @@ export default function Dashboard() {
                     </div>
                     <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{stat.label}</div>
                   </div>
-                  
+
                   <div className="flex items-baseline justify-between mt-1">
                     <div className="text-2xl sm:text-3xl font-bold text-foreground leading-none">{stat.value}</div>
-                    <div className={`text-[11px] font-semibold flex items-center gap-0.5 ${
-                      stat.changeType === 'positive' ? 'text-success' :
-                      stat.changeType === 'info' ? 'text-primary' : 'text-warning'
-                    }`}>
+                    <div className={`text-[11px] font-semibold flex items-center gap-0.5 ${stat.changeType === 'positive' ? 'text-success' :
+                        stat.changeType === 'info' ? 'text-primary' : 'text-warning'
+                      }`}>
                       {stat.changeType === 'positive' && <TrendingUp size={12} />}
                       {stat.change}
                     </div>
@@ -187,7 +186,7 @@ export default function Dashboard() {
                     Novo Atendimento
                   </button>
                 </div>
-                
+
                 {/* Lista de horários com scroll interno e independente (apenas no desktop) */}
                 <div className="flex-1 divide-y divide-border lg:overflow-y-auto lg:min-h-0">
                   {todaySchedule.map((item, index) => (
@@ -279,8 +278,8 @@ export default function Dashboard() {
                           w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0
                           ${activity.type === 'success' ? 'bg-success/10 text-success' :
                             activity.type === 'booking' ? 'bg-primary/10 text-primary' :
-                            activity.type === 'info' ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' :
-                            'bg-warning/10 text-warning'}
+                              activity.type === 'info' ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' :
+                                'bg-warning/10 text-warning'}
                         `}>
                           <Icon size={16} />
                         </div>
@@ -296,7 +295,7 @@ export default function Dashboard() {
               </div>
             </div>
           </div>
-          
+
         </div>
       </div>
     </div>

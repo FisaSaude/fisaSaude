@@ -1,49 +1,129 @@
-import { Plus, ChevronLeft, ChevronRight, Search, X, Clock, User, Phone, Calendar as CalendarIcon, CalendarDays, CalendarRange, CheckCircle2, ShieldAlert } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import {
+  Plus,
+  ChevronLeft,
+  ChevronRight,
+  X,
+  User,
+  Clock,
+  CheckCircle2,
+  ShieldAlert,
+  CalendarCheck,
+  Ban,
+  Calendar as CalendarIcon
+} from 'lucide-react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import axios from 'axios';
+import { api } from '../../services/api';
 
-type ViewType = 'day' | 'week' | 'month';
+type ViewType = 'week' | 'month';
 
-interface AgendamentoReal {
+export type StatusAgendamentoEnum =
+  | 'AGENDADO'
+  | 'CONFIRMADO'
+  | 'CANCELADO'
+  | 'CONCLUIDO'
+  | 'BLOQUEADO';
+
+export interface AgendamentoUsuarioPeriodoResponseDto {
   id: number;
-  data: string;
-  horaInicio: string;
-  horaFim: string;
-  status: 'AGENDADO' | 'CONFIRMADO' | 'CANCELADO' | 'CONCLUIDO' | 'BLOQUEADO';
-  observacoes: string;
-  clienteNome: string;
-  clienteId?: number;
-  clienteWhatsapp?: string;
-  servicoNome: string;
-  servicoId?: number;
+  data: string | number[];
+  horaInicio: string | number[];
+  horaFim: string | number[];
+  nomeCliente?: string | null;
+  status: StatusAgendamentoEnum;
+  preco?: number | null;
 }
+
+interface Cliente {
+  id: number;
+  nome: string;
+  telefone?: string;
+}
+
+export interface FeriadoItem {
+  date: string;
+  name: string;
+  type?: string;
+}
+
+/* =========================================================
+   AUXILIARES DE DATA/HORA
+========================================================= */
+
+const normalizeDate = (value: any): string => {
+  if (!value) return '';
+  if (Array.isArray(value)) {
+    const y = String(value[0]);
+    const m = String(value[1]).padStart(2, '0');
+    const d = String(value[2]).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+  const str = String(value);
+  return str.includes('T') ? str.split('T')[0] : str.substring(0, 10);
+};
+
+const normalizeTime = (value: any): string => {
+  if (!value) return '';
+  if (Array.isArray(value)) {
+    const h = String(value[0]).padStart(2, '0');
+    const m = String(value[1] || 0).padStart(2, '0');
+    return `${h}:${m}`;
+  }
+  return String(value).substring(0, 5);
+};
+
+const dateToKey = (date: Date): string => {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+};
+
+const addDays = (date: Date, amount: number) => {
+  const result = new Date(date);
+  result.setDate(result.getDate() + amount);
+  return result;
+};
+
+const startOfWeek = (date: Date) => {
+  const result = new Date(date);
+  const day = result.getDay();
+  result.setDate(result.getDate() - day);
+  result.setHours(0, 0, 0, 0);
+  return result;
+};
+
+const calcularHoraFim = (hora: string) => {
+  if (!hora) return '';
+  const [h, m] = hora.split(':').map(Number);
+  const date = new Date();
+  date.setHours(h, (m || 0) + 50, 0, 0);
+  return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+};
 
 export default function Schedule() {
   const [view, setView] = useState<ViewType>('month');
-  const [showNewBookingModal, setShowNewBookingModal] = useState(false);
-  const [showBlockModal, setShowBlockModal] = useState(false);
-  const [selectedBooking, setSelectedBooking] = useState<AgendamentoReal | null>(null);
-  
-  // --- ESTADOS DO CALENDÁRIO DINÂMICO ---
-  const [currentDate, setCurrentDate] = useState(new Date()); 
-  const [selectedDate, setSelectedDate] = useState<number>(new Date().getDate()); 
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState(new Date());
 
-  // Estados para dados vindos do Back-end
-  const [agendamentos, setAgendamentos] = useState<AgendamentoReal[]>([]);
+  const [agendamentos, setAgendamentos] = useState<AgendamentoUsuarioPeriodoResponseDto[]>([]);
+  const [clientes, setClientes] = useState<Cliente[]>([]);
+  const [feriados, setFeriados] = useState<FeriadoItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
-  
-  // Estado para o Pop-up de Sucesso (Toast)
   const [successMessage, setSuccessMessage] = useState('');
-  const [showSuccessToast, setShowSuccessToast] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
 
-  // --- ESTADOS DO FORMULÁRIO DE AGENDAMENTO ---
-  const [nomeClienteInput, setNomeClienteInput] = useState(''); 
-  const [servicoSelecionadoId, setServicoSelecionadoId] = useState('1'); 
-  const [sugestoesFiltradas, setSugestoesFiltradas] = useState<{id: number, nome: string}[]>([]);
-  const [showDropdownSugestoes, setShowDropdownSugestoes] = useState(false);
+  // Modais
+  const [showDayScheduleModal, setShowDayScheduleModal] = useState(false);
+  const [selectedBooking, setSelectedBooking] = useState<AgendamentoUsuarioPeriodoResponseDto | null>(null);
+  const [showNewBookingModal, setShowNewBookingModal] = useState(false);
+  const [showBlockModal, setShowBlockModal] = useState(false);
 
-  // Estados para os formulários
+  const [clienteInput, setClienteInput] = useState('');
+  const [clienteSelecionado, setClienteSelecionado] = useState<number | null>(null);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+
   const [formData, setFormData] = useState({
     data: '',
     horaInicio: '',
@@ -54,323 +134,493 @@ export default function Schedule() {
   const [blockData, setBlockData] = useState({
     data: '',
     horaInicio: '',
-    horaFim: '',
-    reason: ''
+    horaFim: ''
   });
 
-  // Lista de serviços baseada estritamente no pilates.sql
-  const servicosFisaSaude = [
-    { id: 1, nome: 'Aula Experimental' },
-    { id: 2, nome: 'Aula Avulsa' },
-    { id: 3, nome: 'Aula Mensal' },
-    { id: 4, nome: 'Aula Semestral' }
-  ];
+  const defaultTimeSlots = useMemo(() => [
+    '07:00', '07:50', '08:40', '09:30', '10:20', '11:10',
+    '12:00', '13:00', '13:50', '14:40', '15:30', '16:20',
+    '17:10', '18:00', '18:50'
+  ], []);
 
-  // Lista de clientes cadastrados no pilates.sql para o Autocomplete
-  const clientesMapeados = [
-    { id: 1, nome: 'Mariana Silva' },
-    { id: 2, nome: 'Joao Pereira' },
-    { id: 3, nome: 'Ana Souza' },
-    { id: 4, nome: 'Carlos Mendes' },
-    { id: 5, nome: 'Beatriz Costa' }
-  ];
-
-  const token = localStorage.getItem('@FisaSaude:token');
-  const api = axios.create({
-    baseURL: 'http://localhost:8080',
-    headers: {
-      Authorization: `Bearer ${token}`
-    }
-  });
-
-  const ano = currentDate.getFullYear();
-  const mes = currentDate.getMonth(); 
-
-  const nomesDosMeses = [
+  const monthNames = useMemo(() => [
     'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
     'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
-  ];
+  ], []);
 
-  const primeiroDiaDaSemana = new Date(ano, mes, 1).getDay();
-  const totalDiasNoMes = new Date(ano, mes + 1, 0).getDate();
+  const weekDays = useMemo(() => ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'], []);
 
-  const dataInicioFormatada = `${ano}-${String(mes + 1).padStart(2, '0')}-01`;
-  const dataFimFormatada = `${ano}-${String(mes + 1).padStart(2, '0')}-${String(totalDiasNoMes).padStart(2, '0')}`;
+  /* =========================================================
+     BUSCA DADOS E FERIADOS
+  ========================================================= */
 
-  const triggerSuccess = (msg: string) => {
-    setSuccessMessage(msg);
-    setShowSuccessToast(true);
-    setTimeout(() => {
-      setShowSuccessToast(false);
-    }, 3500);
-  };
+  const carregarFeriados = useCallback(async (ano: number) => {
+    try {
+      const res = await api.get(`/feriados/${ano}`);
+      setFeriados(Array.isArray(res.data) ? res.data : []);
+    } catch {
+      try {
+        const fallback = await axios.get(`https://brasilapi.com.br/api/feriados/v1/${ano}`);
+        setFeriados(Array.isArray(fallback.data) ? fallback.data : []);
+      } catch (err) {
+        console.warn('Não foi possível carregar os feriados nacionais:', err);
+      }
+    }
+  }, []);
 
-  // --- REQUISIÇÕES HTTP ---
-
-  const carregarDadosDaAgenda = async () => {
+  const carregarDados = useCallback(async () => {
     setLoading(true);
     setErrorMessage('');
+
+    let usuarioId = localStorage.getItem('@FisaSaude:usuarioId');
+    if (!usuarioId || isNaN(Number(usuarioId))) {
+      usuarioId = '1';
+    }
+
+    const ano = currentDate.getFullYear();
+    const mes = currentDate.getMonth() + 1;
+    const ultimoDia = new Date(ano, mes, 0).getDate();
+    const dataInicio = `${ano}-${String(mes).padStart(2, '0')}-01`;
+    const dataFim = `${ano}-${String(mes).padStart(2, '0')}-${String(ultimoDia).padStart(2, '0')}`;
+
     try {
-      // Tenta puxar primeiro os que estão confirmados
-      let response = await api.get('/agendamentos', {
+      const resAgendamentos = await api.get('/agendamentos/usuario-periodo', {
         params: {
-          status: 'CONFIRMADO',
-          dataInicio: dataInicioFormatada,
-          dataFim: dataFimFormatada
+          usuarioId: Number(usuarioId),
+          dataInicio: dataInicio,
+          dataFim: dataFim
         }
       });
 
-      let dados = response.data;
+      const lista = Array.isArray(resAgendamentos.data)
+        ? resAgendamentos.data
+        : resAgendamentos.data?.content || [];
 
-      // Se o JSON vier vazio, faz o fallback para buscar os com status AGENDADO
-      if (!dados || dados.length === 0) {
-        const fallbackResponse = await api.get('/agendamentos', {
-          params: {
-            status: 'AGENDADO',
-            dataInicio: dataInicioFormatada,
-            dataFim: dataFimFormatada
-          }
-        });
-        dados = fallbackResponse.data;
-      }
+      setAgendamentos(lista);
 
-      setAgendamentos(dados || []);
-    } catch (error: any) {
-      console.error(error);
-      setErrorMessage('Não foi possível atualizar a agenda para este período.');
+      const resClientes = await api.get('/clientes').catch(() => ({ data: [] }));
+      const listaClientes = Array.isArray(resClientes.data)
+        ? resClientes.data
+        : resClientes.data?.content || [];
+      setClientes(listaClientes);
+
+      await carregarFeriados(ano);
+    } catch (err: any) {
+      console.error('Erro ao buscar dados do período:', err);
+      setErrorMessage(
+        err.response?.data?.message || 'Não foi possível carregar a agenda do servidor.'
+      );
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentDate, carregarFeriados]);
 
   useEffect(() => {
-    carregarDadosDaAgenda();
+    carregarDados();
+  }, [carregarDados]);
+
+  const getFeriadoDoDia = useCallback(
+    (date: Date) => {
+      const key = dateToKey(date);
+      return feriados.find((f) => normalizeDate(f.date) === key);
+    },
+    [feriados]
+  );
+
+  const getBookingsForDate = useCallback(
+    (date: Date) => {
+      const targetKey = dateToKey(date);
+      return agendamentos.filter((booking) => {
+        const itemKey = normalizeDate(booking.data);
+        return itemKey === targetKey && booking.status !== 'CANCELADO';
+      });
+    },
+    [agendamentos]
+  );
+
+  const isSlotInInterval = (slot: string, inicio: string, fim: string) => {
+    return slot >= inicio && slot <= fim;
+  };
+
+  const getSlotStatus = useCallback(
+    (date: Date, timeSlot: string) => {
+      const bookings = getBookingsForDate(date);
+
+      const exact = bookings.find(
+        (b) => normalizeTime(b.horaInicio) === timeSlot && b.status !== 'BLOQUEADO'
+      );
+      if (exact) return { type: 'booking' as const, data: exact };
+
+      const blockedRange = bookings.find((b) => {
+        if (b.status !== 'BLOQUEADO') return false;
+        const ini = normalizeTime(b.horaInicio);
+        const fim = normalizeTime(b.horaFim);
+        return isSlotInInterval(timeSlot, ini, fim);
+      });
+
+      if (blockedRange) return { type: 'blocked' as const, data: blockedRange };
+
+      return { type: 'free' as const, data: null };
+    },
+    [getBookingsForDate]
+  );
+
+  const selectedDaySlots = useMemo(() => {
+    const slots = new Set(defaultTimeSlots);
+    const bookings = getBookingsForDate(selectedDate);
+    bookings.forEach((booking) => {
+      const timeStr = normalizeTime(booking.horaInicio);
+      if (timeStr) slots.add(timeStr);
+    });
+    return Array.from(slots).sort();
+  }, [getBookingsForDate, selectedDate, defaultTimeSlots]);
+
+  const weekDates = useMemo(() => {
+    const start = startOfWeek(selectedDate);
+    return Array.from({ length: 7 }).map((_, index) => addDays(start, index));
+  }, [selectedDate]);
+
+  const calendarDays = useMemo(() => {
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const days = [];
+
+    for (let i = 0; i < firstDay; i++) days.push(null);
+    for (let day = 1; day <= daysInMonth; day++) days.push(new Date(year, month, day));
+    while (days.length % 7 !== 0) days.push(null);
+
+    return days;
   }, [currentDate]);
 
-  // Monitora a digitação e filtra as sugestões de alunos
-  useEffect(() => {
-    if (nomeClienteInput.trim() === '') {
-      setSugestoesFiltradas([]);
+  const previousPeriod = () => {
+    if (view === 'month') {
+      setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
       return;
     }
-
-    const filtrados = clientesMapeados.filter(cliente =>
-      cliente.nome.toLowerCase().includes(nomeClienteInput.toLowerCase())
-    );
-    setSugestoesFiltradas(filtrados);
-  }, [nomeClienteInput]);
-
-  const voltarMes = () => {
-    setCurrentDate(new Date(ano, mes - 1, 1));
-    setSelectedDate(1);
+    setSelectedDate(addDays(selectedDate, -7));
   };
 
-  const avancarMes = () => {
-    setCurrentDate(new Date(ano, mes + 1, 1));
-    setSelectedDate(1);
+  const nextPeriod = () => {
+    if (view === 'month') {
+      setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
+      return;
+    }
+    setSelectedDate(addDays(selectedDate, 7));
   };
 
-  const irParaHoje = () => {
-    const hoje = new Date();
-    setCurrentDate(hoje);
-    setSelectedDate(hoje.getDate());
+  const goToday = () => {
+    const today = new Date();
+    setCurrentDate(today);
+    setSelectedDate(today);
   };
 
-  const formatDayKey = `${ano}-${String(mes + 1).padStart(2, '0')}-${String(selectedDate).padStart(2, '0')}`;
-  const daySchedule = agendamentos.filter(b => b.data === formatDayKey);
+  const calendarTitle = useMemo(() => {
+    if (view === 'month') {
+      return `${monthNames[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
+    }
+    const start = startOfWeek(selectedDate);
+    const end = addDays(start, 6);
+    if (start.getMonth() === end.getMonth()) {
+      return `${start.getDate()}–${end.getDate()} de ${monthNames[start.getMonth()]}`;
+    }
+    return `${start.getDate()} ${monthNames[start.getMonth()].substring(0, 3)} – ${end.getDate()} ${monthNames[end.getMonth()].substring(0, 3)}`;
+  }, [view, currentDate, selectedDate, monthNames]);
 
-  const daysWithBookings = agendamentos.map(b => {
-    const partes = b.data.split('-'); 
-    return Number(partes[1]) === (mes + 1) && Number(partes[0]) === ano ? Number(partes[2]) : null;
-  }).filter(d => d !== null) as number[];
+  const abrirModalHorariosDoDia = (date: Date) => {
+    setSelectedDate(date);
+    setShowDayScheduleModal(true);
+  };
 
-  const getDaysInMonthGrid = () => {
-    const days = [];
-    for (let i = 0; i < primeiroDiaDaSemana; i++) days.push(null);
-    for (let i = 1; i <= totalDiasNoMes; i++) days.push(i);
-    return days;
+  const abrirNovoAgendamento = (date?: Date, time?: string) => {
+    const targetDate = date || selectedDate;
+    setFormData({
+      data: dateToKey(targetDate),
+      horaInicio: time || '',
+      horaFim: time ? calcularHoraFim(time) : '',
+      observacoes: ''
+    });
+    setClienteInput('');
+    setClienteSelecionado(null);
+    setShowSuggestions(false);
+    setShowNewBookingModal(true);
   };
 
   const handleCriarAgendamento = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Mapeia o nome em texto digitado para o ID numérico correspondente
-    const clienteEncontrado = clientesMapeados.find(
-      c => c.nome.toLowerCase().trim() === nomeClienteInput.toLowerCase().trim()
-    );
+    let clienteId = clienteSelecionado;
+    if (!clienteId) {
+      const match = clientes.find(
+        (c) => c.nome.toLowerCase().trim() === clienteInput.toLowerCase().trim()
+      );
+      clienteId = match?.id || null;
+    }
 
-    const finalClienteId = clienteEncontrado ? clienteEncontrado.id : 1;
+    if (!clienteId) {
+      alert('Selecione um cliente válido.');
+      return;
+    }
+
+    let usuarioId = localStorage.getItem('@FisaSaude:usuarioId');
+    if (!usuarioId || isNaN(Number(usuarioId))) {
+      usuarioId = '1';
+    }
 
     try {
       await api.post('/agendamentos', {
+        clienteId: Number(clienteId),
+        servicoId: 1,
+        usuarioId: Number(usuarioId),
         data: formData.data,
-        horaInicio: `${formData.horaInicio}:00`,
-        horaFim: `${formData.horaFim}:00`,
-        clienteId: finalClienteId,          
-        servicoId: Number(servicoSelecionadoId), 
-        usuarioId: 1, 
-        observacoes: formData.observacoes
+        horaInicio: `${formData.horaInicio.substring(0, 5)}:00`,
+        horaFim: `${formData.horaFim.substring(0, 5)}:00`,
+        observacoes: formData.observacoes || null
       });
-      
+
       setShowNewBookingModal(false);
-      setFormData({ data: '', horaInicio: '', horaFim: '', observacoes: '' });
-      setNomeClienteInput('');
-      
-      triggerSuccess('Agendamento realizado com sucesso!');
-      carregarDadosDaAgenda();
-    } catch (error) {
-      alert('Erro ao registrar agendamento. Verifique as chaves ou se os IDs batem no MySQL.');
+      await carregarDados();
+      showSuccessMessage('Agendamento criado com sucesso!');
+    } catch (error: any) {
+      alert(error.response?.data?.message || 'Erro ao criar agendamento.');
     }
   };
 
-  const handleBloquearHorario = async (e: React.FormEvent) => {
+  const handleBloquearPeriodo = async (e: React.FormEvent) => {
     e.preventDefault();
+    let usuarioId = localStorage.getItem('@FisaSaude:usuarioId');
+    if (!usuarioId || isNaN(Number(usuarioId))) usuarioId = '1';
+
+    if (blockData.horaInicio >= blockData.horaFim) {
+      alert('O horário de término deve ser posterior ao de início.');
+      return;
+    }
+
     try {
-      await api.post('/agendamentos', {
+      await api.post('/agendamentos/bloquear-periodo', {
+        usuarioId: Number(usuarioId),
         data: blockData.data,
-        horaInicio: `${blockData.horaInicio}:00`,
-        horaFim: `${blockData.horaFim}:00`,
-        usuarioId: 1,
-        observacoes: `Bloqueado: ${blockData.reason}`
+        horaInicio: `${blockData.horaInicio.substring(0, 5)}:00`,
+        horaFim: `${blockData.horaFim.substring(0, 5)}:00`
       });
+
       setShowBlockModal(false);
-      setBlockData({ data: '', horaInicio: '', horaFim: '', reason: '' });
-      
-      triggerSuccess('Horário bloqueado operacionalmente!');
-      carregarDadosDaAgenda();
-    } catch (error) {
-      alert('Erro ao bloquear horário.');
+      setBlockData({ data: '', horaInicio: '', horaFim: '' });
+      await carregarDados();
+      showSuccessMessage('Período bloqueado com sucesso!');
+    } catch (error: any) {
+      alert(error.response?.data?.message || 'Erro ao bloquear período.');
     }
   };
 
-  const handleMudarStatus = async (id: number, novoStatus: string) => {
+  const handleConcluir = async (id: number) => {
     try {
-      await api.put(`/agendamentos/${id}/status?novoStatus=${novoStatus}`);
+      await api.post(`/agendamentos/${id}/concluir`);
       setSelectedBooking(null);
-      
-      triggerSuccess(`Agendamento atualizado para ${novoStatus.toLowerCase()}!`);
-      carregarDadosDaAgenda();
-    } catch (error) {
-      alert('Falha ao atualizar status.');
+      await carregarDados();
+      showSuccessMessage('Agendamento concluído!');
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Não foi possível concluir o agendamento.');
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status?.toLowerCase()) {
-      case 'confirmado': return 'bg-emerald-500 border-emerald-600';
-      case 'cancelado': return 'bg-red-400 border-red-500';
-      case 'bloqueado': return 'bg-gray-400 border-gray-500';
-      default: return 'bg-amber-400 border-amber-500';
+  const handleCancelar = async (id: number) => {
+    try {
+      await api.post(`/agendamentos/${id}/cancelar`);
+      setSelectedBooking(null);
+      await carregarDados();
+      showSuccessMessage('Agendamento cancelado!');
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Não foi possível cancelar o agendamento.');
     }
   };
 
-  const timeSlots = [
-    '08:00', '08:30', '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
-    '12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30',
-    '16:00', '16:30', '17:00', '17:30', '18:00'
-  ];
+  const showSuccessMessage = (message: string) => {
+    setSuccessMessage(message);
+    setShowSuccess(true);
+    setTimeout(() => setShowSuccess(false), 3000);
+  };
+
+  const filteredClients = clienteInput.trim()
+    ? clientes.filter((c) => c.nome.toLowerCase().includes(clienteInput.toLowerCase()))
+    : [];
+
+  const feriadoDoDiaSelecionado = getFeriadoDoDia(selectedDate);
 
   return (
-    <div className="w-full lg:h-full lg:overflow-hidden flex flex-col lg:min-h-0 bg-background relative">
-      
-      {/* POP-UP (TOAST) DE SUCESSO COESIVO */}
-      {showSuccessToast && (
-        <div className="fixed top-5 left-1/2 -translate-x-1/2 z-50 bg-emerald-600 border border-emerald-500 text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 font-semibold text-sm animate-bounce">
-          <CheckCircle2 size={18} className="text-white flex-shrink-0" />
-          <span>{successMessage}</span>
+    <div className="w-full h-full min-h-0 bg-[#F8F6F0] text-[#1B2E26] flex flex-col overflow-y-auto sm:overflow-hidden">
+      {showSuccess && (
+        <div className="fixed top-4 left-4 right-4 sm:left-1/2 sm:-translate-x-1/2 sm:w-auto z-[100] bg-[#009386] text-white px-4 py-3 rounded-2xl shadow-xl flex items-center justify-center gap-2 text-xs sm:text-sm font-semibold">
+          <CheckCircle2 size={16} />
+          {successMessage}
         </div>
       )}
 
-      <div className="flex-1 lg:h-full lg:overflow-hidden p-4 sm:p-5 lg:p-6 flex flex-col lg:min-h-0">
-        <div className="max-w-[1600px] w-full flex-1 flex flex-col lg:min-h-0 space-y-4">
-          
-          {/* Header */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 flex-shrink-0">
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">Agenda</h1>
-              <p className="text-xs sm:text-sm text-gray-600">Gerencie os horários do estúdio de forma totalmente dinâmica</p>
-            </div>
-            <div className="flex gap-2">
-              <button onClick={() => setShowBlockModal(true)} className="bg-white hover:bg-gray-50 text-gray-700 px-4 py-2.5 rounded-xl border-2 border-gray-200 hover:border-gray-300 transition-all font-semibold text-sm shadow-sm">
-                Bloquear Horário
-              </button>
-              <button onClick={() => {
-                setFormData({ ...formData, data: formatDayKey });
-                setShowNewBookingModal(true);
-              }} className="bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white px-5 py-2.5 rounded-xl transition-all shadow-md flex items-center justify-center gap-2 font-semibold text-sm">
-                <Plus size={16} /> Novo Agendamento
-              </button>
-            </div>
+      <div className="flex-1 min-h-0 p-3 sm:p-5 lg:p-6 flex flex-col">
+        {/* Header Superior */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3 sm:mb-4 flex-shrink-0">
+          <div>
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold">Agenda</h1>
+            <p className="text-[11px] sm:text-xs text-[#56635C] mt-0.5">
+              Gerencie seus horários e atendimentos
+            </p>
           </div>
 
-          {errorMessage && (
-            <div className="p-3 bg-red-50 border border-red-200 text-red-800 rounded-xl text-xs flex items-center gap-2 font-medium">
-              <ShieldAlert size={16} className="text-red-600" />
-              <div>{errorMessage}</div>
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setBlockData({ data: dateToKey(selectedDate), horaInicio: '', horaFim: '' });
+                setShowBlockModal(true);
+              }}
+              className="flex-1 sm:flex-none px-3 py-2 sm:px-4 sm:py-2.5 bg-white border border-[#E3DEC9] rounded-xl text-[11px] sm:text-xs font-bold hover:bg-[#EBE5D3]/50 transition-colors cursor-pointer flex items-center justify-center gap-1.5"
+            >
+              <Ban size={13} className="text-[#FF6954]" />
+              Bloquear
+            </button>
 
-          {/* Navegação de Meses Dinâmica */}
-          <div className="bg-white border border-gray-200 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 flex-shrink-0 shadow-sm">
-            <div className="flex items-center gap-3">
-              <div className="flex items-center border border-gray-200 rounded-lg bg-gray-50 p-0.5">
-                <button className="p-2 hover:bg-white rounded-md transition-all" onClick={voltarMes}>
-                  <ChevronLeft className="text-gray-600" size={16} />
+            <button
+              type="button"
+              onClick={() => abrirNovoAgendamento()}
+              className="flex-1 sm:flex-none px-3.5 py-2 sm:px-5 sm:py-2.5 bg-[#009386] hover:bg-[#007491] text-white rounded-xl text-[11px] sm:text-xs font-bold flex items-center justify-center gap-1.5 shadow-md transition-colors cursor-pointer"
+            >
+              <Plus size={15} />
+              Novo
+            </button>
+          </div>
+        </div>
+
+        {errorMessage && (
+          <div className="mb-3 p-2.5 rounded-xl bg-[#FF6954]/10 border border-[#FF6954]/30 text-[#D94F3C] text-[11px] font-medium flex items-center gap-2">
+            <ShieldAlert size={15} className="flex-shrink-0" />
+            <span className="truncate">{errorMessage}</span>
+          </div>
+        )}
+
+        {/* Card Principal */}
+        <div className="flex-1 min-h-[500px] sm:min-h-0 bg-white border border-[#E3DEC9] rounded-2xl shadow-xs flex flex-col overflow-hidden">
+          {/* Barra de Período e Views */}
+          <div className="p-2.5 sm:p-4 border-b border-[#E3DEC9] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 flex-shrink-0">
+            <div className="flex items-center justify-between sm:justify-start gap-2">
+              <div className="flex items-center border border-[#E3DEC9] rounded-xl overflow-hidden bg-white">
+                <button
+                  type="button"
+                  onClick={previousPeriod}
+                  className="p-2 hover:bg-[#F8F6F0] transition-colors cursor-pointer"
+                >
+                  <ChevronLeft size={16} className="text-[#56635C]" />
                 </button>
-                <button className="p-2 hover:bg-white rounded-md transition-all" onClick={avancarMes}>
-                  <ChevronRight className="text-gray-600" size={16} />
+                <button
+                  type="button"
+                  onClick={nextPeriod}
+                  className="p-2 hover:bg-[#F8F6F0] transition-colors cursor-pointer"
+                >
+                  <ChevronRight size={16} className="text-[#56635C]" />
                 </button>
               </div>
-              <div>
-                <div className="text-base font-bold text-gray-900">{nomesDosMeses[mes]} {ano}</div>
-                <div className="text-xs text-gray-500 font-medium">Visualizando Dia {selectedDate}</div>
-              </div>
-              <button onClick={irParaHoje} className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg text-xs font-semibold text-gray-700 transition-all">
+
+              <button
+                type="button"
+                onClick={goToday}
+                className="px-2.5 py-1.5 rounded-xl bg-[#F8F6F0] hover:bg-[#EBE5D3] text-xs font-bold transition-colors cursor-pointer"
+              >
                 Hoje
               </button>
+
+              <h2 className="text-xs sm:text-base font-bold truncate">{calendarTitle}</h2>
             </div>
 
-            <div className="inline-flex gap-0.5 p-1 bg-gray-100 rounded-xl">
-              {['day', 'week', 'month'].map((type) => (
-                <button key={type} onClick={() => setView(type as ViewType)} className={`px-4 py-1.5 rounded-lg transition-all font-bold text-xs flex items-center gap-1.5 capitalize ${view === type ? 'bg-white text-emerald-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}>
-                  {type === 'day' ? <CalendarIcon size={14} /> : type === 'week' ? <CalendarRange size={14} /> : <CalendarDays size={14} />}
-                  {type === 'day' ? 'Dia' : type === 'week' ? 'Semana' : 'Mês'}
+            {/* Alternador Semana / Mês */}
+            <div className="flex bg-[#F8F6F0] border border-[#E3DEC9] p-0.5 rounded-xl w-full sm:w-auto">
+              {[
+                { value: 'week' as ViewType, label: 'Semana' },
+                { value: 'month' as ViewType, label: 'Mês' }
+              ].map((item) => (
+                <button
+                  type="button"
+                  key={item.value}
+                  onClick={() => setView(item.value)}
+                  className={`flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${view === item.value
+                      ? 'bg-[#009386] text-white shadow-xs'
+                      : 'text-[#56635C] hover:text-[#1B2E26]'
+                    }`}
+                >
+                  {item.label}
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Grid de Visualização (split view fixo apenas no desktop) */}
-          <div className="flex-1 flex flex-col lg:flex-row gap-5 lg:min-h-0 lg:h-full w-full">
-            <div className={`flex-1 lg:h-full lg:min-h-0 bg-white border border-gray-200 rounded-xl shadow-sm ${view === 'month' ? 'lg:overflow-hidden p-0' : 'lg:overflow-y-auto p-4'}`}>
-              
-              {loading ? (
-                <div className="flex justify-center items-center h-full w-full">
-                  <div className="w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
-                </div>
-              ) : view === 'month' ? (
-                <div className="w-full flex flex-col lg:h-full lg:min-h-0">
-                  <div className="grid grid-cols-7 bg-gray-50 border-b border-gray-200 text-center py-2 flex-shrink-0">
-                    {['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB'].map((d) => (
-                      <span key={d} className="text-[10px] font-bold text-gray-500 tracking-wider">{d}</span>
+          {loading ? (
+            <div className="flex-1 flex items-center justify-center p-8">
+              <div className="w-8 h-8 border-4 border-[#009386] border-t-transparent rounded-full animate-spin" />
+            </div>
+          ) : (
+            <div className="flex-1 min-h-0 overflow-hidden">
+              {/* VISÃO DO MÊS */}
+              {view === 'month' && (
+                <div className="h-full flex flex-col">
+                  {/* Cabeçalho dias da semana */}
+                  <div className="grid grid-cols-7 border-b border-[#E3DEC9] bg-[#F8F6F0] flex-shrink-0">
+                    {weekDays.map((day) => (
+                      <div key={day} className="py-2 sm:py-3 text-center text-[9px] sm:text-xs font-bold uppercase text-[#56635C]">
+                        {day}
+                      </div>
                     ))}
                   </div>
-                  
-                  <div className="grid grid-cols-7 grid-rows-5 min-h-[420px] lg:flex-1 lg:min-h-0">
-                    {getDaysInMonthGrid().map((day, idx) => {
-                      if (day === null) return <div key={`empty-${idx}`} className="border-b border-r border-gray-100 bg-gray-50/30" />;
-                      
-                      const hasBookings = daysWithBookings.includes(day);
-                      const isSelected = day === selectedDate;
-                      
+
+                  {/* Dias do mês */}
+                  <div className="grid grid-cols-7 grid-rows-5 flex-1 min-h-0">
+                    {calendarDays.map((date, index) => {
+                      if (!date) {
+                        return <div key={`empty-${index}`} className="border-r border-b border-[#E3DEC9]/50 bg-[#F8F6F0]/30" />;
+                      }
+
+                      const bookings = getBookingsForDate(date);
+                      const feriado = getFeriadoDoDia(date);
+                      const isToday = dateToKey(date) === dateToKey(new Date());
+
                       return (
-                        <button key={`day-${day}`} onClick={() => { setSelectedDate(day); setView('day'); }} className={`border-b border-r border-gray-100 p-2 text-left flex flex-col justify-between transition-colors hover:bg-gray-50/80 group ${isSelected ? 'bg-emerald-50/30' : ''}`}>
-                          <span className={`text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center ${isSelected ? 'bg-emerald-600 text-white shadow-sm' : 'text-gray-700'}`}>
-                            {day}
-                          </span>
-                          {hasBookings && (
-                            <div className="w-full text-[10px] bg-emerald-50 text-emerald-700 px-1.5 py-0.5 rounded truncate font-semibold border border-emerald-100 group-hover:bg-emerald-100">
-                              Sessões Ativas
+                        <button
+                          type="button"
+                          key={dateToKey(date)}
+                          onClick={() => abrirModalHorariosDoDia(date)}
+                          className={`relative border-r border-b border-[#E3DEC9]/50 p-1 sm:p-2.5 text-left flex flex-col hover:bg-[#F8F6F0] transition-all cursor-pointer ${feriado ? 'bg-[#FF6954]/5' : ''
+                            }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span
+                              className={`w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center rounded-full text-[11px] sm:text-xs font-bold ${isToday
+                                  ? 'bg-[#EBE5D3] text-[#007491]'
+                                  : 'text-[#1B2E26]'
+                                }`}
+                            >
+                              {date.getDate()}
+                            </span>
+
+                            {/* Indicador mobile (dot) */}
+                            {bookings.length > 0 && (
+                              <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-[#009386] rounded-full sm:hidden" />
+                            )}
+                          </div>
+
+                          {feriado && (
+                            <div className="mt-0.5">
+                              <span className="text-[8px] sm:text-[9px] font-bold text-[#D94F3C] bg-[#FF6954]/15 px-1 py-0.2 rounded sm:truncate block leading-tight">
+                                {feriado.name}
+                              </span>
+                            </div>
+                          )}
+
+                          {bookings.length > 0 && (
+                            <div className="mt-auto hidden sm:block pt-1">
+                              <div className="flex items-center gap-1">
+                                <CalendarCheck size={11} className="text-[#009386]" />
+                                <span className="text-[10px] font-bold text-[#009386] truncate">
+                                  {bookings.length} {bookings.length === 1 ? 'horário' : 'horários'}
+                                </span>
+                              </div>
                             </div>
                           )}
                         </button>
@@ -378,215 +628,525 @@ export default function Schedule() {
                     })}
                   </div>
                 </div>
-              ) : (
-                <div className="p-4 space-y-2">
-                  {agendamentos.map(b => (
-                    <div key={b.id} className="p-3 bg-gray-50 border rounded-xl flex justify-between items-center">
-                      <div className="text-xs font-bold text-gray-800">{b.clienteNome} ({b.servicoNome})</div>
-                      <div className="text-[11px] font-medium text-gray-500">{b.data} | {b.horaInicio.substring(0,5)}</div>
+              )}
+
+              {/* VISÃO DA SEMANA */}
+              {view === 'week' && (
+                <div className="h-full flex flex-col overflow-x-auto">
+                  <div className="min-w-[560px] sm:min-w-full flex-1 flex flex-col">
+                    <div className="grid grid-cols-7 border-b border-[#E3DEC9] flex-shrink-0 bg-white">
+                      {weekDates.map((date) => {
+                        const bookings = getBookingsForDate(date);
+                        const feriado = getFeriadoDoDia(date);
+                        const isToday = dateToKey(date) === dateToKey(new Date());
+
+                        return (
+                          <button
+                            type="button"
+                            key={dateToKey(date)}
+                            onClick={() => abrirModalHorariosDoDia(date)}
+                            className="p-2 sm:p-3 border-r border-[#E3DEC9] text-center hover:bg-[#F8F6F0] transition-colors cursor-pointer"
+                          >
+                            <div className="text-[9px] sm:text-[10px] uppercase font-bold text-[#56635C]">
+                              {weekDays[date.getDay()]}
+                            </div>
+                            <div
+                              className={`mx-auto mt-0.5 sm:mt-1 w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs sm:text-sm font-bold ${isToday
+                                  ? 'bg-[#EBE5D3] text-[#007491]'
+                                  : 'text-[#1B2E26]'
+                                }`}
+                            >
+                              {date.getDate()}
+                            </div>
+                            {feriado ? (
+                              <div className="mt-0.5 text-[8px] font-bold text-[#D94F3C] truncate">
+                                {feriado.name}
+                              </div>
+                            ) : (
+                              bookings.length > 0 && (
+                                <div className="mt-0.5 text-[8px] sm:text-[9px] font-bold text-[#009386]">
+                                  {bookings.length} agend.
+                                </div>
+                              )
+                            )}
+                          </button>
+                        );
+                      })}
                     </div>
-                  ))}
+
+                    <div className="flex-1 overflow-y-auto">
+                      <div className="grid grid-cols-7" style={{ minHeight: defaultTimeSlots.length * 52 }}>
+                        {weekDates.map((date) => {
+                          return (
+                            <div key={dateToKey(date)} className="border-r border-[#E3DEC9] p-1 space-y-1">
+                              {defaultTimeSlots.map((time) => {
+                                const slot = getSlotStatus(date, time);
+
+                                return (
+                                  <button
+                                    type="button"
+                                    key={`${dateToKey(date)}-${time}`}
+                                    onClick={() => {
+                                      if (slot.type === 'booking' && slot.data) {
+                                        setSelectedBooking(slot.data);
+                                      } else if (slot.type === 'blocked') {
+                                        alert('Horário compreendido dentro de um período bloqueado.');
+                                      } else {
+                                        abrirNovoAgendamento(date, time);
+                                      }
+                                    }}
+                                    className={`w-full min-h-[46px] rounded-lg p-1 text-left transition-all cursor-pointer ${slot.type === 'booking'
+                                        ? 'bg-[#009386]/10 border border-[#009386]/20'
+                                        : slot.type === 'blocked'
+                                          ? 'bg-[#FF6954]/15 border border-[#FF6954]/30'
+                                          : 'border border-transparent hover:bg-[#F8F6F0]'
+                                      }`}
+                                  >
+                                    <div className="text-[8px] sm:text-[9px] font-bold text-[#56635C]">{time}</div>
+                                    {slot.type === 'booking' && (
+                                      <div className="mt-0.5">
+                                        <span className="text-[8px] sm:text-[9px] font-bold text-[#1B2E26] truncate block">
+                                          {slot.data?.nomeCliente || 'Atendimento'}
+                                        </span>
+                                      </div>
+                                    )}
+                                    {slot.type === 'blocked' && (
+                                      <div className="mt-0.5 text-[8px] font-bold text-[#D94F3C] flex items-center gap-0.5">
+                                        <Ban size={9} /> Bloq.
+                                      </div>
+                                    )}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
-
-            {/* Linha do Tempo Operacional por Dia */}
-            {(view === 'day' || window.innerWidth > 1024) && (
-              <div className="w-full lg:w-[480px] xl:w-[520px] bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col lg:h-full lg:min-h-0 lg:overflow-hidden">
-                <div className="p-4 border-b border-gray-200 bg-gray-50/50 flex items-center justify-between flex-shrink-0">
-                  <div className="text-sm font-bold text-gray-900 flex items-center gap-2">
-                    Horários do Dia
-                    <span className="text-xs bg-emerald-50 text-emerald-700 px-2.5 py-0.5 rounded-full font-semibold border border-emerald-100">{String(selectedDate).padStart(2,'0')}/{String(mes+1).padStart(2,'0')}</span>
-                  </div>
-                </div>
-
-                <div className="flex-1 divide-y divide-gray-100 lg:overflow-y-auto lg:min-h-0 p-3 space-y-2">
-                  {timeSlots.map((time) => {
-                    const booking = daySchedule.find(b => b.horaInicio.substring(0, 5) === time);
-                    const isOccupied = !!booking;
-                    
-                    return (
-                      <div key={time} className={`flex items-center gap-3 p-2 rounded-xl transition-all border border-transparent ${isOccupied ? 'bg-emerald-50/40 border-emerald-100/60 hover:bg-emerald-50 cursor-pointer' : 'hover:bg-gray-50'}`} onClick={() => isOccupied && setSelectedBooking(booking)}>
-                        <div className="w-12 flex-shrink-0 text-xs font-bold text-gray-500">{time}</div>
-                        <div className="flex-1 min-w-0">
-                          {isOccupied ? (
-                            <div>
-                              <div className="text-sm font-bold text-gray-900 truncate">{booking.clienteNome}</div>
-                              <div className="text-xs text-gray-500 font-medium mt-0.5">Sessão: {booking.servicoNome}</div>
-                            </div>
-                          ) : (
-                            <button onClick={() => { 
-                              setFormData({ ...formData, horaInicio: time, data: formatDayKey }); 
-                              setNomeClienteInput('');
-                              setShowNewBookingModal(true); 
-                            }} className="text-xs font-semibold text-gray-400 hover:text-emerald-700 transition-colors">
-                              Disponível
-                            </button>
-                          )}
-                        </div>
-                        {isOccupied && <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold uppercase">{booking.status}</span>}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-          </div>
+          )}
         </div>
       </div>
 
-      {/* MODAL DETALHES MAPEADO COM O JAVA DTO REAL */}
-      {selectedBooking && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setSelectedBooking(null)}>
-          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
-            <div className="flex justify-between items-start">
-              <div>
-                <h2 className="text-xl font-bold text-gray-900">{selectedBooking.clienteNome}</h2>
-                <span className="text-xs bg-amber-50 text-amber-800 border px-2 py-0.5 rounded-full mt-1 inline-block font-semibold uppercase tracking-wider">{selectedBooking.status}</span>
-              </div>
-              <button onClick={() => setSelectedBooking(null)} className="p-1.5 hover:bg-gray-100 rounded-lg"><X size={18} /></button>
-            </div>
-            
-            <div className="text-sm text-gray-600 space-y-2">
-              <div>
-                <strong>Horário:</strong> {selectedBooking.horaInicio ? selectedBooking.horaInicio.substring(0, 5) : ''} às {selectedBooking.horaFim ? selectedBooking.horaFim.substring(0, 5) : ''}
-              </div>
-              <div>
-                <strong>Modalidade:</strong> {selectedBooking.servicoNome || 'Geral'}
-              </div>
-              {selectedBooking.clienteWhatsapp && (
-                <div className="flex items-center gap-1.5 text-gray-700">
-                  <strong>WhatsApp:</strong> {selectedBooking.clienteWhatsapp}
+      {/* =========================================================
+          MODAL HORÁRIOS DO DIA (BOTTOM-SHEET NO MOBILE)
+      ========================================================= */}
+      {showDayScheduleModal && (
+        <div
+          className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4"
+          onClick={() => setShowDayScheduleModal(false)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white w-full max-w-lg max-h-[85vh] sm:max-h-[80vh] rounded-t-3xl sm:rounded-3xl p-4 sm:p-6 shadow-2xl flex flex-col"
+          >
+            {/* Header Modal Dia */}
+            <div className="flex items-center justify-between pb-3 border-b border-[#E3DEC9] flex-shrink-0">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-[#009386]/10 flex items-center justify-center text-[#009386]">
+                  <CalendarIcon size={16} />
                 </div>
-              )}
-              <div className="p-3 bg-gray-50 rounded-xl space-y-1 text-xs border border-gray-100 mt-2">
-                <div className="font-bold text-gray-400 uppercase tracking-wider">Observações da Ficha</div>
-                <p className="text-gray-700 italic">{selectedBooking.observacoes || 'Nenhuma observação cadastrada para este horário.'}</p>
+                <div>
+                  <h2 className="text-sm sm:text-base font-bold leading-tight">
+                    {selectedDate.getDate()} de {monthNames[selectedDate.getMonth()]}
+                  </h2>
+                  {feriadoDoDiaSelecionado ? (
+                    <span className="text-[10px] font-bold text-[#D94F3C] bg-[#FF6954]/15 px-1.5 py-0.5 rounded inline-block mt-0.5">
+                      Feriado: {feriadoDoDiaSelecionado.name}
+                    </span>
+                  ) : (
+                    <p className="text-[10px] text-[#56635C]">Horários disponíveis e agendamentos</p>
+                  )}
+                </div>
               </div>
+              <button
+                type="button"
+                onClick={() => setShowDayScheduleModal(false)}
+                className="p-1.5 hover:bg-[#F8F6F0] rounded-xl text-[#56635C] cursor-pointer"
+              >
+                <X size={18} />
+              </button>
             </div>
 
-            <div className="flex gap-2 pt-2 border-t">
-              {selectedBooking.status !== 'CONFIRMADO' && selectedBooking.status !== 'CANCELADO' && (
-                <button onClick={() => handleMudarStatus(selectedBooking.id, 'CONFIRMADO')} className="flex-1 bg-emerald-600 text-white py-2.5 rounded-xl text-xs font-bold shadow-sm hover:bg-emerald-700 transition-colors">
-                  Confirmar Presença
-                </button>
-              )}
-              {selectedBooking.status !== 'CANCELADO' && (
-                <button onClick={() => handleMudarStatus(selectedBooking.id, 'CANCELADO')} className="flex-1 bg-red-500 text-white py-2.5 rounded-xl text-xs font-bold shadow-sm hover:bg-red-600 transition-colors">
-                  Cancelar Aula
-                </button>
-              )}
+            {/* Lista dos Horários com scroll */}
+            <div className="flex-1 overflow-y-auto py-3 space-y-2">
+              {selectedDaySlots.map((time) => {
+                const slot = getSlotStatus(selectedDate, time);
+
+                return (
+                  <button
+                    type="button"
+                    key={time}
+                    onClick={() => {
+                      if (slot.type === 'booking' && slot.data) {
+                        setSelectedBooking(slot.data);
+                      } else if (slot.type === 'blocked') {
+                        alert('Este horário está dentro de um período bloqueado.');
+                      } else {
+                        abrirNovoAgendamento(selectedDate, time);
+                      }
+                    }}
+                    className={`w-full flex items-center justify-between p-3 rounded-xl border text-left transition-all cursor-pointer ${slot.type === 'booking'
+                        ? 'bg-[#009386]/10 border-[#009386]/30'
+                        : slot.type === 'blocked'
+                          ? 'bg-[#FF6954]/10 border-[#FF6954]/25 opacity-80'
+                          : 'bg-white border-[#E3DEC9] hover:bg-[#F8F6F0]'
+                      }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <div className="text-xs font-bold text-[#56635C] flex items-center gap-1.5">
+                        <Clock size={13} />
+                        {time}
+                      </div>
+
+                      {slot.type === 'booking' && (
+                        <div>
+                          <div className="font-bold text-[#1B2E26] text-xs">
+                            {slot.data?.nomeCliente || 'Atendimento'}
+                          </div>
+                          <span className="text-[10px] text-[#56635C]">
+                            {slot.data?.preco ? `R$ ${slot.data.preco}` : 'Confirmado'}
+                          </span>
+                        </div>
+                      )}
+
+                      {slot.type === 'blocked' && (
+                        <div>
+                          <div className="font-bold text-[#D94F3C] text-xs flex items-center gap-1">
+                            <Ban size={12} /> Bloqueado
+                          </div>
+                          <span className="text-[9px] text-[#56635C]">
+                            {normalizeTime(slot.data?.horaInicio)} até {normalizeTime(slot.data?.horaFim)}
+                          </span>
+                        </div>
+                      )}
+
+                      {slot.type === 'free' && (
+                        <div>
+                          <span className="text-xs font-semibold text-[#56635C]">Horário livre</span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div>
+                      {slot.type === 'booking' && (
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase ${slot.data?.status === 'CONFIRMADO'
+                              ? 'bg-[#009386] text-white'
+                              : slot.data?.status === 'AGENDADO'
+                                ? 'bg-[#3CD099] text-[#0E2820]'
+                                : 'bg-[#EBE5D3] text-[#1B2E26]'
+                            }`}
+                        >
+                          {slot.data?.status}
+                        </span>
+                      )}
+
+                      {slot.type === 'blocked' && (
+                        <span className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase bg-[#FF6954] text-white">
+                          Bloq
+                        </span>
+                      )}
+
+                      {slot.type === 'free' && (
+                        <span className="p-1 rounded-lg bg-[#009386]/10 text-[#009386] flex items-center">
+                          <Plus size={14} />
+                        </span>
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="pt-3 border-t border-[#E3DEC9]">
+              <button
+                type="button"
+                onClick={() => setShowDayScheduleModal(false)}
+                className="w-full py-2.5 rounded-xl bg-[#EBE5D3]/70 hover:bg-[#EBE5D3] text-[#1B2E26] font-bold text-xs uppercase cursor-pointer"
+              >
+                Fechar
+              </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* MODAL NOVO AGENDAMENTO COM AUTOCOMPLETE DE NOME */}
+      {/* MODAL NOVO AGENDAMENTO (BOTTOM-SHEET NO MOBILE) */}
       {showNewBookingModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setShowNewBookingModal(false)}>
-          <form onSubmit={handleCriarAgendamento} className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4" onClick={(e) => e.stopPropagation()}>
-            <div className="flex justify-between items-center border-b pb-2">
-              <h2 className="text-lg font-bold text-gray-900">Marcar Horário de Pilates</h2>
-              <button type="button" onClick={() => setShowNewBookingModal(false)} className="text-gray-400 hover:text-gray-600"><X size={18} /></button>
+        <div
+          className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4"
+          onClick={() => setShowNewBookingModal(false)}
+        >
+          <form
+            onSubmit={handleCriarAgendamento}
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white w-full max-w-md max-h-[90vh] rounded-t-3xl sm:rounded-3xl p-5 sm:p-6 shadow-2xl overflow-y-auto"
+          >
+            <div className="flex items-center justify-between border-b border-[#E3DEC9] pb-3 mb-4">
+              <div>
+                <h2 className="text-lg font-bold">Novo Agendamento</h2>
+                <p className="text-[11px] text-[#56635C]">Preencha os dados do atendimento</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowNewBookingModal(false)}
+                className="p-1.5 rounded-lg hover:bg-[#F8F6F0] cursor-pointer"
+              >
+                <X size={18} />
+              </button>
             </div>
-            
-            <div className="space-y-3">
-              {/* Autocomplete do Nome do Aluno */}
+
+            <div className="mb-3.5 relative">
+              <label className="text-[11px] font-bold uppercase block mb-1">Cliente *</label>
               <div className="relative">
-                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Nome completo do aluno</label>
-                <input 
-                  type="text" 
-                  required 
-                  placeholder="Comece a digitar o nome..." 
-                  value={nomeClienteInput} 
-                  onChange={e => {
-                    setNomeClienteInput(e.target.value);
-                    setShowDropdownSugestoes(true);
-                  }} 
-                  onFocus={() => setShowDropdownSugestoes(true)}
-                  className="w-full p-2.5 border rounded-xl bg-gray-50 text-sm focus:bg-white focus:border-emerald-500 focus:outline-none font-medium" 
+                <User size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#56635C]" />
+                <input
+                  required
+                  value={clienteInput}
+                  onChange={(e) => {
+                    setClienteInput(e.target.value);
+                    setClienteSelecionado(null);
+                    setShowSuggestions(true);
+                  }}
+                  placeholder="Nome do cliente"
+                  className="w-full pl-8 pr-3 py-2 bg-[#F8F6F0] border border-[#E3DEC9] rounded-xl text-xs outline-none focus:border-[#009386]"
                 />
-                
-                {/* Dropdown de sugestões flutuante */}
-                {showDropdownSugestoes && sugestoesFiltradas.length > 0 && (
-                  <div className="absolute left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-xl max-h-40 overflow-y-auto z-50 divide-y divide-gray-50">
-                    {sugestoesFiltradas.map(cliente => (
-                      <button
-                        key={cliente.id}
-                        type="button"
-                        onClick={() => {
-                          setNomeClienteInput(cliente.nome);
-                          setShowDropdownSugestoes(false);
-                        }}
-                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-emerald-50/50 hover:text-emerald-800 transition-colors font-medium flex items-center gap-2"
-                      >
-                        <User size={14} className="text-gray-400" />
-                        {cliente.nome}
-                      </button>
-                    ))}
-                  </div>
-                )}
-                <span className="text-[10px] text-gray-400 mt-0.5 block">O sistema sugerirá nomes cadastrados conforme você digita.</span>
               </div>
 
-              {/* Seletor Textual de Serviço */}
-              <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Modalidade do Serviço</label>
-                <select 
-                  value={servicoSelecionadoId} 
-                  onChange={e => setServicoSelecionadoId(e.target.value)}
-                  className="w-full p-2.5 border rounded-xl bg-gray-50 text-sm focus:bg-white focus:border-emerald-500 focus:outline-none font-medium"
-                >
-                  {servicosFisaSaude.map(s => (
-                    <option key={s.id} value={s.id}>{s.nome}</option>
+              {showSuggestions && filteredClients.length > 0 && (
+                <div className="absolute left-0 right-0 mt-1 bg-white border border-[#E3DEC9] rounded-xl shadow-xl z-20 max-h-36 overflow-y-auto">
+                  {filteredClients.map((c) => (
+                    <button
+                      type="button"
+                      key={c.id}
+                      onClick={() => {
+                        setClienteInput(c.nome);
+                        setClienteSelecionado(c.id);
+                        setShowSuggestions(false);
+                      }}
+                      className="w-full text-left px-3 py-2 hover:bg-[#F8F6F0] text-xs font-medium cursor-pointer"
+                    >
+                      {c.nome}
+                    </button>
                   ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Data do Agendamento</label>
-                <input type="date" required value={formData.data} onChange={e => setFormData({...formData, data: e.target.value})} className="w-full p-2.5 border rounded-xl bg-gray-50 text-sm font-medium focus:outline-none focus:border-emerald-500" />
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Horário Início</label>
-                  <input type="time" required value={formData.horaInicio} onChange={e => setFormData({...formData, horaInicio: e.target.value})} className="p-2.5 border rounded-xl bg-gray-50 text-sm font-medium focus:outline-none focus:border-emerald-500" />
                 </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Horário Fim</label>
-                  <input type="time" required value={formData.horaFim} onChange={e => setFormData({...formData, horaFim: e.target.value})} className="p-2.5 border rounded-xl bg-gray-50 text-sm font-medium focus:outline-none focus:border-emerald-500" />
-                </div>
-              </div>
+              )}
+            </div>
 
+            <div className="mb-3.5">
+              <label className="text-[11px] font-bold uppercase block mb-1">Data *</label>
+              <input
+                required
+                type="date"
+                value={formData.data}
+                onChange={(e) => setFormData({ ...formData, data: e.target.value })}
+                className="w-full px-3 py-2 bg-[#F8F6F0] border border-[#E3DEC9] rounded-xl text-xs outline-none focus:border-[#009386]"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-2.5 mb-3.5">
               <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Observações Clínicas</label>
-                <textarea placeholder="Histórico de dores, recomendações de fisioterapia, etc." value={formData.observacoes} onChange={e => setFormData({...formData, observacoes: e.target.value})} className="w-full p-2.5 border rounded-xl bg-gray-50 text-sm focus:outline-none focus:border-emerald-500" rows={2} />
+                <label className="text-[11px] font-bold uppercase block mb-1">Início *</label>
+                <input
+                  required
+                  type="time"
+                  value={formData.horaInicio}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      horaInicio: e.target.value,
+                      horaFim: calcularHoraFim(e.target.value)
+                    })
+                  }
+                  className="w-full px-3 py-2 bg-[#F8F6F0] border border-[#E3DEC9] rounded-xl text-xs outline-none focus:border-[#009386]"
+                />
+              </div>
+              <div>
+                <label className="text-[11px] font-bold uppercase block mb-1">Término *</label>
+                <input
+                  required
+                  type="time"
+                  value={formData.horaFim}
+                  onChange={(e) => setFormData({ ...formData, horaFim: e.target.value })}
+                  className="w-full px-3 py-2 bg-[#F8F6F0] border border-[#E3DEC9] rounded-xl text-xs outline-none focus:border-[#009386]"
+                />
               </div>
             </div>
 
-            <div className="flex gap-2 pt-2 border-t">
-              <button type="button" onClick={() => setShowNewBookingModal(false)} className="flex-1 bg-gray-100 py-2.5 rounded-xl text-sm font-semibold hover:bg-gray-200 transition-colors">Cancelar</button>
-              <button type="submit" className="flex-1 bg-emerald-600 text-white py-2.5 rounded-xl text-sm font-semibold hover:bg-emerald-700 shadow-md transition-colors">Salvar na Agenda</button>
+            <div className="mb-4">
+              <label className="text-[11px] font-bold uppercase block mb-1">Observações</label>
+              <textarea
+                rows={2}
+                value={formData.observacoes}
+                onChange={(e) => setFormData({ ...formData, observacoes: e.target.value })}
+                placeholder="Observações adicionais..."
+                className="w-full px-3 py-2 bg-[#F8F6F0] border border-[#E3DEC9] rounded-xl text-xs outline-none focus:border-[#009386] resize-none"
+              />
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setShowNewBookingModal(false)}
+                className="flex-1 py-2.5 rounded-xl bg-[#EBE5D3]/60 hover:bg-[#EBE5D3] font-bold text-xs cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                className="flex-1 py-2.5 rounded-xl bg-[#009386] hover:bg-[#007491] text-white font-bold text-xs cursor-pointer"
+              >
+                Salvar
+              </button>
             </div>
           </form>
         </div>
       )}
 
-      {/* MODAL BLOQUEIO */}
-      {showBlockModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setShowBlockModal(false)}>
-          <form onSubmit={handleBloquearHorario} className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4" onClick={(e) => e.stopPropagation()}>
-            <h2 className="text-xl font-bold text-gray-900">Bloquear Horário</h2>
-            <input type="date" required value={blockData.data} onChange={e => setBlockData({...blockData, data: e.target.value})} className="w-full p-2.5 border rounded-xl bg-gray-50 text-sm" />
-            <div className="grid grid-cols-2 gap-2">
-              <input type="time" required value={blockData.horaInicio} onChange={e => setBlockData({...blockData, horaInicio: e.target.value})} className="p-2.5 border rounded-xl bg-gray-50 text-sm" />
-              <input type="time" required value={blockData.horaFim} onChange={e => setBlockData({...blockData, horaFim: e.target.value})} className="p-2.5 border rounded-xl bg-gray-50 text-sm" />
+      {/* MODAL DETALHES DO AGENDAMENTO (BOTTOM-SHEET NO MOBILE) */}
+      {selectedBooking && (
+        <div
+          className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4"
+          onClick={() => setSelectedBooking(null)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 sm:p-6 shadow-2xl"
+          >
+            <div className="flex items-start justify-between">
+              <div>
+                <h2 className="text-lg font-bold">{selectedBooking.nomeCliente || 'Compromisso'}</h2>
+                <span className="inline-block mt-1 px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase bg-[#009386] text-white">
+                  {selectedBooking.status}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedBooking(null)}
+                className="p-1.5 hover:bg-[#F8F6F0] rounded-lg cursor-pointer"
+              >
+                <X size={18} />
+              </button>
             </div>
-            <input type="text" required placeholder="Motivo" value={blockData.reason} onChange={e => setBlockData({...blockData, reason: e.target.value})} className="w-full p-2.5 border rounded-xl bg-gray-50 text-sm" />
-            <div className="flex gap-2">
-              <button type="button" onClick={() => setShowBlockModal(false)} className="flex-1 bg-gray-100 py-2.5 rounded-xl text-sm font-semibold">Cancelar</button>
-              <button type="submit" className="flex-1 bg-red-500 text-white py-2.5 rounded-xl text-sm font-semibold">Bloquear</button>
+
+            <div className="mt-4 space-y-2 text-xs text-[#56635C]">
+              <div className="flex items-center gap-2">
+                <Clock size={14} className="text-[#009386]" />
+                <span>
+                  {normalizeTime(selectedBooking.horaInicio)} às {normalizeTime(selectedBooking.horaFim)}
+                </span>
+              </div>
+
+              {selectedBooking.preco && (
+                <div>
+                  <strong className="text-[#1B2E26]">Valor:</strong> R$ {selectedBooking.preco}
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-2 mt-5 pt-3 border-t border-[#E3DEC9]">
+              {selectedBooking.status !== 'CONCLUIDO' && selectedBooking.status !== 'CANCELADO' && (
+                <button
+                  type="button"
+                  onClick={() => handleConcluir(selectedBooking.id)}
+                  className="flex-1 py-2.5 rounded-xl bg-[#009386] hover:bg-[#007491] text-white font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <CheckCircle2 size={14} /> Concluir
+                </button>
+              )}
+              {selectedBooking.status !== 'CANCELADO' && (
+                <button
+                  type="button"
+                  onClick={() => handleCancelar(selectedBooking.id)}
+                  className="flex-1 py-2.5 rounded-xl bg-[#FF6954] hover:bg-[#E8533E] text-white font-bold text-xs cursor-pointer"
+                >
+                  Cancelar
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL BLOQUEIO DE INTERVALO (BOTTOM-SHEET NO MOBILE) */}
+      {showBlockModal && (
+        <div
+          className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4"
+          onClick={() => setShowBlockModal(false)}
+        >
+          <form
+            onSubmit={handleBloquearPeriodo}
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 sm:p-6 shadow-2xl"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold">Bloquear Intervalo</h2>
+              <button
+                type="button"
+                onClick={() => setShowBlockModal(false)}
+                className="p-1.5 hover:bg-[#F8F6F0] rounded-lg cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <label className="text-[11px] font-bold uppercase block mb-1">Data *</label>
+                <input
+                  required
+                  type="date"
+                  value={blockData.data}
+                  onChange={(e) => setBlockData({ ...blockData, data: e.target.value })}
+                  className="w-full p-2 bg-[#F8F6F0] border border-[#E3DEC9] rounded-xl text-xs"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2.5">
+                <div>
+                  <label className="text-[11px] font-bold uppercase block mb-1">Hora Início *</label>
+                  <input
+                    required
+                    type="time"
+                    value={blockData.horaInicio}
+                    onChange={(e) => setBlockData({ ...blockData, horaInicio: e.target.value })}
+                    className="w-full p-2 bg-[#F8F6F0] border border-[#E3DEC9] rounded-xl text-xs"
+                  />
+                </div>
+                <div>
+                  <label className="text-[11px] font-bold uppercase block mb-1">Hora Término *</label>
+                  <input
+                    required
+                    type="time"
+                    value={blockData.horaFim}
+                    onChange={(e) => setBlockData({ ...blockData, horaFim: e.target.value })}
+                    className="w-full p-2 bg-[#F8F6F0] border border-[#E3DEC9] rounded-xl text-xs"
+                  />
+                </div>
+              </div>
+              <p className="text-[10px] text-[#56635C]">
+                Todos os horários nesse intervalo ficarão indisponíveis para agendamento.
+              </p>
+            </div>
+
+            <div className="flex gap-2 mt-5">
+              <button
+                type="button"
+                onClick={() => setShowBlockModal(false)}
+                className="flex-1 py-2.5 rounded-xl bg-[#EBE5D3] font-bold text-xs cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                className="flex-1 py-2.5 rounded-xl bg-[#FF6954] text-white font-bold text-xs cursor-pointer"
+              >
+                Confirmar
+              </button>
             </div>
           </form>
         </div>

@@ -2,28 +2,74 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { Lock, Mail, ArrowRight, ShieldCheck, Eye, EyeOff, Sparkles } from 'lucide-react';
 import { FisaLogo } from '../../components/FisaLogo';
+import { api } from '../../services/api';
 
 export default function Login() {
   const navigate = useNavigate();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [login, setLogin] = useState('');
+  const [senha, setSenha] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
 
-    setTimeout(() => {
-      if (email && password) {
+    try {
+      const emailLimpo = login.trim();
+      const response = await api.post('/auth/login', {
+        email: emailLimpo,
+        senha: senha,
+      });
+
+      const { token } = response.data;
+
+      if (token) {
+        localStorage.setItem('@FisaSaude:token', token);
+        localStorage.setItem('@FisaSaude:userEmail', emailLimpo);
+
+        // Busca a lista de usuários para mapear o ID numérico pelo email autenticado
+        try {
+          const usuariosRes = await api.get('/usuarios', {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          
+          if (Array.isArray(usuariosRes.data)) {
+            const usuarioLogado = usuariosRes.data.find(
+              (u: any) => u.email?.toLowerCase() === emailLimpo.toLowerCase()
+            );
+            
+            if (usuarioLogado?.id) {
+              localStorage.setItem('@FisaSaude:usuarioId', String(usuarioLogado.id));
+            } else if (usuariosRes.data.length > 0) {
+              localStorage.setItem('@FisaSaude:usuarioId', String(usuariosRes.data[0].id));
+            }
+          }
+        } catch (uErr) {
+          console.warn('Não foi possível listar usuários para obter o ID numérico:', uErr);
+        }
+
         navigate('/admin');
       } else {
-        setError('Preencha seu e-mail e senha para acessar.');
-        setIsLoading(false);
+        setError('Resposta do servidor inválida. Token não recebido.');
       }
-    }, 600);
+    } catch (err: any) {
+      console.error('Erro na autenticação:', err);
+      const mensagemErro =
+        err.response?.data?.message ||
+        err.response?.data?.mensagem ||
+        (err.response?.status === 400 ? 'Dados inválidos. Verifique os campos.' : null) ||
+        (err.response?.status === 403 || err.response?.status === 401
+          ? 'Usuário ou senha incorretos.'
+          : null) ||
+        'Não foi possível conectar ao servidor. Verifique se o back-end está ativo.';
+
+      setError(mensagemErro);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -31,7 +77,6 @@ export default function Login() {
       style={{ backgroundColor: '#F8F6F0', color: '#1B2E26' }}
       className="min-h-screen w-full flex items-center justify-center p-4 sm:p-6 lg:p-8 font-sans relative overflow-hidden select-none"
     >
-      {/* Elementos Decorativos de Fundo */}
       <div
         style={{ backgroundColor: 'rgba(60, 208, 153, 0.18)' }}
         className="absolute top-0 right-0 w-96 h-96 rounded-full blur-3xl pointer-events-none -translate-y-1/2 translate-x-1/3"
@@ -41,21 +86,18 @@ export default function Login() {
         className="absolute bottom-0 left-0 w-96 h-96 rounded-full blur-3xl pointer-events-none translate-y-1/2 -translate-x-1/3"
       />
 
-      {/* Card de Login */}
       <div className="w-full max-w-md relative z-10">
         <div
           style={{ backgroundColor: '#FFFFFF', borderColor: '#E3DEC9' }}
           className="rounded-3xl p-7 sm:p-9 border shadow-xl relative overflow-hidden"
         >
-          {/* Faixa Superior */}
           <div
             style={{
-              background: 'linear-gradient(to right, #009386, #3CD099, #FF6954)'
+              background: 'linear-gradient(to right, #009386, #3CD099, #FF6954)',
             }}
             className="absolute top-0 left-0 right-0 h-2"
           />
 
-          {/* Topo do Card */}
           <div className="flex flex-col items-center text-center mb-8 mt-2">
             <div className="mb-4">
               <FisaLogo size="lg" />
@@ -65,7 +107,7 @@ export default function Login() {
               style={{
                 backgroundColor: 'rgba(0, 147, 134, 0.12)',
                 color: '#007491',
-                borderColor: 'rgba(0, 147, 134, 0.25)'
+                borderColor: 'rgba(0, 147, 134, 0.25)',
               }}
               className="inline-flex items-center gap-1.5 border px-3 py-1 rounded-full text-[11px] font-semibold uppercase tracking-wider mb-2"
             >
@@ -81,44 +123,49 @@ export default function Login() {
             </p>
           </div>
 
-          {/* Mensagem de Erro */}
           {error && (
             <div
               style={{
                 backgroundColor: 'rgba(158, 42, 67, 0.1)',
                 borderColor: 'rgba(158, 42, 67, 0.3)',
-                color: '#9E2A43'
+                color: '#9E2A43',
               }}
               className="mb-5 p-3.5 border rounded-2xl text-xs font-semibold flex items-center gap-2"
             >
-              <span style={{ backgroundColor: '#9E2A43' }} className="w-1.5 h-1.5 rounded-full" />
-              {error}
+              <span
+                style={{ backgroundColor: '#9E2A43' }}
+                className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+              />
+              <span>{error}</span>
             </div>
           )}
 
-          {/* Formulário */}
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4" noValidate={false}>
             <div>
               <label
+                htmlFor="login"
                 style={{ color: '#1B2E26' }}
                 className="block text-xs font-bold uppercase tracking-wider mb-1.5"
               >
-                E-mail
+                Login / E-mail
               </label>
               <div className="relative flex items-center">
                 <div style={{ color: '#56635C' }} className="absolute left-3.5 pointer-events-none">
                   <Mail size={18} />
                 </div>
                 <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="seu.email@fisasaude.com.br"
+                  id="login"
+                  name="login"
+                  type="text"
+                  autoComplete="username"
+                  value={login}
+                  onChange={(e) => setLogin(e.target.value)}
+                  placeholder="seu.login"
                   required
                   style={{
                     backgroundColor: '#F8F6F0',
                     borderColor: '#E3DEC9',
-                    color: '#1B2E26'
+                    color: '#1B2E26',
                   }}
                   className="w-full border rounded-2xl pl-11 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#009386]/30 font-medium transition-all"
                 />
@@ -127,6 +174,7 @@ export default function Login() {
 
             <div>
               <label
+                htmlFor="senha"
                 style={{ color: '#1B2E26' }}
                 className="block text-xs font-bold uppercase tracking-wider mb-1.5"
               >
@@ -137,15 +185,18 @@ export default function Login() {
                   <Lock size={18} />
                 </div>
                 <input
+                  id="senha"
+                  name="password"
                   type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="current-password"
+                  value={senha}
+                  onChange={(e) => setSenha(e.target.value)}
                   placeholder="••••••••"
                   required
                   style={{
                     backgroundColor: '#F8F6F0',
                     borderColor: '#E3DEC9',
-                    color: '#1B2E26'
+                    color: '#1B2E26',
                   }}
                   className="w-full border rounded-2xl pl-11 pr-11 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#009386]/30 font-medium transition-all"
                 />
@@ -161,7 +212,6 @@ export default function Login() {
               </div>
             </div>
 
-            {/* Botão Entrar */}
             <button
               type="submit"
               disabled={isLoading}
@@ -179,7 +229,6 @@ export default function Login() {
             </button>
           </form>
 
-          {/* Rodapé Interno com Recuperação de Senha */}
           <div
             style={{ borderColor: '#E3DEC9' }}
             className="mt-7 pt-5 border-t text-center flex flex-col gap-3"
@@ -188,7 +237,7 @@ export default function Login() {
               href="#recuperar"
               onClick={(e) => {
                 e.preventDefault();
-                alert('Solicite a recuperação de senha com a recepção ou administrador do sistema.');
+                alert('Solicite a redefinição de senha ao administrador do sistema.');
               }}
               style={{ color: '#009386' }}
               className="text-xs font-semibold hover:underline cursor-pointer"
@@ -196,16 +245,15 @@ export default function Login() {
               Esqueceu sua senha de acesso?
             </a>
 
-            <div style={{ color: '#56635C' }} className="inline-flex items-center justify-center gap-1.5 text-[11px]">
+            <div
+              style={{ color: '#56635C' }}
+              className="inline-flex items-center justify-center gap-1.5 text-[11px]"
+            >
               <ShieldCheck size={14} style={{ color: '#009386' }} />
               Conexão criptografada e segura
             </div>
           </div>
         </div>
-
-        <p style={{ color: '#56635C' }} className="text-center text-[11px] mt-6">
-          &copy; {new Date().getFullYear()} FISA Saúde. Sistema de Gestão Interna.
-        </p>
       </div>
     </div>
   );
