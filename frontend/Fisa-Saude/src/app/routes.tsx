@@ -15,6 +15,7 @@ import Settings from "./pages/admin/Settings";
 import Logs from "./pages/admin/Logs";
 import AdminLayout from "./layouts/AdminLayout";
 import RootLayout from "./layouts/RootLayout";
+import TeamManagement from './pages/admin/TeamManagement';
 
 export const router = createBrowserRouter([
   {
@@ -53,6 +54,7 @@ export const router = createBrowserRouter([
           { path: "agenda", Component: Schedule },
           { path: "clientes", Component: Clients },
           { path: "clientes/:id", Component: ClientProfile },
+          { path: "equipe", Component: TeamManagement },
           { path: "relacionamento", Component: RelacionamentoComercial },
           { path: "financeiro", Component: Financial },
           { path: "logs", Component: Logs },

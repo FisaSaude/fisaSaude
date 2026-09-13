@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { 
-  DollarSign, 
-  TrendingDown, 
-  TrendingUp, 
-  X, 
-  AlertCircle, 
-  ArrowDownCircle, 
-  ArrowUpCircle 
+import {
+  DollarSign,
+  TrendingDown,
+  TrendingUp,
+  X,
+  AlertCircle,
+  ArrowDownCircle,
+  ArrowUpCircle,
+  Calendar
 } from 'lucide-react';
 import { api } from '../../services/api';
 
@@ -49,7 +50,7 @@ const SERVICOS_PADRAO: ServicoItem[] = [
   { id: 7, nome: 'Pilates 1x/semana - Semestral', preco: 227 },
   { id: 8, nome: 'Pilates 2x/semana - Semestral', preco: 367 },
   { id: 9, nome: 'Pilates 3x/semana - Semestral', preco: 497 },
-  { id: 10, nome: 'Pacote Fisa Movimento (Pilates 2x/sem + Fisio 1x/mês)', preco: 620 },
+  { id: 10, nome: 'Pacote Fisa Movimento (Pilates + Fisio)', preco: 620 },
   { id: 11, nome: 'Pacote Fisa Cuidado (Pilates 2x/sem + Fisio 2x/mês)', preco: 810 },
   { id: 12, nome: 'Pacote Fisa Performance (Pilates + Fisio + Liberação)', preco: 760 },
 ];
@@ -81,11 +82,9 @@ export default function Financial() {
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
 
-  // Modais
   const [showDespesaModal, setShowDespesaModal] = useState(false);
   const [showEntradaModal, setShowEntradaModal] = useState(false);
 
-  // Form Saída (Despesa)
   const [formDespesa, setFormDespesa] = useState({
     nome: '',
     tipo: 'Operacional',
@@ -94,7 +93,6 @@ export default function Financial() {
     estabelecimentoId: 1
   });
 
-  // Form Entrada (Receber Pagamento)
   const [formEntrada, setFormEntrada] = useState({
     clienteId: '',
     servicoId: '',
@@ -108,21 +106,18 @@ export default function Financial() {
       setLoading(true);
       setErrorMessage('');
 
-      // 1. Despesas cadastradas no backend
       const resDespesas = await api.get('/despesas').catch(() => ({ data: [] }));
       const listaDespesas = Array.isArray(resDespesas.data)
         ? resDespesas.data
         : resDespesas.data?.content || [];
       setDespesas(listaDespesas);
 
-      // 2. Clientes cadastrados
       const resClientes = await api.get('/clientes').catch(() => ({ data: [] }));
       const listaClientes = Array.isArray(resClientes.data)
         ? resClientes.data
         : resClientes.data?.content || [];
       setClientes(listaClientes);
 
-      // 3. Entradas base reais do banco de dados (Setembro/2026)
       const entradasBaseBanco: PagamentoEntrada[] = [
         { id: 'banco_1', clienteNome: 'Mariana Silva', servicoNome: 'Pilates 2x/semana - Mensal', data: '2026-09-01', valor: 457.0, formaPagamento: 'PIX' },
         { id: 'banco_2', clienteNome: 'Joao Pereira', servicoNome: 'Pacote Fisa Movimento (Pilates + Fisio)', data: '2026-09-01', valor: 620.0, formaPagamento: 'Cartão de Crédito' },
@@ -134,7 +129,6 @@ export default function Financial() {
         { id: 'banco_8', clienteNome: 'Marina Costa', servicoNome: 'Liberação Miofascial - Sessão Avulsa', data: '2026-09-07', valor: 150.0, formaPagamento: 'PIX' }
       ];
 
-      // 4. Busca agendamentos concluídos da API
       let entradasApi: PagamentoEntrada[] = [];
       try {
         let usuarioId = localStorage.getItem('@FisaSaude:usuarioId') || '1';
@@ -169,7 +163,6 @@ export default function Financial() {
         entradasApi = [];
       }
 
-      // 5. Entradas cadastradas manualmente
       const salvos = localStorage.getItem('@FisaSaude:entradas_financeiras');
       const entradasManuais: PagamentoEntrada[] = salvos ? JSON.parse(salvos) : [];
 
@@ -199,17 +192,11 @@ export default function Financial() {
 
   const handleCriarEntrada = (e: React.FormEvent) => {
     e.preventDefault();
-
     const clienteIdNum = Number(formEntrada.clienteId);
     const valorNum = parseFloat(formEntrada.valor.replace(',', '.'));
 
-    if (!clienteIdNum) {
-      alert('Selecione o paciente que realizou o pagamento.');
-      return;
-    }
-
-    if (isNaN(valorNum) || valorNum <= 0) {
-      alert('Informe um valor de pagamento válido.');
+    if (!clienteIdNum || isNaN(valorNum) || valorNum <= 0) {
+      alert('Preencha os campos obrigatórios corretamente.');
       return;
     }
 
@@ -240,22 +227,15 @@ export default function Financial() {
     });
 
     carregarDadosFinanceiros();
-    alert('Pagamento registrado com sucesso!');
   };
 
   const handleCriarDespesa = async (e: React.FormEvent) => {
     e.preventDefault();
-
     const nomeLimpo = formDespesa.nome.trim();
     const valorNumerico = parseFloat(formDespesa.valor.replace(',', '.'));
 
-    if (!nomeLimpo) {
-      alert('Informe o nome/descrição da despesa.');
-      return;
-    }
-
-    if (isNaN(valorNumerico) || valorNumerico <= 0) {
-      alert('Informe um valor de saída válido maior que zero.');
+    if (!nomeLimpo || isNaN(valorNumerico) || valorNumerico <= 0) {
+      alert('Preencha os dados da despesa corretamente.');
       return;
     }
 
@@ -278,10 +258,8 @@ export default function Financial() {
       });
 
       await carregarDadosFinanceiros();
-      alert('Despesa registrada com sucesso!');
     } catch (err: any) {
-      console.error('Erro ao criar despesa:', err.response?.data || err);
-      alert('Falha ao registrar despesa no sistema.');
+      alert('Erro ao cadastrar despesa.');
     }
   };
 
@@ -315,185 +293,155 @@ export default function Financial() {
     }));
 
     let combinado = [...listaEntradas, ...listaSaidas];
-
-    if (activeTab === 'entradas') {
-      combinado = combinado.filter((item) => item.tipo === 'ENTRADA');
-    } else if (activeTab === 'saidas') {
-      combinado = combinado.filter((item) => item.tipo === 'SAIDA');
-    }
+    if (activeTab === 'entradas') combinado = combinado.filter((item) => item.tipo === 'ENTRADA');
+    if (activeTab === 'saidas') combinado = combinado.filter((item) => item.tipo === 'SAIDA');
 
     return combinado.sort((a, b) => b.data.localeCompare(a.data));
   }, [entradas, despesas, activeTab]);
 
   return (
-    <div className="h-full lg:overflow-hidden bg-[#F8F6F0] text-[#1B2E26]">
-      <div className="h-full lg:overflow-y-auto p-4 lg:p-8">
-        <div className="max-w-7xl mx-auto space-y-6">
-          {/* Header Superior */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div className="h-full bg-[#F8F6F0] text-[#1B2E26] flex flex-col">
+      <div className="flex-1 p-3 sm:p-5 lg:p-8 space-y-4 sm:space-y-6">
+        {/* Header Mobile Otimizado */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <h1 className="text-xl sm:text-3xl font-bold text-[#1B2E26]">Controle Financeiro</h1>
+            <p className="text-[11px] sm:text-sm text-[#56635C]">
+              Fluxo de pagamentos e despesas operacionais
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <button
+              onClick={() => setShowDespesaModal(true)}
+              className="flex-1 sm:flex-none px-3 py-2.5 bg-white border border-[#E3DEC9] active:bg-[#F8F6F0] text-[#1B2E26] rounded-xl font-bold text-xs uppercase flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+            >
+              <ArrowDownCircle size={15} className="text-[#D94F3C]" />
+              Despesa
+            </button>
+
+            <button
+              onClick={() => setShowEntradaModal(true)}
+              className="flex-1 sm:flex-none bg-[#009386] hover:bg-[#007491] active:scale-98 text-white px-4 py-2.5 rounded-xl font-bold text-xs uppercase flex items-center justify-center gap-1.5 shadow-md cursor-pointer transition-transform"
+            >
+              <ArrowUpCircle size={15} />
+              Receber
+            </button>
+          </div>
+        </div>
+
+        {errorMessage && (
+          <div className="p-3 bg-[#FF6954]/10 border border-[#FF6954]/30 rounded-xl text-xs font-semibold text-[#D94F3C] flex items-center gap-2">
+            <AlertCircle size={16} />
+            {errorMessage}
+          </div>
+        )}
+
+        {/* Cards de Resumo Responsivos */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="bg-white rounded-2xl p-4 shadow-xs border border-[#E3DEC9] flex items-center gap-3">
+            <div className="w-10 h-10 bg-[#009386]/10 text-[#009386] rounded-xl flex items-center justify-center flex-shrink-0">
+              <TrendingUp size={20} />
+            </div>
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-[#1B2E26] mb-1">Controle Financeiro</h1>
-              <p className="text-xs sm:text-sm text-[#56635C]">
-                Gestão de pagamentos recebidos e controle de saídas operacionais
-              </p>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setShowDespesaModal(true)}
-                className="flex-1 sm:flex-none px-4 py-2.5 bg-white border border-[#E3DEC9] hover:bg-[#F8F6F0] text-[#1B2E26] rounded-xl transition-all font-semibold text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer shadow-xs"
-              >
-                <ArrowDownCircle size={16} className="text-[#D94F3C]" />
-                Nova Despesa
-              </button>
-
-              <button
-                onClick={() => setShowEntradaModal(true)}
-                className="flex-1 sm:flex-none bg-[#009386] hover:bg-[#007491] text-white px-5 py-2.5 rounded-xl transition-all shadow-md flex items-center justify-center gap-2 font-bold text-xs uppercase tracking-wider cursor-pointer"
-              >
-                <ArrowUpCircle size={16} />
-                Receber Pagamento
-              </button>
-            </div>
-          </div>
-
-          {errorMessage && (
-            <div className="p-3 bg-[#FF6954]/10 border border-[#FF6954]/30 rounded-xl text-xs font-semibold text-[#D94F3C] flex items-center gap-2">
-              <AlertCircle size={16} />
-              {errorMessage}
-            </div>
-          )}
-
-          {/* Cards de Indicadores */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {/* Total Recebido */}
-            <div className="bg-white rounded-2xl p-5 shadow-xs border border-[#E3DEC9]">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-[#009386]/10 text-[#009386] rounded-xl flex items-center justify-center">
-                  <TrendingUp size={20} />
-                </div>
-                <div>
-                  <span className="text-[11px] font-bold text-[#56635C] uppercase tracking-wider">
-                    Total de Entradas (Receitas)
-                  </span>
-                  <div className="text-xl sm:text-2xl font-black text-[#009386]">
-                    R$ {totalEntradas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Total Despesas */}
-            <div className="bg-white rounded-2xl p-5 shadow-xs border border-[#E3DEC9]">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-[#FF6954]/10 text-[#D94F3C] rounded-xl flex items-center justify-center">
-                  <TrendingDown size={20} />
-                </div>
-                <div>
-                  <span className="text-[11px] font-bold text-[#56635C] uppercase tracking-wider">
-                    Total de Saídas (Despesas)
-                  </span>
-                  <div className="text-xl sm:text-2xl font-black text-[#D94F3C]">
-                    - R$ {totalDespesas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Saldo Operacional */}
-            <div className="bg-white rounded-2xl p-5 shadow-xs border border-[#E3DEC9]">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-[#007491]/10 text-[#007491] rounded-xl flex items-center justify-center">
-                  <DollarSign size={20} />
-                </div>
-                <div>
-                  <span className="text-[11px] font-bold text-[#56635C] uppercase tracking-wider">
-                    Saldo em Caixa
-                  </span>
-                  <div className={`text-xl sm:text-2xl font-black ${saldoLiquido >= 0 ? 'text-[#007491]' : 'text-[#D94F3C]'}`}>
-                    R$ {saldoLiquido.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Tabela de Lançamentos */}
-          <div className="bg-white rounded-3xl shadow-xs border border-[#E3DEC9] overflow-hidden">
-            <div className="p-4 border-b border-[#E3DEC9] bg-[#F8F6F0]/60 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-              <div className="flex bg-[#EBE5D3]/60 p-1 rounded-xl w-full sm:w-auto">
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('todos')}
-                  className={`flex-1 sm:flex-none px-4 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                    activeTab === 'todos' ? 'bg-white text-[#1B2E26] shadow-xs' : 'text-[#56635C]'
-                  }`}
-                >
-                  Todos
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('entradas')}
-                  className={`flex-1 sm:flex-none px-4 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                    activeTab === 'entradas' ? 'bg-[#009386] text-white shadow-xs' : 'text-[#56635C]'
-                  }`}
-                >
-                  Entradas ({entradas.length})
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('saidas')}
-                  className={`flex-1 sm:flex-none px-4 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                    activeTab === 'saidas' ? 'bg-[#D94F3C] text-white shadow-xs' : 'text-[#56635C]'
-                  }`}
-                >
-                  Saídas ({despesas.length})
-                </button>
-              </div>
-
-              <span className="text-xs font-bold text-[#56635C]">
-                {lancamentosUnificados.length} lançamentos encontrados
+              <span className="text-[10px] sm:text-[11px] font-bold text-[#56635C] uppercase tracking-wider block">
+                Total de Entradas
               </span>
+              <div className="text-lg sm:text-2xl font-black text-[#009386]">
+                R$ {totalEntradas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl p-4 shadow-xs border border-[#E3DEC9] flex items-center gap-3">
+            <div className="w-10 h-10 bg-[#FF6954]/10 text-[#D94F3C] rounded-xl flex items-center justify-center flex-shrink-0">
+              <TrendingDown size={20} />
+            </div>
+            <div>
+              <span className="text-[10px] sm:text-[11px] font-bold text-[#56635C] uppercase tracking-wider block">
+                Total de Despesas
+              </span>
+              <div className="text-lg sm:text-2xl font-black text-[#D94F3C]">
+                - R$ {totalDespesas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl p-4 shadow-xs border border-[#E3DEC9] flex items-center gap-3">
+            <div className="w-10 h-10 bg-[#007491]/10 text-[#007491] rounded-xl flex items-center justify-center flex-shrink-0">
+              <DollarSign size={20} />
+            </div>
+            <div>
+              <span className="text-[10px] sm:text-[11px] font-bold text-[#56635C] uppercase tracking-wider block">
+                Saldo em Caixa
+              </span>
+              <div className={`text-lg sm:text-2xl font-black ${saldoLiquido >= 0 ? 'text-[#007491]' : 'text-[#D94F3C]'}`}>
+                R$ {saldoLiquido.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Lista e Abas */}
+        <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xs border border-[#E3DEC9] overflow-hidden">
+          <div className="p-3 sm:p-4 border-b border-[#E3DEC9] bg-[#F8F6F0]/60 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5">
+            <div className="flex bg-[#EBE5D3]/60 p-1 rounded-xl w-full sm:w-auto">
+              {(['todos', 'entradas', 'saidas'] as const).map((tab) => (
+                <button
+                  key={tab}
+                  type="button"
+                  onClick={() => setActiveTab(tab)}
+                  className={`flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-xs font-bold capitalize transition-all cursor-pointer ${activeTab === tab
+                      ? tab === 'saidas'
+                        ? 'bg-[#D94F3C] text-white shadow-xs'
+                        : tab === 'entradas'
+                          ? 'bg-[#009386] text-white shadow-xs'
+                          : 'bg-white text-[#1B2E26] shadow-xs'
+                      : 'text-[#56635C]'
+                    }`}
+                >
+                  {tab}
+                </button>
+              ))}
             </div>
 
-            {loading ? (
-              <div className="p-12 text-center text-xs text-[#56635C]">Carregando lançamentos...</div>
-            ) : lancamentosUnificados.length === 0 ? (
-              <div className="p-12 text-center text-xs text-[#56635C]">Nenhum lançamento registrado nesta categoria.</div>
-            ) : (
-              <div className="overflow-x-auto">
+            <span className="text-[11px] font-bold text-[#56635C]">
+              {lancamentosUnificados.length} registros
+            </span>
+          </div>
+
+          {loading ? (
+            <div className="p-10 text-center text-xs text-[#56635C]">Carregando...</div>
+          ) : lancamentosUnificados.length === 0 ? (
+            <div className="p-10 text-center text-xs text-[#56635C]">Nenhum lançamento no momento.</div>
+          ) : (
+            <>
+              {/* Tabela para Desktop */}
+              <div className="hidden sm:block overflow-x-auto">
                 <table className="w-full">
-                  <thead className="bg-white border-b border-[#E3DEC9] text-[11px] font-extrabold uppercase text-[#56635C] tracking-wider">
+                  <thead className="bg-white border-b border-[#E3DEC9] text-[11px] font-extrabold uppercase text-[#56635C]">
                     <tr>
-                      <th className="px-6 py-3.5 text-left">Data</th>
-                      <th className="px-6 py-3.5 text-left">Tipo</th>
-                      <th className="px-6 py-3.5 text-left">Descrição / Paciente</th>
-                      <th className="px-6 py-3.5 text-left">Forma / Categoria</th>
-                      <th className="px-6 py-3.5 text-right">Valor</th>
+                      <th className="px-5 py-3 text-left">Data</th>
+                      <th className="px-5 py-3 text-left">Tipo</th>
+                      <th className="px-5 py-3 text-left">Descrição</th>
+                      <th className="px-5 py-3 text-left">Categoria</th>
+                      <th className="px-5 py-3 text-right">Valor</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#E3DEC9]/60 text-xs">
                     {lancamentosUnificados.map((item) => (
-                      <tr key={item.id} className="hover:bg-[#F8F6F0]/70 transition-colors">
-                        <td className="px-6 py-4 font-semibold text-[#56635C]">{formatDateBR(item.data)}</td>
-                        <td className="px-6 py-4">
-                          <span
-                            className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wide border ${
-                              item.tipo === 'ENTRADA'
-                                ? 'bg-[#009386]/10 text-[#009386] border-[#009386]/20'
-                                : 'bg-[#FF6954]/10 text-[#D94F3C] border-[#FF6954]/20'
-                            }`}
-                          >
-                            {item.tipo === 'ENTRADA' ? 'Entrada' : 'Saída'}
+                      <tr key={item.id} className="hover:bg-[#F8F6F0]/60">
+                        <td className="px-5 py-3.5 font-semibold text-[#56635C]">{formatDateBR(item.data)}</td>
+                        <td className="px-5 py-3.5">
+                          <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase ${item.tipo === 'ENTRADA' ? 'bg-[#009386]/10 text-[#009386]' : 'bg-[#FF6954]/10 text-[#D94F3C]'
+                            }`}>
+                            {item.tipo}
                           </span>
                         </td>
-                        <td className="px-6 py-4 font-bold text-[#1B2E26]">{item.descricao}</td>
-                        <td className="px-6 py-4 text-[#56635C] font-medium">{item.categoria}</td>
-                        <td
-                          className={`px-6 py-4 text-sm font-bold text-right ${
-                            item.tipo === 'ENTRADA' ? 'text-[#009386]' : 'text-[#D94F3C]'
-                          }`}
-                        >
+                        <td className="px-5 py-3.5 font-bold text-[#1B2E26]">{item.descricao}</td>
+                        <td className="px-5 py-3.5 text-[#56635C]">{item.categoria}</td>
+                        <td className={`px-5 py-3.5 text-sm font-bold text-right ${item.tipo === 'ENTRADA' ? 'text-[#009386]' : 'text-[#D94F3C]'
+                          }`}>
                           {item.tipo === 'ENTRADA' ? '+' : '-'} R$ {Number(item.valor).toFixed(2)}
                         </td>
                       </tr>
@@ -501,228 +449,229 @@ export default function Financial() {
                   </tbody>
                 </table>
               </div>
-            )}
-          </div>
 
-          {/* MODAL RECEBER PAGAMENTO */}
-          {showEntradaModal && (
-            <div
-              className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-              onClick={() => setShowEntradaModal(false)}
-            >
-              <form
-                onSubmit={handleCriarEntrada}
-                onClick={(e) => e.stopPropagation()}
-                className="bg-white rounded-3xl max-w-md w-full border border-[#E3DEC9] shadow-2xl overflow-hidden p-6 space-y-4"
-              >
-                <div className="flex items-center justify-between border-b border-[#E3DEC9] pb-3">
-                  <div>
-                    <h2 className="text-lg font-bold text-[#1B2E26]">Receber Pagamento</h2>
-                    <p className="text-[11px] text-[#56635C]">Registre um pagamento de sessão ou plano</p>
+              {/* Lista Vertical em Cartões para Mobile */}
+              <div className="sm:hidden divide-y divide-[#E3DEC9]/60">
+                {lancamentosUnificados.map((item) => (
+                  <div key={item.id} className="p-3.5 flex items-center justify-between gap-2 active:bg-[#F8F6F0]">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5 text-[10px] text-[#56635C] font-semibold mb-0.5">
+                        <Calendar size={11} />
+                        <span>{formatDateBR(item.data)}</span>
+                        <span>•</span>
+                        <span className="truncate">{item.categoria}</span>
+                      </div>
+                      <p className="text-xs font-bold text-[#1B2E26] truncate">{item.descricao}</p>
+                    </div>
+
+                    <div className="text-right flex-shrink-0">
+                      <span className={`text-xs font-extrabold ${item.tipo === 'ENTRADA' ? 'text-[#009386]' : 'text-[#D94F3C]'}`}>
+                        {item.tipo === 'ENTRADA' ? '+' : '-'} R$ {Number(item.valor).toFixed(2)}
+                      </span>
+                    </div>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setShowEntradaModal(false)}
-                    className="p-1.5 hover:bg-[#F8F6F0] rounded-xl text-[#56635C] cursor-pointer"
-                  >
-                    <X size={18} />
-                  </button>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-[#1B2E26] uppercase mb-1">Paciente *</label>
-                  <select
-                    required
-                    value={formEntrada.clienteId}
-                    onChange={(e) => setFormEntrada({ ...formEntrada, clienteId: e.target.value })}
-                    className="w-full px-3 py-2.5 bg-[#F8F6F0] border border-[#E3DEC9] rounded-xl text-xs font-medium focus:bg-white focus:outline-none focus:border-[#009386]"
-                  >
-                    <option value="">Selecione o paciente</option>
-                    {clientes.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.nome}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-[#1B2E26] uppercase mb-1">Serviço / Plano *</label>
-                  <select
-                    required
-                    value={formEntrada.servicoId}
-                    onChange={handleSelectServico}
-                    className="w-full px-3 py-2.5 bg-[#F8F6F0] border border-[#E3DEC9] rounded-xl text-xs font-medium focus:bg-white focus:outline-none focus:border-[#009386]"
-                  >
-                    <option value="">Selecione o serviço</option>
-                    {SERVICOS_PADRAO.map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {s.nome} {s.preco > 0 ? `(R$ ${s.preco})` : ''}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-bold text-[#1B2E26] uppercase mb-1">Valor Pago (R$) *</label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      required
-                      placeholder="0.00"
-                      value={formEntrada.valor}
-                      onChange={(e) => setFormEntrada({ ...formEntrada, valor: e.target.value })}
-                      className="w-full px-3 py-2.5 bg-[#F8F6F0] border border-[#E3DEC9] rounded-xl text-xs font-medium focus:bg-white focus:outline-none focus:border-[#009386]"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-[#1B2E26] uppercase mb-1">Forma de Pagamento</label>
-                    <select
-                      value={formEntrada.formaPagamento}
-                      onChange={(e) => setFormEntrada({ ...formEntrada, formaPagamento: e.target.value })}
-                      className="w-full px-3 py-2.5 bg-[#F8F6F0] border border-[#E3DEC9] rounded-xl text-xs font-medium focus:bg-white focus:outline-none focus:border-[#009386]"
-                    >
-                      <option value="PIX">PIX</option>
-                      <option value="Cartão de Crédito">Cartão de Crédito</option>
-                      <option value="Cartão de Débito">Cartão de Débito</option>
-                      <option value="Dinheiro">Dinheiro</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-[#1B2E26] uppercase mb-1">Data do Pagamento *</label>
-                  <input
-                    type="date"
-                    required
-                    value={formEntrada.data}
-                    onChange={(e) => setFormEntrada({ ...formEntrada, data: e.target.value })}
-                    className="w-full px-3 py-2.5 bg-[#F8F6F0] border border-[#E3DEC9] rounded-xl text-xs font-medium focus:bg-white focus:outline-none focus:border-[#009386]"
-                  />
-                </div>
-
-                <div className="flex gap-2 pt-3 border-t border-[#E3DEC9]">
-                  <button
-                    type="button"
-                    onClick={() => setShowEntradaModal(false)}
-                    className="flex-1 bg-[#EBE5D3]/60 hover:bg-[#EBE5D3] py-2.5 rounded-xl text-xs font-bold uppercase cursor-pointer"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    type="submit"
-                    className="flex-1 bg-[#009386] hover:bg-[#007491] text-white py-2.5 rounded-xl text-xs font-bold uppercase shadow-sm cursor-pointer"
-                  >
-                    Confirmar Entrada
-                  </button>
-                </div>
-              </form>
-            </div>
-          )}
-
-          {/* MODAL NOVA DESPESA */}
-          {showDespesaModal && (
-            <div
-              className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-              onClick={() => setShowDespesaModal(false)}
-            >
-              <form
-                onSubmit={handleCriarDespesa}
-                onClick={(e) => e.stopPropagation()}
-                className="bg-white rounded-3xl max-w-md w-full border border-[#E3DEC9] shadow-2xl overflow-hidden p-6 space-y-4"
-              >
-                <div className="flex items-center justify-between border-b border-[#E3DEC9] pb-3">
-                  <div>
-                    <h2 className="text-lg font-bold text-[#1B2E26]">Lançar Nova Despesa</h2>
-                    <p className="text-[11px] text-[#56635C]">Registre uma saída de caixa no sistema</p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setShowDespesaModal(false)}
-                    className="p-1.5 hover:bg-[#F8F6F0] rounded-xl text-[#56635C] cursor-pointer"
-                  >
-                    <X size={18} />
-                  </button>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-[#1B2E26] uppercase mb-1">
-                    Nome / Descrição da Despesa *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    maxLength={100}
-                    placeholder="Ex: Aluguel, Compra de faixas..."
-                    value={formDespesa.nome}
-                    onChange={(e) => setFormDespesa({ ...formDespesa, nome: e.target.value })}
-                    className="w-full px-4 py-2.5 bg-[#F8F6F0] border border-[#E3DEC9] rounded-xl text-xs font-medium focus:bg-white focus:outline-none focus:border-[#009386]"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-bold text-[#1B2E26] uppercase mb-1">Tipo / Categoria *</label>
-                    <select
-                      value={formDespesa.tipo}
-                      onChange={(e) => setFormDespesa({ ...formDespesa, tipo: e.target.value })}
-                      className="w-full px-3 py-2.5 bg-[#F8F6F0] border border-[#E3DEC9] rounded-xl text-xs font-medium focus:bg-white focus:outline-none focus:border-[#009386]"
-                    >
-                      <option value="Operacional">Operacional</option>
-                      <option value="Imóvel">Imóvel</option>
-                      <option value="Administrativo">Administrativo</option>
-                      <option value="Serviços">Serviços</option>
-                      <option value="Outros">Outros</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-[#1B2E26] uppercase mb-1">Valor (R$) *</label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      required
-                      placeholder="0.00"
-                      value={formDespesa.valor}
-                      onChange={(e) => setFormDespesa({ ...formDespesa, valor: e.target.value })}
-                      className="w-full px-4 py-2.5 bg-[#F8F6F0] border border-[#E3DEC9] rounded-xl text-xs font-medium focus:bg-white focus:outline-none focus:border-[#009386]"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-[#1B2E26] uppercase mb-1">Data da Despesa *</label>
-                  <input
-                    type="date"
-                    required
-                    value={formDespesa.dataDespesa}
-                    onChange={(e) => setFormDespesa({ ...formDespesa, dataDespesa: e.target.value })}
-                    className="w-full px-4 py-2.5 bg-[#F8F6F0] border border-[#E3DEC9] rounded-xl text-xs font-medium focus:bg-white focus:outline-none focus:border-[#009386]"
-                  />
-                </div>
-
-                <div className="flex gap-2 pt-3 border-t border-[#E3DEC9]">
-                  <button
-                    type="button"
-                    onClick={() => setShowDespesaModal(false)}
-                    className="flex-1 bg-[#EBE5D3]/60 hover:bg-[#EBE5D3] py-2.5 rounded-xl text-xs font-bold uppercase cursor-pointer"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    type="submit"
-                    className="flex-1 bg-[#D94F3C] hover:bg-[#B83E2D] text-white py-2.5 rounded-xl text-xs font-bold uppercase shadow-sm cursor-pointer"
-                  >
-                    Salvar Despesa
-                  </button>
-                </div>
-              </form>
-            </div>
+                ))}
+              </div>
+            </>
           )}
         </div>
       </div>
+
+      {/* MODAL BOTTOM-SHEET: RECEBER PAGAMENTO */}
+      {showEntradaModal && (
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-end sm:items-center justify-center z-50 p-0 sm:p-4"
+          onClick={() => setShowEntradaModal(false)}
+        >
+          <form
+            onSubmit={handleCriarEntrada}
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white rounded-t-3xl sm:rounded-3xl max-w-md w-full max-h-[90vh] overflow-y-auto p-5 sm:p-6 shadow-2xl space-y-3.5"
+          >
+            <div className="flex items-center justify-between border-b pb-3">
+              <h2 className="text-base font-bold text-[#1B2E26]">Receber Pagamento</h2>
+              <button type="button" onClick={() => setShowEntradaModal(false)} className="p-1 text-[#56635C]">
+                <X size={18} />
+              </button>
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-bold uppercase mb-1">Paciente *</label>
+              <select
+                required
+                value={formEntrada.clienteId}
+                onChange={(e) => setFormEntrada({ ...formEntrada, clienteId: e.target.value })}
+                className="w-full px-3 py-2 bg-[#F8F6F0] border border-[#E3DEC9] rounded-xl text-xs font-medium"
+              >
+                <option value="">Selecione o paciente</option>
+                {clientes.map((c) => (
+                  <option key={c.id} value={c.id}>{c.nome}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-bold uppercase mb-1">Serviço / Plano *</label>
+              <select
+                required
+                value={formEntrada.servicoId}
+                onChange={handleSelectServico}
+                className="w-full px-3 py-2 bg-[#F8F6F0] border border-[#E3DEC9] rounded-xl text-xs font-medium"
+              >
+                <option value="">Selecione o serviço</option>
+                {SERVICOS_PADRAO.map((s) => (
+                  <option key={s.id} value={s.id}>{s.nome} {s.preco > 0 ? `(R$ ${s.preco})` : ''}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="block text-[11px] font-bold uppercase mb-1">Valor (R$) *</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  required
+                  value={formEntrada.valor}
+                  onChange={(e) => setFormEntrada({ ...formEntrada, valor: e.target.value })}
+                  className="w-full px-3 py-2 bg-[#F8F6F0] border border-[#E3DEC9] rounded-xl text-xs font-medium"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold uppercase mb-1">Forma</label>
+                <select
+                  value={formEntrada.formaPagamento}
+                  onChange={(e) => setFormEntrada({ ...formEntrada, formaPagamento: e.target.value })}
+                  className="w-full px-3 py-2 bg-[#F8F6F0] border border-[#E3DEC9] rounded-xl text-xs font-medium"
+                >
+                  <option value="PIX">PIX</option>
+                  <option value="Cartão de Crédito">Cartão de Crédito</option>
+                  <option value="Cartão de Débito">Cartão de Débito</option>
+                  <option value="Dinheiro">Dinheiro</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-bold uppercase mb-1">Data *</label>
+              <input
+                type="date"
+                required
+                value={formEntrada.data}
+                onChange={(e) => setFormEntrada({ ...formEntrada, data: e.target.value })}
+                className="w-full px-3 py-2 bg-[#F8F6F0] border border-[#E3DEC9] rounded-xl text-xs font-medium"
+              />
+            </div>
+
+            <div className="flex gap-2 pt-3">
+              <button
+                type="button"
+                onClick={() => setShowEntradaModal(false)}
+                className="flex-1 bg-[#EBE5D3]/60 py-2.5 rounded-xl text-xs font-bold uppercase"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                className="flex-1 bg-[#009386] text-white py-2.5 rounded-xl text-xs font-bold uppercase shadow-sm"
+              >
+                Confirmar
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* MODAL BOTTOM-SHEET: NOVA DESPESA */}
+      {showDespesaModal && (
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-end sm:items-center justify-center z-50 p-0 sm:p-4"
+          onClick={() => setShowDespesaModal(false)}
+        >
+          <form
+            onSubmit={handleCriarDespesa}
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white rounded-t-3xl sm:rounded-3xl max-w-md w-full max-h-[90vh] overflow-y-auto p-5 sm:p-6 shadow-2xl space-y-3.5"
+          >
+            <div className="flex items-center justify-between border-b pb-3">
+              <h2 className="text-base font-bold text-[#1B2E26]">Lançar Despesa</h2>
+              <button type="button" onClick={() => setShowDespesaModal(false)} className="p-1 text-[#56635C]">
+                <X size={18} />
+              </button>
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-bold uppercase mb-1">Descrição *</label>
+              <input
+                type="text"
+                required
+                maxLength={100}
+                placeholder="Ex: Aluguel, Faixas..."
+                value={formDespesa.nome}
+                onChange={(e) => setFormDespesa({ ...formDespesa, nome: e.target.value })}
+                className="w-full px-3 py-2 bg-[#F8F6F0] border border-[#E3DEC9] rounded-xl text-xs font-medium"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="block text-[11px] font-bold uppercase mb-1">Categoria</label>
+                <select
+                  value={formDespesa.tipo}
+                  onChange={(e) => setFormDespesa({ ...formDespesa, tipo: e.target.value })}
+                  className="w-full px-3 py-2 bg-[#F8F6F0] border border-[#E3DEC9] rounded-xl text-xs font-medium"
+                >
+                  <option value="Operacional">Operacional</option>
+                  <option value="Imóvel">Imóvel</option>
+                  <option value="Administrativo">Administrativo</option>
+                  <option value="Serviços">Serviços</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold uppercase mb-1">Valor (R$) *</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  required
+                  placeholder="0.00"
+                  value={formDespesa.valor}
+                  onChange={(e) => setFormDespesa({ ...formDespesa, valor: e.target.value })}
+                  className="w-full px-3 py-2 bg-[#F8F6F0] border border-[#E3DEC9] rounded-xl text-xs font-medium"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-bold uppercase mb-1">Data *</label>
+              <input
+                type="date"
+                required
+                value={formDespesa.dataDespesa}
+                onChange={(e) => setFormDespesa({ ...formDespesa, dataDespesa: e.target.value })}
+                className="w-full px-3 py-2 bg-[#F8F6F0] border border-[#E3DEC9] rounded-xl text-xs font-medium"
+              />
+            </div>
+
+            <div className="flex gap-2 pt-3">
+              <button
+                type="button"
+                onClick={() => setShowDespesaModal(false)}
+                className="flex-1 bg-[#EBE5D3]/60 py-2.5 rounded-xl text-xs font-bold uppercase"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                className="flex-1 bg-[#D94F3C] text-white py-2.5 rounded-xl text-xs font-bold uppercase shadow-sm"
+              >
+                Salvar
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
     </div>
   );
 }
