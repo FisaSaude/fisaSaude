@@ -112,7 +112,22 @@ public class TwilioWhatsappSender {
         if (digitos.isEmpty()) {
             throw new IllegalArgumentException("numero sem digitos validos");
         }
-        return "whatsapp:+" + digitos;
+        return "whatsapp:+" + normalizarCelularBrasileiroSemDdi(digitos);
+    }
+
+    /**
+     * Celular BR sem DDI (11 dígitos, 3º = 9) vira {@code 55...}. Sem isso a Twilio
+     * interpreta {@code +11965643020} como EUA ({@code +1}) e responde 21211.
+     * Números já com 55 e o sandbox EUA ({@code 1} + 10 dígitos) ficam iguais.
+     */
+    static String normalizarCelularBrasileiroSemDdi(String digitos) {
+        if (digitos.startsWith("55") && digitos.length() >= 12) {
+            return digitos;
+        }
+        if (digitos.length() == 11 && digitos.charAt(2) == '9') {
+            return "55" + digitos;
+        }
+        return digitos;
     }
 
     private static String primeiraParteSid(String sid) {
