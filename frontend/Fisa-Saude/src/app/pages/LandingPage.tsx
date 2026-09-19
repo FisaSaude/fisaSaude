@@ -321,7 +321,6 @@ export default function LandingPage() {
                   )
                 }
                 className="
-                  cta-heartbeat
                   inline-flex
                   h-10
                   items-center
@@ -363,7 +362,6 @@ export default function LandingPage() {
                   )
                 }
                 className="
-                  cta-heartbeat
                   inline-flex
                   h-9
                   items-center
