@@ -321,6 +321,7 @@ export default function LandingPage() {
                   )
                 }
                 className="
+                  cta-heartbeat
                   inline-flex
                   h-10
                   items-center
@@ -334,7 +335,7 @@ export default function LandingPage() {
                   tracking-wider
                   text-white
                   shadow-sm
-                  transition-all
+                  transition-colors
                   duration-200
                   hover:bg-[#E8533E]
                   hover:shadow-md
@@ -352,7 +353,40 @@ export default function LandingPage() {
                 MENU MOBILE
             ===================================================== */}
 
-            <div className="flex lg:hidden items-center">
+            <div className="flex lg:hidden items-center gap-2">
+
+              <button
+                type="button"
+                onClick={() =>
+                  handleWhatsAppClick(
+                    'Olá! Quero agendar uma aula experimental de pilates na Fisa Saúde, no Tatuapé.'
+                  )
+                }
+                className="
+                  cta-heartbeat
+                  inline-flex
+                  h-9
+                  items-center
+                  justify-center
+                  rounded-full
+                  bg-[#FF6954]
+                  px-3.5
+                  text-[10px]
+                  font-bold
+                  uppercase
+                  tracking-wider
+                  text-white
+                  shadow-sm
+                  transition-colors
+                  duration-200
+                  hover:bg-[#E8533E]
+                  active:scale-95
+                  whitespace-nowrap
+                "
+                aria-label="Agendar aula experimental pelo WhatsApp"
+              >
+                Agendar aula
+              </button>
 
               <button
                 type="button"
@@ -3600,7 +3634,7 @@ export default function LandingPage() {
                   />
 
                   <a
-                    href={`tel:${COMPANY.contact.phone}`}
+                    href={`tel:+${COMPANY.contact.whatsapp}`}
                     className="
                       text-[#A2BAAF]
                       hover:text-white

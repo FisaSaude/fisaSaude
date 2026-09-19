@@ -2,61 +2,81 @@
 @import './tailwind.css';
 @import './theme.css';
 
-@keyframes whatsapp-fab-nudge {
+/* Dois batimentos (pum-pum), pausa, repete — como um coração. */
+@keyframes cta-heartbeat {
   0%,
-  68%,
+  22%,
   100% {
     transform: scale(1);
   }
-  74%,
-  86% {
-    transform: scale(1.08);
+  6% {
+    transform: scale(1.14);
   }
-  80%,
-  92% {
+  11% {
     transform: scale(1);
+  }
+  16% {
+    transform: scale(1.16);
   }
 }
 
-@keyframes whatsapp-fab-ring {
+@keyframes cta-heartbeat-ring {
   0%,
-  68%,
+  22%,
   100% {
     transform: scale(1);
     opacity: 0;
   }
-  74% {
-    transform: scale(1.35);
-    opacity: 0.45;
+  6% {
+    transform: scale(1.28);
+    opacity: 0.4;
   }
-  86% {
-    transform: scale(1.55);
-    opacity: 0;
+  11% {
+    transform: scale(1.12);
+    opacity: 0.08;
+  }
+  16% {
+    transform: scale(1.42);
+    opacity: 0.32;
   }
 }
 
-.whatsapp-fab-nudge {
-  animation: whatsapp-fab-nudge 4.5s ease-in-out infinite;
+.cta-heartbeat {
+  animation: cta-heartbeat 2.6s ease-in-out infinite;
+  transform-origin: center;
 }
 
-.whatsapp-fab-nudge .whatsapp-fab-ring {
-  animation: whatsapp-fab-ring 4.5s ease-in-out infinite;
+.whatsapp-fab {
+  position: fixed !important;
+  right: 1.5rem;
+  bottom: 1.5rem;
+  z-index: 40;
 }
 
-.whatsapp-fab-nudge:hover,
-.whatsapp-fab-nudge:focus-visible {
+.whatsapp-fab::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  border: 2px solid currentColor;
+  pointer-events: none;
+  animation: cta-heartbeat-ring 2.6s ease-in-out infinite;
+}
+
+.cta-heartbeat:hover,
+.cta-heartbeat:focus-visible {
   animation: none;
 }
 
-.whatsapp-fab-nudge:hover .whatsapp-fab-ring,
-.whatsapp-fab-nudge:focus-visible .whatsapp-fab-ring {
+.whatsapp-fab:hover::after,
+.whatsapp-fab:focus-visible::after {
   animation: none;
   opacity: 0;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .whatsapp-fab-nudge,
-  .whatsapp-fab-nudge .whatsapp-fab-ring {
+  .cta-heartbeat,
+  .whatsapp-fab::after {
     animation: none;
   }
 }

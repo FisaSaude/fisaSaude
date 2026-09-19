@@ -24,23 +24,18 @@ export function WhatsAppButton({
       type="button"
       onClick={handleWhatsAppClick}
       className="
-        fixed
-        bottom-6
-        right-6
-        z-40
+        whatsapp-fab
+        cta-heartbeat
         w-14
         h-14
         bg-[#25D366]
         hover:bg-[#20bd5a]
-        text-white
+        text-[#25D366]
         rounded-full
         shadow-2xl
-        transition-all
-        duration-300
         flex
         items-center
         justify-center
-        hover:scale-110
         active:scale-95
         focus:outline-none
         focus:ring-4
@@ -56,7 +51,7 @@ export function WhatsAppButton({
         height="25"
         fill="none"
         aria-hidden="true"
-        className="block"
+        className="relative z-10 block"
       >
         <path
           fill="white"
