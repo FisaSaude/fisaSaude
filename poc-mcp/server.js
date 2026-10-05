@@ -1,12 +1,30 @@
 /** POC: MCP → API Java (:8080). Rode: node server.js */
-import { createServer } from "node:http";
+import { createServer, request as httpRequest } from "node:http";
 import { z } from "zod";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 
 const API = "http://localhost:8080";
 const PORT = 3333;
+const NOTIFICACAO_PORT = 8081;
 let token;
+
+// Mantém o webhook do Twilio no mesmo túnel ngrok do MCP (só /webhook/, nunca /internal/).
+function proxyNotificacao(req, res) {
+  const up = httpRequest(
+    { host: "localhost", port: NOTIFICACAO_PORT, path: req.url, method: req.method, headers: req.headers },
+    (r) => {
+      res.writeHead(r.statusCode, r.headers);
+      r.pipe(res);
+    }
+  );
+  up.on("error", (e) => {
+    console.log("Proxy notificacao falhou:", e.message);
+    res.statusCode = 502;
+    res.end("notificacao indisponivel");
+  });
+  req.pipe(up);
+}
 
 async function login() {
   const r = await fetch(`${API}/auth/login`, {
@@ -175,6 +193,10 @@ createServer(async (req, res) => {
   const path = (req.url || "").split("?")[0];
   if (path === "/health") {
     res.end(JSON.stringify({ status: "ok" }));
+    return;
+  }
+  if (path.startsWith("/webhook/")) {
+    proxyNotificacao(req, res);
     return;
   }
   if (path !== "/mcp") {
