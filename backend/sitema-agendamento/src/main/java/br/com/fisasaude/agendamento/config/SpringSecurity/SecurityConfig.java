@@ -64,7 +64,7 @@ public class SecurityConfig {
                         .permitAll()
                         .requestMatchers("/internal/**")
                         .permitAll()
-                        .requestMatchers("/usuarios")
+                        .requestMatchers("/usuarios/**", "/despesas/**", "/estabelecimentos/**")
                         .hasRole("ADMIN")
                         .anyRequest()
                         .authenticated())

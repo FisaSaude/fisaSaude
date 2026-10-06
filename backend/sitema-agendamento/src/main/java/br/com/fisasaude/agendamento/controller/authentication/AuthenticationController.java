@@ -38,6 +38,7 @@ public class AuthenticationController implements SwaggerAuthenticationController
                 usuario.getId(),
                 usuario.getNome(),
                 usuario.getEmail(),
+                usuario.getRole(),
                 usuario.getEstabelecimento().getId(),
                 usuario.getEstabelecimento().getNome()
         ));
