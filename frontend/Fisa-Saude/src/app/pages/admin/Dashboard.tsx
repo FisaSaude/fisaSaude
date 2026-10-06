@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router';
+import { KpiInfoTooltip } from '../../components/KpiInfoTooltip';
 import { ADMIN_USER } from '../../constants/company';
 import { api } from '../../services/api';
 
@@ -153,7 +154,8 @@ export default function Dashboard() {
       change: `${clientes.filter((c) => c.whatsappAtivo !== false).length} c/ WhatsApp`,
       changeType: 'positive',
       color: 'from-primary to-emerald-600',
-      tooltip: 'Total de pacientes cadastrados no estúdio.'
+      tooltip:
+        'Total de pacientes cadastrados na clínica. O número reflete todos os registros ativos no sistema.'
     },
     {
       icon: Calendar,
@@ -162,7 +164,8 @@ export default function Dashboard() {
       change: `${hojeConcluidos} concluídos`,
       changeType: 'info',
       color: 'from-violet-500 to-purple-600',
-      tooltip: 'Total de sessões marcadas para hoje.'
+      tooltip:
+        'Sessões na agenda do dia atual. Cancelados não entram na contagem.'
     },
     {
       icon: TrendingUp,
@@ -171,7 +174,8 @@ export default function Dashboard() {
       change: agendamentosHoje.length >= 8 ? 'Acima da meta' : 'Regular',
       changeType: 'positive',
       color: 'from-success to-emerald-600',
-      tooltip: 'Ocupação da grade de horários.'
+      tooltip:
+        'Percentual de horários de hoje ocupados em relação a uma grade de referência de 15 slots.'
     },
     {
       icon: Activity,
@@ -180,7 +184,8 @@ export default function Dashboard() {
       change: 'Comparecimento',
       changeType: 'positive',
       color: 'from-amber-500 to-orange-600',
-      tooltip: 'Sessões concluídas vs cancelamentos.'
+      tooltip:
+        'No mês atual, sessões concluídas em relação ao total de concluídas e canceladas.'
     }
   ], [clientes, agendamentosHoje, hojeConcluidos, taxaOcupacao, taxaAdesao]);
 
@@ -255,18 +260,26 @@ export default function Dashboard() {
           </div>
 
           {/* KPIs Principais (Visíveis tanto no Desktop quanto no Mobile) */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4 flex-shrink-0">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4 flex-shrink-0 overflow-visible">
             {stats.map((stat, index) => {
               const Icon = stat.icon;
               return (
-                <div key={index} className="bg-white rounded-2xl p-3 sm:p-4 shadow-xs border border-[#E3DEC9] flex flex-col justify-between">
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <div className={`w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-br ${stat.color} rounded-xl flex items-center justify-center text-white shadow-xs flex-shrink-0`}>
-                      <Icon size={14} />
+                <div
+                  key={index}
+                  className="bg-white rounded-2xl p-3 sm:p-4 shadow-xs border border-[#E3DEC9] flex flex-col justify-between overflow-visible"
+                >
+                  <div className="flex items-start justify-between gap-1 mb-1.5 min-h-[1.75rem]">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div
+                        className={`w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-br ${stat.color} rounded-xl flex items-center justify-center text-white shadow-xs flex-shrink-0`}
+                      >
+                        <Icon size={14} />
+                      </div>
+                      <span className="text-[9px] sm:text-[11px] font-bold text-[#56635C] uppercase tracking-wider truncate pt-0.5">
+                        {stat.label}
+                      </span>
                     </div>
-                    <span className="text-[9px] sm:text-[11px] font-bold text-[#56635C] uppercase tracking-wider truncate">
-                      {stat.label}
-                    </span>
+                    <KpiInfoTooltip text={stat.tooltip} />
                   </div>
 
                   <div className="flex items-baseline justify-between mt-1">
