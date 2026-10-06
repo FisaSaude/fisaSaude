@@ -11,8 +11,6 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router';
 import { FisaLogo } from '../components/FisaLogo';
 import { ADMIN_USER } from '../constants/company';
-import { api } from '../services/api';
-
 interface UsuarioLogado {
   nome: string;
   role: 'ADMIN' | 'USUARIO';
@@ -25,13 +23,13 @@ export default function AdminLayout() {
 
   const [usuario, setUsuario] = useState<UsuarioLogado>({
     nome: ADMIN_USER.name,
-    role: 'ADMIN',
-    estabelecimentoNome: 'Fisa Saúde Unidade Central'
+    role: 'USUARIO',
+    estabelecimentoNome: 'Fisa Saúde Unidade Central',
   });
 
   useEffect(() => {
-    const carregarUsuario = async () => {
-      let roleDetectada: 'ADMIN' | 'USUARIO' = 'ADMIN';
+    const carregarUsuario = () => {
+      let roleDetectada: 'ADMIN' | 'USUARIO' = 'USUARIO';
       let nomeDetectado = ADMIN_USER.name;
       let estNome = 'Fisa Saúde Unidade Central';
 
@@ -44,18 +42,6 @@ export default function AdminLayout() {
           estNome = parsed.estabelecimentoNome || estNome;
         } catch (e) {
           console.error(e);
-        }
-      } else {
-        let usuarioId = localStorage.getItem('@FisaSaude:usuarioId') || '1';
-        try {
-          const res = await api.get(`/usuarios/${usuarioId}`);
-          if (res.data) {
-            roleDetectada = res.data.role === 'ADMIN' ? 'ADMIN' : 'USUARIO';
-            nomeDetectado = res.data.nome || ADMIN_USER.name;
-            estNome = res.data.estabelecimento?.nome || estNome;
-          }
-        } catch {
-          // Fallback
         }
       }
 

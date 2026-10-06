@@ -24,32 +24,33 @@ export default function Login() {
         senha: senha,
       });
 
-      const { token } = response.data;
+      const {
+        token,
+        id,
+        nome,
+        role,
+        estabelecimentoId,
+        estabelecimentoNome,
+      } = response.data;
 
       if (token) {
         localStorage.setItem('@FisaSaude:token', token);
         localStorage.setItem('@FisaSaude:userEmail', emailLimpo);
 
-        // Busca a lista de usuários para mapear o ID numérico pelo email autenticado
-        try {
-          const usuariosRes = await api.get('/usuarios', {
-            headers: { Authorization: `Bearer ${token}` }
-          });
-          
-          if (Array.isArray(usuariosRes.data)) {
-            const usuarioLogado = usuariosRes.data.find(
-              (u: any) => u.email?.toLowerCase() === emailLimpo.toLowerCase()
-            );
-            
-            if (usuarioLogado?.id) {
-              localStorage.setItem('@FisaSaude:usuarioId', String(usuarioLogado.id));
-            } else if (usuariosRes.data.length > 0) {
-              localStorage.setItem('@FisaSaude:usuarioId', String(usuariosRes.data[0].id));
-            }
-          }
-        } catch (uErr) {
-          console.warn('Não foi possível listar usuários para obter o ID numérico:', uErr);
+        if (id != null) {
+          localStorage.setItem('@FisaSaude:usuarioId', String(id));
         }
+
+        const roleNormalizada = role === 'ADMIN' ? 'ADMIN' : 'USUARIO';
+        localStorage.setItem(
+          '@FisaSaude:usuario',
+          JSON.stringify({
+            nome: nome || emailLimpo,
+            role: roleNormalizada,
+            estabelecimentoId,
+            estabelecimentoNome,
+          })
+        );
 
         navigate('/admin');
       } else {
