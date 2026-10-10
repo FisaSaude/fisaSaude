@@ -38,7 +38,7 @@ public class AuthenticationController implements SwaggerAuthenticationController
         Usuario usuario = (Usuario) auth.getPrincipal();
         String token = tokenService.generateToken(usuario);
         ResponseCookie cookie = ResponseCookie
-                .from("token", token)
+                .from("access_token", token)
                 .httpOnly(true)
                 .secure(true)
                 .sameSite("Lax")

@@ -3,6 +3,7 @@ package br.com.fisasaude.agendamento.config.SpringSecurity;
 import br.com.fisasaude.agendamento.repository.UsuarioRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -45,7 +46,18 @@ public class SecurityFilter extends OncePerRequestFilter {
 
     private String recoverToken(HttpServletRequest request) {
         var authHeader = request.getHeader("Authorization");
+
+        if(authHeader == null && request.getCookies() != null) {
+            for (Cookie cookie : request.getCookies()) {
+                if ("access_token".equals(cookie.getName())) {
+                    authHeader = cookie.getValue();
+                        break;
+                    }
+            }
+        }
+
         if(authHeader == null) return null;
+
         return authHeader.replace("Bearer ", "");
     }
 
