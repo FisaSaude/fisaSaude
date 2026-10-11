@@ -12,6 +12,7 @@ const SERVICO_ID_PADRAO = 1;
 const USUARIO_ID_PADRAO = 1;
 const MCP_PUBLIC_URL = process.env.MCP_PUBLIC_URL?.replace(/\/$/, "");
 let token;
+let accessCookie;
 
 /** OAuth mínimo para conector customizado da Claude (DCR + PKCE). */
 const oauthClients = new Map();
@@ -240,6 +241,20 @@ function proxyNotificacao(req, res) {
   req.pipe(up);
 }
 
+function cookieFromSetCookie(headerValue) {
+  if (!headerValue) return null;
+  const first = Array.isArray(headerValue) ? headerValue[0] : String(headerValue).split(",")[0];
+  const match = /(?:^|,\s*)access_token=([^;]+)/.exec(first) || /access_token=([^;]+)/.exec(String(headerValue));
+  return match ? match[1] : null;
+}
+
+function authHeaders() {
+  const headers = { "Content-Type": "application/json" };
+  if (token) headers.Authorization = `Bearer ${token}`;
+  if (accessCookie) headers.Cookie = `access_token=${accessCookie}`;
+  return headers;
+}
+
 async function login() {
   const r = await fetch(`${API}/auth/login`, {
     method: "POST",
@@ -247,25 +262,25 @@ async function login() {
     body: JSON.stringify({ email: "admin@fisasaude.com", senha: "Admin@1234" }),
   });
   if (!r.ok) throw new Error(`login falhou ${r.status}`);
-  token = (await r.json()).token;
+  const body = await r.json().catch(() => ({}));
+  token = body.token || null;
+  const setCookie =
+    (typeof r.headers.getSetCookie === "function" && r.headers.getSetCookie()) ||
+    r.headers.get("set-cookie");
+  accessCookie = cookieFromSetCookie(setCookie) || token;
+  if (!token && !accessCookie) throw new Error("login sem token e sem cookie");
   console.log("Login realizado com sucesso");
 }
 
 async function api(path, opt = {}) {
-  if (!token) await login();
+  if (!token && !accessCookie) await login();
   const method = opt.method || "GET";
   console.log(`Chamando endpoint: ${method} ${path}`);
-  const headers = {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${token}`,
-  };
+  const headers = { ...authHeaders(), ...(opt.headers || {}) };
   let r = await fetch(`${API}${path}`, { ...opt, headers });
   if (r.status === 401) {
     await login();
-    r = await fetch(`${API}${path}`, {
-      ...opt,
-      headers: { ...headers, Authorization: `Bearer ${token}` },
-    });
+    r = await fetch(`${API}${path}`, { ...opt, headers: authHeaders() });
   }
   if (!r.ok) {
     const msg = await r.text();
@@ -281,29 +296,49 @@ const out = (data) => ({
   content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
 });
 
+function formatarClientes(lista) {
+  const clientes = (lista || []).map((c) => ({
+    id: c.id,
+    nome: c.nome,
+    telefone: c.telefone ?? null,
+  }));
+  const nomes = clientes.map((c) => c.nome).filter(Boolean);
+  return {
+    total: clientes.length,
+    nomes,
+    clientes,
+    como_responder:
+      "Fale em português, de forma natural e curta. Cite só os nomes (e telefone se pedirem). Não mostre ID, não monte tabela técnica, não fale de MCP, API, filtro, letra ou truque de busca. Se a lista estiver vazia, diga que não há cliente cadastrado. O id fica só para as próximas tools (agendar, financeiro).",
+  };
+}
+
 const tools = [
   {
+    name: "listar_clientes",
+    desc: "Lista todos os clientes da Fisa Saúde. Use isto quando perguntarem quem são os clientes, quantos tem ou 'meus clientes'. Não peça nome. Depois responda só com os nomes, em linguagem natural, sem ID e sem explicar a ferramenta.",
+    schema: z.object({}),
+    async run() {
+      return formatarClientes(await api("/clientes"));
+    },
+  },
+  {
     name: "buscar_cliente",
-    desc: "Cliente por id ou nome (filtra lista).",
+    desc: "Busca cliente por nome (trecho) ou, se já souber, por id interno. Se nome e id vierem vazios, lista todos — não invente filtro por letra. Na resposta ao usuário, cite só os nomes; não mostre ID nem fale de MCP/API.",
     schema: { nome: z.string().optional(), id: z.number().int().positive().optional() },
     async run({ nome, id }) {
       if (id != null) {
         const c = await api(`/clientes/${id}`);
-        return { clientes: [{ id: c.id, nome: c.nome }] };
+        return formatarClientes([c]);
       }
-      if (!nome?.trim()) throw new Error("Informe id ou nome.");
-      const n = nome.trim().toLowerCase();
       const lista = await api("/clientes");
-      return {
-        clientes: (lista || [])
-          .filter((c) => c.nome?.toLowerCase().includes(n))
-          .map((c) => ({ id: c.id, nome: c.nome })),
-      };
+      if (!nome?.trim()) return formatarClientes(lista);
+      const n = nome.trim().toLowerCase();
+      return formatarClientes((lista || []).filter((c) => c.nome?.toLowerCase().includes(n)));
     },
   },
   {
     name: "listar_agendamentos_cliente",
-    desc: "Agendamentos de um cliente.",
+    desc: "Agendamentos de um cliente. Use o id interno obtido em listar_clientes ou buscar_cliente. Ao responder, fale data, horário e status; não mostre o id.",
     schema: { clienteId: z.number().int().positive() },
     async run({ clienteId }) {
       const lista = await api(`/agendamentos/cliente/${clienteId}`);
@@ -413,7 +448,13 @@ const tools = [
         fotoLink: fotoLink ?? null,
       }),
     });
-    return { id: criado.id, nome: criado.nome, telefone: criado.telefone };
+    return {
+      ok: true,
+      nome: criado.nome,
+      telefone: criado.telefone,
+      id: criado.id,
+      como_responder: `Confirme o cadastro em uma frase: ${criado.nome} foi cadastrado. Não mostre o id.`,
+    };
   },
 },
 {
@@ -480,7 +521,13 @@ const tools = [
 ];
 
 function buildMcp() {
-  const mcp = new McpServer({ name: "fisa-poc", version: "1.0.0" });
+  const mcp = new McpServer(
+    { name: "fisa-poc", version: "1.1.0" },
+    {
+      instructions:
+        "Assistente da clínica Fisa Saúde. Responda em português, curto e humano. Ao falar de clientes, use os nomes. Nunca cite ID, MCP, API, endpoint, cookie, token nem truques de filtro. Se pedirem 'quem são os clientes', chame listar_clientes sem argumentos.",
+    }
+  );
   for (const t of tools) {
     mcp.registerTool(
       t.name,

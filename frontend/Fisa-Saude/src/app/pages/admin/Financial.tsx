@@ -7,7 +7,8 @@ import {
   AlertCircle,
   ArrowDownCircle,
   ArrowUpCircle,
-  Calendar
+  Calendar,
+  ChevronDown
 } from 'lucide-react';
 import { api } from '../../services/api';
 
@@ -74,6 +75,31 @@ const formatDateBR = (val: any): string => {
   return `${d}/${m}/${y}`;
 };
 
+const mesAtualISO = () => {
+  const hoje = new Date();
+  return `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}`;
+};
+
+const opcoesPeriodo = (quantidade = 12) => {
+  const opts: { value: string; label: string }[] = [];
+  const cursor = new Date();
+  cursor.setDate(1);
+  const anoAtual = cursor.getFullYear();
+  opts.push({ value: String(anoAtual), label: `Ano ${anoAtual}` });
+  if (anoAtual > 2025) {
+    opts.push({ value: String(anoAtual - 1), label: `Ano ${anoAtual - 1}` });
+  }
+  for (let i = 0; i < quantidade; i++) {
+    const value = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, '0')}`;
+    const label = cursor.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+    opts.push({ value, label: label.charAt(0).toUpperCase() + label.slice(1) });
+    cursor.setMonth(cursor.getMonth() - 1);
+  }
+  return opts;
+};
+
+const pertenceAoPeriodo = (data: string, periodo: string) => Boolean(data) && data.startsWith(periodo);
+
 export default function Financial() {
   const [activeTab, setActiveTab] = useState<'todos' | 'entradas' | 'saidas'>('todos');
   const [despesas, setDespesas] = useState<DespesaResponseDto[]>([]);
@@ -82,6 +108,7 @@ export default function Financial() {
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
 
+  const [mesFiltro, setMesFiltro] = useState(mesAtualISO);
   const [showDespesaModal, setShowDespesaModal] = useState(false);
   const [showEntradaModal, setShowEntradaModal] = useState(false);
 
@@ -131,18 +158,15 @@ export default function Financial() {
 
       let entradasApi: PagamentoEntrada[] = [];
       try {
-        let usuarioId = localStorage.getItem('@FisaSaude:usuarioId') || '1';
-        const hoje = new Date();
-        const ano = hoje.getFullYear();
-        const mes = hoje.getMonth() + 1;
-        const ultimoDia = new Date(ano, mes, 0).getDate();
-
+        const usuarioId = localStorage.getItem('@FisaSaude:usuarioId') || '1';
+        const ano = new Date().getFullYear();
         const resAgendamentos = await api.get('/agendamentos/usuario-periodo', {
           params: {
             usuarioId: Number(usuarioId),
-            dataInicio: `${ano}-${String(mes).padStart(2, '0')}-01`,
-            dataFim: `${ano}-${String(mes).padStart(2, '0')}-${String(ultimoDia).padStart(2, '0')}`
-          }
+            dataInicio: `${ano}-01-01`,
+            dataFim: `${ano}-12-31`
+          },
+          timeout: 4000
         });
 
         const lista = Array.isArray(resAgendamentos.data)
@@ -263,18 +287,28 @@ export default function Financial() {
     }
   };
 
+  const entradasDoMes = useMemo(
+    () => entradas.filter((item) => pertenceAoPeriodo(normalizeDate(item.data), mesFiltro)),
+    [entradas, mesFiltro]
+  );
+
+  const saidasDoMes = useMemo(
+    () => despesas.filter((d) => pertenceAoPeriodo(normalizeDate(d.dataDespesa), mesFiltro)),
+    [despesas, mesFiltro]
+  );
+
   const totalEntradas = useMemo(() => {
-    return entradas.reduce((acc, item) => acc + (Number(item.valor) || 0), 0);
-  }, [entradas]);
+    return entradasDoMes.reduce((acc, item) => acc + (Number(item.valor) || 0), 0);
+  }, [entradasDoMes]);
 
-  const totalDespesas = useMemo(() => {
-    return despesas.reduce((acc, d) => acc + (Number(d.valor) || 0), 0);
-  }, [despesas]);
+  const totalSaidas = useMemo(() => {
+    return saidasDoMes.reduce((acc, d) => acc + (Number(d.valor) || 0), 0);
+  }, [saidasDoMes]);
 
-  const saldoLiquido = totalEntradas - totalDespesas;
+  const saldoLiquido = totalEntradas - totalSaidas;
 
   const lancamentosUnificados = useMemo(() => {
-    const listaEntradas = entradas.map((e) => ({
+    const listaEntradas = entradasDoMes.map((e) => ({
       id: e.id,
       tipo: 'ENTRADA' as const,
       data: e.data,
@@ -283,7 +317,7 @@ export default function Financial() {
       valor: e.valor
     }));
 
-    const listaSaidas = despesas.map((d) => ({
+    const listaSaidas = saidasDoMes.map((d) => ({
       id: String(d.id),
       tipo: 'SAIDA' as const,
       data: normalizeDate(d.dataDespesa),
@@ -297,7 +331,11 @@ export default function Financial() {
     if (activeTab === 'saidas') combinado = combinado.filter((item) => item.tipo === 'SAIDA');
 
     return combinado.sort((a, b) => b.data.localeCompare(a.data));
-  }, [entradas, despesas, activeTab]);
+  }, [entradasDoMes, saidasDoMes, activeTab]);
+
+  const periodoSelecionado = opcoesPeriodo().find((p) => p.value === mesFiltro)?.label || mesFiltro;
+  const classeAcao =
+    'h-9 min-h-9 max-h-9 px-3.5 box-border rounded-xl text-xs font-bold uppercase leading-none inline-flex items-center justify-center gap-1.5 shrink-0';
 
   return (
     <div className="h-full bg-[#F8F6F0] text-[#1B2E26] flex flex-col">
@@ -312,20 +350,38 @@ export default function Financial() {
           </div>
 
           <div className="flex items-center gap-2 w-full sm:w-auto">
+            <div className={`relative flex-1 sm:flex-none bg-white border border-[#E3DEC9] text-[#1B2E26] shadow-xs ${classeAcao}`}>
+              <Calendar size={15} className="text-[#009386] shrink-0" />
+              <span className="truncate max-w-[9.5rem]">{periodoSelecionado}</span>
+              <ChevronDown size={14} className="text-[#56635C] shrink-0" />
+              <select
+                aria-label="Filtrar período"
+                value={mesFiltro}
+                onChange={(e) => setMesFiltro(e.target.value)}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+              >
+                {opcoesPeriodo().map((periodo) => (
+                  <option key={periodo.value} value={periodo.value}>
+                    {periodo.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             <button
               onClick={() => setShowDespesaModal(true)}
-              className="flex-1 sm:flex-none px-3 py-2.5 bg-white border border-[#E3DEC9] active:bg-[#F8F6F0] text-[#1B2E26] rounded-xl font-bold text-xs uppercase flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+              className={`flex-1 sm:flex-none bg-white border border-[#E3DEC9] active:bg-[#F8F6F0] text-[#1B2E26] shadow-xs cursor-pointer ${classeAcao}`}
             >
               <ArrowDownCircle size={15} className="text-[#D94F3C]" />
-              Despesa
+              Saída
             </button>
 
             <button
               onClick={() => setShowEntradaModal(true)}
-              className="flex-1 sm:flex-none bg-[#009386] hover:bg-[#007491] active:scale-98 text-white px-4 py-2.5 rounded-xl font-bold text-xs uppercase flex items-center justify-center gap-1.5 shadow-md cursor-pointer transition-transform"
+              className={`flex-1 sm:flex-none bg-[#009386] hover:bg-[#007491] active:scale-98 text-white shadow-md cursor-pointer transition-transform ${classeAcao}`}
             >
               <ArrowUpCircle size={15} />
-              Receber
+              Entrada
             </button>
           </div>
         </div>
@@ -359,10 +415,10 @@ export default function Financial() {
             </div>
             <div>
               <span className="text-[10px] sm:text-[11px] font-bold text-[#56635C] uppercase tracking-wider block">
-                Total de Despesas
+                Total de Saídas
               </span>
               <div className="text-lg sm:text-2xl font-black text-[#D94F3C]">
-                - R$ {totalDespesas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                - R$ {totalSaidas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
               </div>
             </div>
           </div>
@@ -413,7 +469,7 @@ export default function Financial() {
           {loading ? (
             <div className="p-10 text-center text-xs text-[#56635C]">Carregando...</div>
           ) : lancamentosUnificados.length === 0 ? (
-            <div className="p-10 text-center text-xs text-[#56635C]">Nenhum lançamento no momento.</div>
+            <div className="p-10 text-center text-xs text-[#56635C]">Nenhum lançamento neste período.</div>
           ) : (
             <>
               {/* Tabela para Desktop */}
@@ -489,7 +545,7 @@ export default function Financial() {
             className="bg-white rounded-t-3xl sm:rounded-3xl max-w-md w-full max-h-[90vh] overflow-y-auto p-5 sm:p-6 shadow-2xl space-y-3.5"
           >
             <div className="flex items-center justify-between border-b pb-3">
-              <h2 className="text-base font-bold text-[#1B2E26]">Receber Pagamento</h2>
+              <h2 className="text-base font-bold text-[#1B2E26]">Registrar entrada</h2>
               <button type="button" onClick={() => setShowEntradaModal(false)} className="p-1 text-[#56635C]">
                 <X size={18} />
               </button>
@@ -595,7 +651,7 @@ export default function Financial() {
             className="bg-white rounded-t-3xl sm:rounded-3xl max-w-md w-full max-h-[90vh] overflow-y-auto p-5 sm:p-6 shadow-2xl space-y-3.5"
           >
             <div className="flex items-center justify-between border-b pb-3">
-              <h2 className="text-base font-bold text-[#1B2E26]">Lançar Despesa</h2>
+              <h2 className="text-base font-bold text-[#1B2E26]">Lançar saída</h2>
               <button type="button" onClick={() => setShowDespesaModal(false)} className="p-1 text-[#56635C]">
                 <X size={18} />
               </button>

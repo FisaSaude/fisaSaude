@@ -156,17 +156,19 @@ export default function Schedule() {
 
   const carregarFeriados = useCallback(async (ano: number) => {
     try {
-      const res = await api.get(`/feriados/${ano}`);
+      const res = await api.get(`/feriados/${ano}`, { timeout: 4000 });
       setFeriados(Array.isArray(res.data) ? res.data : []);
     } catch {
       try {
-        const fallback = await axios.get(`https://brasilapi.com.br/api/feriados/v1/${ano}`);
+        const fallback = await axios.get(`https://brasilapi.com.br/api/feriados/v1/${ano}`, { timeout: 4000 });
         setFeriados(Array.isArray(fallback.data) ? fallback.data : []);
       } catch (err) {
         console.warn('Não foi possível carregar os feriados nacionais:', err);
       }
     }
   }, []);
+
+  const periodoChave = `${currentDate.getFullYear()}-${currentDate.getMonth()}`;
 
   const carregarDados = useCallback(async () => {
     setLoading(true);
@@ -177,34 +179,33 @@ export default function Schedule() {
       usuarioId = '1';
     }
 
-    const ano = currentDate.getFullYear();
-    const mes = currentDate.getMonth() + 1;
+    const [anoStr, mesStr] = periodoChave.split('-');
+    const ano = Number(anoStr);
+    const mes = Number(mesStr) + 1;
     const ultimoDia = new Date(ano, mes, 0).getDate();
     const dataInicio = `${ano}-${String(mes).padStart(2, '0')}-01`;
     const dataFim = `${ano}-${String(mes).padStart(2, '0')}-${String(ultimoDia).padStart(2, '0')}`;
 
     try {
-      const resAgendamentos = await api.get('/agendamentos/usuario-periodo', {
-        params: {
-          usuarioId: Number(usuarioId),
-          dataInicio: dataInicio,
-          dataFim: dataFim
-        }
-      });
+      const [resAgendamentos, resClientes] = await Promise.all([
+        api.get('/agendamentos/usuario-periodo', {
+          params: { usuarioId: Number(usuarioId), dataInicio, dataFim },
+          timeout: 5000
+        }).catch(() => ({ data: [] })),
+        api.get('/clientes', { timeout: 5000 }).catch(() => ({ data: [] }))
+      ]);
 
       const lista = Array.isArray(resAgendamentos.data)
         ? resAgendamentos.data
         : resAgendamentos.data?.content || [];
-
       setAgendamentos(lista);
 
-      const resClientes = await api.get('/clientes').catch(() => ({ data: [] }));
       const listaClientes = Array.isArray(resClientes.data)
         ? resClientes.data
         : resClientes.data?.content || [];
       setClientes(listaClientes);
 
-      await carregarFeriados(ano);
+      void carregarFeriados(ano);
     } catch (err: any) {
       console.error('Erro ao buscar dados do período:', err);
       setErrorMessage(
@@ -213,7 +214,7 @@ export default function Schedule() {
     } finally {
       setLoading(false);
     }
-  }, [currentDate, carregarFeriados]);
+  }, [periodoChave, carregarFeriados]);
 
   useEffect(() => {
     carregarDados();
@@ -552,12 +553,13 @@ export default function Schedule() {
             </div>
           </div>
 
-          {loading ? (
-            <div className="flex-1 flex items-center justify-center p-8">
-              <div className="w-8 h-8 border-4 border-[#009386] border-t-transparent rounded-full animate-spin" />
-            </div>
-          ) : (
-            <div className="flex-1 min-h-0 overflow-hidden">
+          <div className="flex-1 min-h-0 overflow-hidden relative">
+            {loading && (
+              <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/70">
+                <div className="w-8 h-8 border-4 border-[#009386] border-t-transparent rounded-full animate-spin" />
+              </div>
+            )}
+            <div className={`h-full ${loading ? 'pointer-events-none opacity-60' : ''}`}>
               {/* VISÃO DO MÊS */}
               {view === 'month' && (
                 <div className="h-full flex flex-col">
@@ -727,7 +729,7 @@ export default function Schedule() {
                 </div>
               )}
             </div>
-          )}
+          </div>
         </div>
       </div>
 
