@@ -20,6 +20,8 @@ import {
   Dumbbell,
   Stethoscope,
   Compass,
+  Moon,
+  Sun,
 } from 'lucide-react';
 
 import { useState, useEffect } from 'react';
@@ -51,11 +53,22 @@ import aboutImage from '../../imports/pilates_03.png';
 
 export default function LandingPage() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.localStorage.getItem('fisa-theme') === 'dark';
+  });
   const [isoOpen, setIsoOpen] = useState(false);
   const [activeSection, setActiveSection] = useState<string>('hero');
 
+  useEffect(() => {
+    window.localStorage.setItem('fisa-theme', isDarkMode ? 'dark' : 'light');
+  }, [isDarkMode]);
+
+  const toggleTheme = () => setIsDarkMode((current) => !current);
+
   const navLinks = [
     { id: 'hero', label: 'Início' },
+    { id: 'convenios', label: 'Convênios' },
     { id: 'sobre', label: 'Sobre Nós' },
     { id: 'servicos', label: 'Serviços' },
     { id: 'diferenciais', label: 'Diferenciais' },
@@ -66,6 +79,7 @@ export default function LandingPage() {
   useEffect(() => {
     const sectionIds = [
       'hero',
+      'convenios',
       'sobre',
       'servicos',
       'diferenciais',
@@ -135,7 +149,128 @@ export default function LandingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8F6F0] text-[#1B2E26] font-sans antialiased selection:bg-[#3CD099]/40 selection:text-[#0E2820]">
+    <div id="fisa-landing" className={`min-h-screen bg-[#F8F6F0] text-[#1B2E26] font-sans antialiased selection:bg-[#3CD099]/40 selection:text-[#0E2820] ${isDarkMode ? 'fisa-theme-dark' : ''}`}>
+      <style>{`
+        #fisa-landing {
+          --fisa-dark-bg: #101b19;
+          --fisa-dark-surface: #172724;
+          --fisa-dark-surface-raised: #203530;
+          --fisa-dark-border: #35534a;
+          --fisa-dark-text: #f4f5ef;
+          --fisa-dark-muted: #b7c9c0;
+          --fisa-dark-coral: #ff8978;
+          --fisa-dark-mint: #7ce0b8;
+          transition: background-color .25s ease, color .25s ease;
+        }
+        #fisa-landing.fisa-theme-dark {
+          background-color: var(--fisa-dark-bg) !important;
+          color: var(--fisa-dark-text) !important;
+          color-scheme: dark;
+        }
+        #fisa-landing.fisa-theme-dark header button[aria-label="Ativar tema claro"],
+        #fisa-landing.fisa-theme-dark header button[aria-label="Ativar tema escuro"] {
+          background-color: var(--fisa-dark-surface-raised) !important;
+          color: var(--fisa-dark-mint) !important;
+        }
+        #fisa-landing.fisa-theme-dark header {
+          background-color: rgba(16, 27, 25, .94) !important;
+          border-color: var(--fisa-dark-border) !important;
+          box-shadow: 0 8px 28px rgba(0, 0, 0, .16);
+        }
+        #fisa-landing.fisa-theme-dark [class~="bg-white"],
+        #fisa-landing.fisa-theme-dark [class~="bg-white/70"],
+        #fisa-landing.fisa-theme-dark [class~="bg-white/75"],
+        #fisa-landing.fisa-theme-dark [class~="bg-white/80"],
+        #fisa-landing.fisa-theme-dark [class~="bg-white/90"],
+        #fisa-landing.fisa-theme-dark [class~="bg-white/95"],
+        #fisa-landing.fisa-theme-dark [class~="bg-[#F8F6F0]"],
+        #fisa-landing.fisa-theme-dark [class~="bg-[#FBF5E9]"],
+        #fisa-landing.fisa-theme-dark [class~="bg-[#EEF0F4]"],
+        #fisa-landing.fisa-theme-dark [class~="bg-[#F7F4ED]"],
+        #fisa-landing.fisa-theme-dark [class~="bg-[#F7F2E9]"],
+        #fisa-landing.fisa-theme-dark [class~="bg-[#EBE5D3]"],
+        #fisa-landing.fisa-theme-dark [class~="bg-[#E3DEC9]"] {
+          background-color: var(--fisa-dark-surface) !important;
+        }
+        #fisa-landing.fisa-theme-dark [class~="bg-[#EBE5D3]/60"],
+        #fisa-landing.fisa-theme-dark [class~="bg-[#009386]/10"],
+        #fisa-landing.fisa-theme-dark [class~="bg-[#E4F5E9]"],
+        #fisa-landing.fisa-theme-dark [class~="bg-[#FFF0E9]"],
+        #fisa-landing.fisa-theme-dark [class~="bg-[#FCE7EE]"] {
+          background-color: var(--fisa-dark-surface-raised) !important;
+        }
+        #fisa-landing.fisa-theme-dark [class~="text-[#1B2E26]"],
+        #fisa-landing.fisa-theme-dark [class~="text-[#231B22]"],
+        #fisa-landing.fisa-theme-dark [class~="text-[#292820]"],
+        #fisa-landing.fisa-theme-dark [class~="text-[#171717]"],
+        #fisa-landing.fisa-theme-dark [class~="text-[#06190F]"],
+        #fisa-landing.fisa-theme-dark [class~="text-[#475E54]"] {
+          color: var(--fisa-dark-text) !important;
+        }
+        #fisa-landing.fisa-theme-dark [class~="text-[#56635C]"],
+        #fisa-landing.fisa-theme-dark [class~="text-[#57544D]"],
+        #fisa-landing.fisa-theme-dark [class~="text-[#4E5851]"],
+        #fisa-landing.fisa-theme-dark [class~="text-[#6B6B78]"],
+        #fisa-landing.fisa-theme-dark [class~="text-[#777268]"] {
+          color: var(--fisa-dark-muted) !important;
+        }
+        #fisa-landing.fisa-theme-dark [class~="text-[#FF6954]"],
+        #fisa-landing.fisa-theme-dark [class~="text-[#E8795C]"],
+        #fisa-landing.fisa-theme-dark [class~="text-[#D8385E]"] {
+          color: var(--fisa-dark-coral) !important;
+        }
+        #fisa-landing.fisa-theme-dark [class~="text-[#009386]"],
+        #fisa-landing.fisa-theme-dark [class~="text-[#007491]"],
+        #fisa-landing.fisa-theme-dark [class~="text-[#268B65]"] {
+          color: var(--fisa-dark-mint) !important;
+        }
+        #fisa-landing.fisa-theme-dark [class~="border-[#E3DEC9]"],
+        #fisa-landing.fisa-theme-dark [class~="border-white"],
+        #fisa-landing.fisa-theme-dark [class~="border-[#1B2E26]/15"] {
+          border-color: var(--fisa-dark-border) !important;
+        }
+        #fisa-landing.fisa-theme-dark [class~="bg-[#FF6954]"] {
+          background-color: #e96f60 !important;
+        }
+        #fisa-landing.fisa-theme-dark [class~="hover:bg-[#E8533E]"]:hover {
+          background-color: #f18372 !important;
+        }
+        #fisa-landing.fisa-theme-dark #hero,
+        #fisa-landing.fisa-theme-dark #convenios,
+        #fisa-landing.fisa-theme-dark #sobre,
+        #fisa-landing.fisa-theme-dark #servicos,
+        #fisa-landing.fisa-theme-dark #diferenciais,
+        #fisa-landing.fisa-theme-dark #faq,
+        #fisa-landing.fisa-theme-dark #localizacao {
+          background-color: var(--fisa-dark-bg) !important;
+        }
+        #fisa-landing.fisa-theme-dark #faq article,
+        #fisa-landing.fisa-theme-dark #faq [role="region"],
+        #fisa-landing.fisa-theme-dark [class*="shadow-"] {
+          border-color: var(--fisa-dark-border);
+        }
+        #fisa-landing.fisa-theme-dark #faq article,
+        #fisa-landing.fisa-theme-dark #faq [role="region"] {
+          background-color: var(--fisa-dark-surface) !important;
+        }
+        #fisa-landing.fisa-theme-dark input,
+        #fisa-landing.fisa-theme-dark textarea,
+        #fisa-landing.fisa-theme-dark select {
+          background-color: var(--fisa-dark-surface) !important;
+          color: var(--fisa-dark-text) !important;
+          border-color: var(--fisa-dark-border) !important;
+        }
+        #fisa-landing.fisa-theme-dark a:focus-visible,
+        #fisa-landing.fisa-theme-dark button:focus-visible {
+          outline-color: var(--fisa-dark-mint);
+        }
+        #fisa-landing.fisa-theme-dark .fisa-decorative-circle {
+          opacity: .16;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          #fisa-landing { transition: none; }
+        }
+      `}</style>
 
       {/* =========================================================
           ACESSIBILIDADE
@@ -300,6 +435,17 @@ export default function LandingPage() {
                 />
               </a>
 
+              <button
+                type="button"
+                onClick={toggleTheme}
+                aria-label={isDarkMode ? 'Ativar tema claro' : 'Ativar tema escuro'}
+                aria-pressed={isDarkMode}
+                title={isDarkMode ? 'Ativar tema claro' : 'Ativar tema escuro'}
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-[#EBE5D3]/60 text-[#475E54] transition-colors hover:bg-[#EBE5D3] hover:text-[#FF6954] focus:outline-none focus:ring-2 focus:ring-[#FF6954]"
+              >
+                {isDarkMode ? <Sun size={17} aria-hidden="true" /> : <Moon size={17} aria-hidden="true" />}
+              </button>
+
               {/* Separador */}
 
               <div
@@ -384,6 +530,17 @@ export default function LandingPage() {
                 aria-label="Agendar aula experimental pelo WhatsApp"
               >
                 Agendar aula
+              </button>
+
+              <button
+                type="button"
+                onClick={toggleTheme}
+                aria-label={isDarkMode ? 'Ativar tema claro' : 'Ativar tema escuro'}
+                aria-pressed={isDarkMode}
+                title={isDarkMode ? 'Ativar tema claro' : 'Ativar tema escuro'}
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#EBE5D3]/60 text-[#475E54] transition-colors hover:bg-[#EBE5D3] hover:text-[#FF6954] focus:outline-none focus:ring-2 focus:ring-[#FF6954]"
+              >
+                {isDarkMode ? <Sun size={18} aria-hidden="true" /> : <Moon size={18} aria-hidden="true" />}
               </button>
 
               <button
@@ -587,18 +744,21 @@ export default function LandingPage() {
           className="
             relative
             overflow-hidden
-            pt-4
-            pb-10
-            sm:pt-6
-            sm:pb-12
-            lg:pt-8
+            bg-[#FBF5E9]
+            pt-6
+            pb-12
+            sm:pt-8
+            sm:pb-14
+            lg:pt-10
             lg:pb-16
           "
           aria-labelledby="hero-heading"
         >
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div aria-hidden="true" className="pointer-events-none absolute -right-24 top-0 h-[28rem] w-[28rem] rounded-full border border-[#E9CDA6]/70" />
+          <div aria-hidden="true" className="pointer-events-none absolute -left-28 bottom-[-12rem] h-[26rem] w-[26rem] rounded-full border-[18px] border-white/70" />
+          <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
-            <div className="grid lg:grid-cols-12 gap-8 lg:gap-8 items-center">
+            <div className="grid lg:grid-cols-12 gap-8 lg:gap-10 items-center">
 
               {/* CONTEÚDO */}
 
@@ -608,7 +768,7 @@ export default function LandingPage() {
                   inline-flex
                   items-center
                   gap-1.5
-                  bg-[#009386]/15
+                  bg-[#009386]/10
                   text-[#007491]
                   border
                   border-[#009386]/25
@@ -775,31 +935,6 @@ export default function LandingPage() {
 
                 </div>
 
-                {/* STATS */}
-
-                <div className="
-                  grid
-                  grid-cols-3
-                  gap-4
-                  pt-4
-                  border-t
-                  border-[#E3DEC9]
-                ">
-
-                  <div className="text-center lg:text-left">
-
-                  </div>
-
-                  <div className="text-center lg:text-left">
-
-                  </div>
-
-                  <div className="text-center lg:text-left">
-
-                  </div>
-
-                </div>
-
               </div>
 
               {/* IMAGEM */}
@@ -812,250 +947,40 @@ export default function LandingPage() {
                 items-center
               ">
 
-                <div className="
-                  absolute
-                  right-0
-                  bottom-0
-                  w-64
-                  h-64
-                  sm:w-72
-                  sm:h-72
-                  bg-[#3CD099]
-                  rounded-[32px]
-                  -z-0
-                  translate-x-2
-                  translate-y-2
-                " />
-
-                <div className="
-                  absolute
-                  -right-3
-                  bottom-6
-                  w-20
-                  h-20
-                  sm:w-24
-                  sm:h-24
-                  bg-[#9E2A43]
-                  rounded-tl-[36px]
-                  rounded-br-[36px]
-                  rounded-tr-[10px]
-                  rounded-bl-[10px]
-                  z-10
-                " />
-
-                <div className="
-                  absolute
-                  -left-2
-                  top-1/4
-                  w-12
-                  h-12
-                  bg-[#009386]
-                  rounded-tl-[20px]
-                  rounded-br-[20px]
-                  rounded-tr-[6px]
-                  rounded-bl-[6px]
-                  z-10
-                " />
+                <div aria-hidden="true" className="absolute right-[4%] top-[4%] aspect-square w-[82%] rounded-full bg-[#F2DCC0]" />
+                <div aria-hidden="true" className="absolute -left-1 bottom-[8%] h-24 w-24 rounded-full border-[10px] border-[#E9CDA6]/70" />
 
                 <div className="
                   relative
                   z-[5]
+                  aspect-square
                   w-full
-                  max-w-sm
-                  sm:max-w-md
-                  bg-white
-                  rounded-t-[160px]
-                  rounded-b-[28px]
+                  max-w-[440px]
                   overflow-hidden
-                  shadow-xl
-                  border-4
-                  border-[#EBE5D3]
-                  p-2
+                  rounded-full
+                  border-[7px]
+                  border-white/90
+                  bg-white
+                  shadow-[0_22px_60px_rgba(83,65,42,0.16)]
                 ">
-                  <div className="
-                    rounded-t-[150px]
-                    rounded-b-[22px]
-                    overflow-hidden
-                  ">
-                    <ImageWithFallback
-                      src={heroImage1}
-                      alt="Clínica de pilates no Tatuapé"
-                      className="w-full h-[320px] sm:h-[420px] object-cover"
-                      loading="eager"
-                      fetchPriority="high"
-                    />
-                  </div>
+                  <ImageWithFallback
+                    src={heroImage1}
+                    alt="Espaço de Pilates e fisioterapia da FISA Saúde"
+                    className="h-full w-full rounded-full object-cover"
+                    loading="eager"
+                    fetchPriority="high"
+                  />
                 </div>
 
-                {/* ISO */}
+                <div className="absolute right-0 top-[16%] z-20 flex max-w-[190px] items-center gap-2 rounded-xl border border-[#F0E7D8] bg-white/95 p-3 shadow-lg sm:right-2">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#FFF0E9] text-[#E8795C]"><Heart size={16} aria-hidden="true" /></span>
+                  <span><strong className="block text-[11px] text-[#292820]">Cuidado individual</strong><span className="text-[9px] text-[#777268]">Respeito ao seu ritmo</span></span>
+                </div>
 
-                <Dialog
-                  open={isoOpen}
-                  onOpenChange={setIsoOpen}
-                >
-                  <div className="
-                    absolute
-                    -bottom-3
-                    left-4
-                    z-20
-                  ">
-                    <button
-                      type="button"
-                      onClick={() => setIsoOpen(true)}
-                      title="Clique para saber mais"
-                      aria-label="Certificada ISO 9001:2015. Clique para saber mais"
-                      className="
-                        bg-white/95
-                        backdrop-blur-md
-                        rounded-xl
-                        p-2.5
-                        shadow-md
-                        border
-                        border-[#E3DEC9]
-                        cursor-pointer
-                        text-left
-                        transition-transform
-                        hover:scale-105
-                        flex
-                        items-center
-                        gap-2.5
-                      "
-                    >
-
-                      <div className="
-                        w-8
-                        h-8
-                        bg-[#009386]
-                        rounded-lg
-                        flex
-                        items-center
-                        justify-center
-                        flex-shrink-0
-                        text-white
-                      ">
-                        <Shield
-                          size={16}
-                          aria-hidden="true"
-                        />
-                      </div>
-
-                      <div>
-
-                        <div className="
-                          text-[9px]
-                          text-[#56635C]
-                          uppercase
-                          font-bold
-                          tracking-wider
-                        ">
-                          Certificada
-                        </div>
-
-                        <div className="
-                          text-xs
-                          text-[#1B2E26]
-                          font-bold
-                          flex
-                          items-center
-                          gap-1
-                        ">
-                          ISO 9001:2015
-
-                          <Info
-                            size={11}
-                            className="text-[#009386]"
-                            aria-hidden="true"
-                          />
-                        </div>
-
-                      </div>
-
-                    </button>
-                  </div>
-
-                  <DialogContent className="
-                    bg-[#F8F6F0]
-                    rounded-2xl
-                    max-w-[500px]
-                    p-6
-                    border
-                    border-[#E3DEC9]
-                  ">
-                    <DialogHeader>
-
-                      <DialogTitle className="
-                        text-left
-                        text-xl
-                        font-bold
-                        text-[#1B2E26]
-                        leading-snug
-                      ">
-                        ISO 9001:2015, Sistema de Gestão da Qualidade
-                      </DialogTitle>
-
-                      <DialogDescription className="
-                        text-left
-                        text-sm
-                        text-[#56635C]
-                        leading-relaxed
-                        pt-2
-                      ">
-                        A ISO 9001:2015 é uma certificação internacional
-                        que garante que a empresa segue padrões rigorosos
-                        de qualidade, organização de processos e melhoria
-                        contínua. Isso significa mais segurança, eficiência
-                        e confiança para os clientes.
-                      </DialogDescription>
-
-                    </DialogHeader>
-
-                    <ul className="
-                      list-disc
-                      pl-5
-                      space-y-1.5
-                      text-[#1B2E26]
-                      text-sm
-                      pt-2
-                    ">
-                      <li>Padronização de processos</li>
-                      <li>Foco na satisfação do cliente</li>
-                      <li>Melhoria contínua</li>
-                      <li>Gestão eficiente</li>
-                    </ul>
-
-                    <p className="text-xs text-[#56635C]">
-                      Certificação reconhecida internacionalmente
-                    </p>
-
-                    <DialogFooter>
-
-                      <DialogClose asChild>
-
-                        <button
-                          type="button"
-                          className="
-                            bg-[#FF6954]
-                            hover:bg-[#E8533E]
-                            text-white
-                            px-5
-                            py-1.5
-                            rounded-full
-                            uppercase
-                            tracking-wider
-                            text-xs
-                            font-bold
-                            shadow-sm
-                          "
-                        >
-                          Fechar
-                        </button>
-
-                      </DialogClose>
-
-                    </DialogFooter>
-
-                  </DialogContent>
-                </Dialog>
+                <div className="absolute bottom-[9%] left-0 z-20 flex max-w-[205px] items-center gap-2 rounded-xl border border-[#F0E7D8] bg-white/95 p-3 shadow-lg">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#E4F5E9] text-[#268B65]"><Activity size={16} aria-hidden="true" /></span>
+                  <span><strong className="block text-[11px] text-[#292820]">Movimento e bem-estar</strong><span className="text-[9px] text-[#777268]">Mais qualidade de vida</span></span>
+                </div>
 
               </div>
 
@@ -1064,11 +989,162 @@ export default function LandingPage() {
         </section>
 
         {/* =========================================================
+            CONVÊNIOS WELLHUB E TOTALPASS
+            Cada card usa uma linguagem visual própria da plataforma
+        ========================================================= */}
+
+        <section
+          id="convenios"
+          className="relative overflow-hidden bg-[#F8F6F0] py-9 sm:py-11 lg:py-12"
+          aria-labelledby="convenios-heading"
+        >
+          <div aria-hidden="true" className="absolute -left-20 top-16 h-56 w-56 rounded-full border-[32px] border-[#009386]/10" />
+          <div aria-hidden="true" className="absolute -right-12 bottom-0 h-64 w-64 rounded-full bg-[#FF6954]/[0.05]" />
+
+          <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="mb-7 grid gap-4 md:mb-8 md:grid-cols-[0.9fr_1.1fr] md:items-end">
+              <div>
+                <span className="inline-flex items-center gap-2 rounded-full border border-[#1B2E26]/15 bg-white/70 px-4 py-2 text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#1B2E26]">
+                  <CheckCircle size={14} aria-hidden="true" />
+                  Seu benefício, seu movimento
+                </span>
+                <h2 id="convenios-heading" className="mt-3 max-w-xl text-2xl font-black leading-[1.08] tracking-tight text-[#231B22] sm:text-3xl lg:text-4xl">
+                  A FISA também está nos seus <span className="text-[#D8385E]">benefícios.</span>
+                </h2>
+              </div>
+              <p className="max-w-xl text-sm leading-7 text-[#57544D] md:justify-self-end md:text-base">
+                Já utiliza uma plataforma de bem-estar pela empresa? Encontre a nossa unidade nos perfis abaixo e confira diretamente as condições para praticar Pilates com a FISA Saúde.
+              </p>
+            </div>
+
+            <div className="grid items-stretch gap-6 lg:grid-cols-2 lg:gap-8">
+              {/* WELLHUB — identidade vibrante, rosa + verde-limão e roda do bem-estar */}
+              <article className="group relative flex min-h-full flex-col overflow-hidden rounded-[2rem] border border-[#D8385E]/15 bg-white shadow-[0_18px_55px_rgba(35,27,34,0.08)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_24px_65px_rgba(35,27,34,0.14)]">
+                <div className="relative min-h-[150px] overflow-hidden bg-[#F33F68] p-5 sm:p-6">
+                  <div aria-hidden="true" className="absolute -right-10 -top-12 h-56 w-56 rounded-full border-[24px] border-white/20" />
+                  <div aria-hidden="true" className="absolute right-7 top-6 h-20 w-20 rounded-full bg-white/20 opacity-95 transition-transform duration-500 group-hover:rotate-45">
+                    <span className="absolute left-1/2 top-0 h-1/2 w-1/2 rounded-tr-full bg-[#F33F68]" />
+                    <span className="absolute bottom-0 left-0 h-1/2 w-1/2 rounded-bl-full bg-[#231B22]" />
+                    <span className="absolute bottom-0 right-0 h-1/2 w-1/2 rounded-br-full bg-white" />
+                  </div>
+                  <div className="relative z-10 flex h-full min-h-[118px] flex-col items-start justify-between">
+                    <span className="rounded-full bg-white/15 px-3 py-1.5 text-[9px] font-extrabold uppercase tracking-[0.18em] text-white">
+                      Bem-estar em movimento
+                    </span>
+                    <div>
+                      <div className="text-3xl font-black tracking-[-0.07em] text-white sm:text-4xl" aria-label="Wellhub">
+                        Wellhub<span className="text-[#B8F46A]">.</span>
+                      </div>
+                      <p className="mt-2 max-w-[240px] text-sm font-semibold text-white">
+                        Mais possibilidades para cuidar de você.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex flex-1 flex-col p-5 sm:p-6">
+                  <div className="mb-3 flex items-center gap-3">
+                    <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#FCE7EE] text-[#D8385E]">
+                      <Activity size={20} aria-hidden="true" />
+                    </span>
+                    <div>
+                      <h3 className="text-lg font-extrabold text-[#231B22]">Encontre a FISA no Wellhub</h3>
+                      <p className="text-xs text-[#6B6B78]">Consulte as condições do seu benefício.</p>
+                    </div>
+                  </div>
+                  <p className="text-sm leading-6 text-[#57544D]">
+                    Acesse o perfil da nossa unidade e confira as opções disponíveis para incluir o Pilates na sua rotina.
+                  </p>
+                  <ul className="mt-3 space-y-2 text-sm text-[#231B22]">
+                    <li className="flex items-start gap-2.5">
+                      <CheckCircle size={17} className="mt-0.5 shrink-0 text-[#1D856C]" aria-hidden="true" />
+                      <span>Verifique a elegibilidade da sua conta.</span>
+                    </li>
+                    <li className="flex items-start gap-2.5">
+                      <CheckCircle size={17} className="mt-0.5 shrink-0 text-[#1D856C]" aria-hidden="true" />
+                      <span>Confira o plano e a disponibilidade da atividade.</span>
+                    </li>
+                  </ul>
+                  <a
+                    href="https://wellhub.com/pt-br/search/partners/fisa-saude-vila-gomes-cardim/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-5 inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-[#F33F68] px-4 py-2.5 text-center text-xs font-extrabold text-white transition hover:bg-[#D92E56] focus:outline-none focus:ring-2 focus:ring-[#F33F68] focus:ring-offset-2"
+                    aria-label="Consultar o perfil da FISA Saúde no Wellhub"
+                  >
+                    Ver perfil no Wellhub <ArrowRight size={16} aria-hidden="true" />
+                  </a>
+                </div>
+              </article>
+
+              {/* TOTALPASS — wordmark em faixa preta inclinada, preto + verde */}
+              <article className="group relative flex min-h-full flex-col overflow-hidden rounded-[1.25rem] border border-[#1A1A1A]/10 bg-white shadow-[0_18px_55px_rgba(0,0,0,0.08)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_24px_65px_rgba(0,0,0,0.15)]">
+                <div className="relative min-h-[150px] overflow-hidden bg-[#22C879] p-5 sm:p-6">
+                  <div aria-hidden="true" className="absolute -right-8 -top-8 h-56 w-56 rounded-full border-[30px] border-[#101710]/10" />
+                  <div aria-hidden="true" className="absolute bottom-0 right-0 h-24 w-3/5 bg-white/10 [clip-path:polygon(22%_0,100%_0,100%_100%,0_100%)]" />
+                  <div className="relative z-10 flex min-h-[118px] flex-col items-start justify-between">
+                    <span className="rounded-sm bg-[#101710]/10 px-3 py-1.5 text-[9px] font-extrabold uppercase tracking-[0.18em] text-[#101710]">
+                      Seu treino, suas escolhas
+                    </span>
+                    <div>
+                      <div className="inline-flex items-center">
+                        <span className="text-5xl font-black italic leading-none tracking-[-0.12em] text-[#06190F] sm:text-6xl">TP</span>
+                      </div>
+                      <p className="mt-3 max-w-[260px] text-sm font-semibold text-[#06190F]">
+                        Seu caminho para uma rotina mais ativa.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex flex-1 flex-col p-5 sm:p-6">
+                  <div className="mb-5 flex items-center gap-3">
+                    <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#E0F7E9] text-[#008A49]">
+                      <Heart size={20} aria-hidden="true" />
+                    </span>
+                    <div>
+                      <h3 className="text-lg font-extrabold text-[#171717]">FISA Saúde na TotalPass</h3>
+                      <p className="text-xs text-[#5A655E]">Veja os detalhes da unidade.</p>
+                    </div>
+                  </div>
+                  <p className="text-sm leading-6 text-[#4E5851]">
+                    Consulte o perfil da FISA Saúde – Fisioterapia e Pilates e veja as informações disponíveis para o seu plano.
+                  </p>
+                  <ul className="mt-3 space-y-2 text-sm text-[#171717]">
+                    <li className="flex items-start gap-2.5">
+                      <CheckCircle size={17} className="mt-0.5 shrink-0 text-[#00A859]" aria-hidden="true" />
+                      <span>Confira a disponibilidade para Pilates.</span>
+                    </li>
+                    <li className="flex items-start gap-2.5">
+                      <CheckCircle size={17} className="mt-0.5 shrink-0 text-[#00A859]" aria-hidden="true" />
+                      <span>Consulte regras e necessidade de agendamento.</span>
+                    </li>
+                  </ul>
+                  <a
+                    href="https://totalpass.com/br/academias/fisa-saude-fisioterapia-e-pilates/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-5 inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-[#171717] px-4 py-2.5 text-center text-xs font-extrabold text-white transition hover:bg-[#00A859] hover:text-[#101010] focus:outline-none focus:ring-2 focus:ring-[#00A859] focus:ring-offset-2"
+                    aria-label="Consultar o perfil da FISA Saúde na TotalPass"
+                  >
+                    Ver perfil na TotalPass <ArrowRight size={16} aria-hidden="true" />
+                  </a>
+                </div>
+              </article>
+            </div>
+
+            <p className="mx-auto mt-5 max-w-3xl border-l-2 border-[#D8385E]/40 pl-4 text-left text-[11px] leading-5 text-[#57544D]">
+              A disponibilidade, o plano elegível e a necessidade de agendamento podem variar. Confirme as condições diretamente no aplicativo ou na página de cada plataforma.
+            </p>
+          </div>
+        </section>
+
+        {/* =========================================================
             FAIXA DESTAQUES
         ========================================================= */}
 
         <section
-          className="bg-[#009386] text-white border-y border-[#007491]"
+          className="bg-[#1B2E26] text-white border-y border-[#1B2E26]"
           aria-label="Destaques"
         >
           <div className="
@@ -1167,7 +1243,7 @@ export default function LandingPage() {
 
         <section
           id="sobre"
-          className="py-14 sm:py-18 lg:py-20"
+          className="relative overflow-hidden bg-white py-12 sm:py-14 lg:py-16"
           aria-labelledby="sobre-heading"
         >
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -1189,60 +1265,22 @@ export default function LandingPage() {
                 justify-center
               ">
 
-                <div className="
-                  relative
-                  z-10
-                  w-full
-                  max-w-md
-                  bg-white
-                  rounded-t-[180px]
-                  rounded-b-[24px]
-                  p-2
-                  shadow-xl
-                  border-4
-                  border-[#EBE5D3]
-                ">
-                  <div className="
-                    rounded-t-[170px]
-                    rounded-b-[18px]
-                    overflow-hidden
-                  ">
+                <div aria-hidden="true" className="absolute left-[8%] top-[8%] h-28 w-28 rounded-full border-[12px] border-[#DDF3E8]" />
+                <div className="relative z-10 w-full max-w-[490px]">
+                  <div className="overflow-hidden rounded-[46%_54%_48%_52%/42%_44%_56%_58%] bg-[#F7F2E9] p-2">
                     <ImageWithFallback
                       src={aboutImage}
-                      alt="Fisioterapia no Tatuapé São Paulo"
-                      className="
-                        w-full
-                        h-[380px]
-                        lg:h-[440px]
-                        object-cover
-                      "
+                      alt="Atendimento de Pilates e fisioterapia na FISA Saúde"
+                      className="h-[300px] w-full rounded-[46%_54%_48%_52%/42%_44%_56%_58%] object-cover sm:h-[350px] lg:h-[390px]"
                       loading="lazy"
                     />
                   </div>
+                  <div className="absolute left-0 top-[18%] max-w-[190px] rounded-lg bg-[#F07E5B] px-4 py-3 text-white shadow-lg sm:-left-3">
+                    <div className="flex items-center gap-2 text-xs font-bold"><Heart size={17} aria-hidden="true" /> Cuidado que acolhe</div>
+                    <p className="mt-1 text-[10px] leading-relaxed text-white/90">Seu bem-estar é parte do nosso movimento.</p>
+                  </div>
+                  <div aria-hidden="true" className="absolute -bottom-2 right-[8%] h-16 w-16 rounded-full border-[5px] border-[#65D4B0]/80" />
                 </div>
-
-                <div className="
-                  absolute
-                  -bottom-3
-                  left-6
-                  w-14
-                  h-14
-                  bg-[#9E2A43]
-                  rounded-tl-[20px]
-                  rounded-br-[20px]
-                  z-20
-                " />
-
-                <div className="
-                  absolute
-                  -top-3
-                  -right-3
-                  w-24
-                  h-24
-                  bg-[#009386]/20
-                  rounded-full
-                  -z-0
-                " />
 
               </div>
 
@@ -1326,11 +1364,11 @@ export default function LandingPage() {
                 <div className="
                   grid
                   sm:grid-cols-2
-                  gap-4
-                  pt-3
+                  gap-3
+                  pt-2
                 ">
 
-                  <div className="flex gap-3 items-start">
+                  <div className="flex gap-3 items-start rounded-xl bg-[#F7F4ED] p-3">
 
                     <div className="
                       w-9
@@ -1369,7 +1407,7 @@ export default function LandingPage() {
 
                   </div>
 
-                  <div className="flex gap-3 items-start">
+                  <div className="flex gap-3 items-start rounded-xl bg-[#F7F4ED] p-3">
 
                     <div className="
                       w-9
@@ -1408,7 +1446,7 @@ export default function LandingPage() {
 
                   </div>
 
-                  <div className="flex gap-3 items-start">
+                  <div className="flex gap-3 items-start rounded-xl bg-[#F7F4ED] p-3">
 
                     <div className="
                       w-9
@@ -1447,7 +1485,7 @@ export default function LandingPage() {
 
                   </div>
 
-                  <div className="flex gap-3 items-start">
+                  <div className="flex gap-3 items-start rounded-xl bg-[#F7F4ED] p-3">
 
                     <div className="
                       w-9
@@ -1531,16 +1569,18 @@ export default function LandingPage() {
         <section
           id="servicos"
           className="
-            py-14
-            sm:py-18
-            lg:py-20
-            bg-[#EFEAD9]/60
+            relative
+            overflow-hidden
+            py-12 sm:py-14 lg:py-16
+            bg-white
             border-y
             border-[#E3DEC9]
           "
           aria-labelledby="servicos-heading"
         >
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div aria-hidden="true" className="pointer-events-none absolute -right-24 top-12 h-64 w-64 rounded-full border-[28px] border-[#FF6954]/[0.07]" />
+          <div aria-hidden="true" className="pointer-events-none absolute -left-20 bottom-8 h-44 w-44 rounded-full border-[20px] border-[#009386]/[0.07]" />
+          <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
             <div className="
               text-center
@@ -1553,7 +1593,7 @@ export default function LandingPage() {
                 inline-flex
                 items-center
                 gap-1.5
-                bg-[#009386]/15
+                bg-[#009386]/10
                 text-[#007491]
                 px-3.5
                 py-1
@@ -1593,11 +1633,9 @@ export default function LandingPage() {
                 text-[#56635C]
                 leading-relaxed
               ">
-                Atendimento personalizado com foco em suas necessidades
-                individuais, promovendo saúde e bem-estar através do movimento.
-                Quem procura fisioterapia no Tatuapé SP encontra aqui avaliação
-                cuidadosa para dores, pós-operatório, lesões e prevenção,
-                perto de quem vive na Zona Leste de SP.
+                Cuidado pensado para o seu momento, seus objetivos e seu ritmo.
+                Conheça as opções de Pilates e fisioterapia e encontre com a
+                nossa equipe o acompanhamento mais adequado para você.
               </p>
 
               <div className="
@@ -1613,7 +1651,7 @@ export default function LandingPage() {
                   text-[#1B2E26]
                   mb-1.5
                 ">
-                  Quando procurar fisioterapia
+                  Não sabe por onde começar?
                 </h3>
 
                 <p className="
@@ -1622,10 +1660,9 @@ export default function LandingPage() {
                   text-[#56635C]
                   leading-relaxed
                 ">
-                  Procure fisioterapia quando a dor persiste, a mobilidade
-                  diminui ou você precisa de reabilitação segura. Nossa equipe
-                  em São Paulo - SP combina pilates terapêutico e fisioterapia
-                  para recuperar função e qualidade de vida no dia a dia.
+                  Está sentindo dor, recuperando-se de uma lesão ou quer se
+                  movimentar com mais segurança? Converse com a equipe para
+                  entender qual atendimento faz sentido para sua necessidade.
                 </p>
 
               </div>
@@ -1636,8 +1673,8 @@ export default function LandingPage() {
               grid
               sm:grid-cols-2
               lg:grid-cols-3
-              gap-6
-              sm:gap-8
+              gap-4
+              sm:gap-5
             ">
 
               {COMPANY.services.map((service, index) => {
@@ -1656,8 +1693,8 @@ export default function LandingPage() {
                     key={index}
                     className="
                       bg-white
-                      rounded-3xl
-                      p-7
+                      rounded-2xl
+                      p-5 sm:p-6
                       border
                       border-[#E3DEC9]
                       hover:border-[#009386]
@@ -1673,8 +1710,8 @@ export default function LandingPage() {
                   >
 
                     <div className={`
-                      w-14
-                      h-14
+                      w-12
+                      h-12
                       ${activeColor}
                       rounded-full
                       flex
@@ -1690,7 +1727,7 @@ export default function LandingPage() {
                     </div>
 
                     <h3 className="
-                      text-lg
+                      text-base
                       font-bold
                       text-[#1B2E26]
                       mb-2
@@ -1729,7 +1766,7 @@ export default function LandingPage() {
 
             </div>
 
-            <div className="text-center mt-10">
+            <div className="text-center mt-7">
 
               <button
                 onClick={() =>
@@ -1767,9 +1804,9 @@ export default function LandingPage() {
 
         <section
           className="
-            py-14
-            sm:py-18
-            lg:py-20
+            relative
+            overflow-hidden
+            py-12 sm:py-14 lg:py-16
             bg-[#F8F6F0]
             border-y
             border-[#E3DEC9]
@@ -1781,9 +1818,9 @@ export default function LandingPage() {
             {/* CABEÇALHO */}
 
             <div className="
-              text-center
-              max-w-3xl
-              mx-auto
+              text-left
+              max-w-4xl
+              mx-0
               mb-10
               sm:mb-12
             ">
@@ -1792,7 +1829,7 @@ export default function LandingPage() {
                 inline-flex
                 items-center
                 gap-1.5
-                bg-[#009386]/15
+                bg-[#009386]/10
                 text-[#007491]
                 px-3.5
                 py-1
@@ -2225,23 +2262,27 @@ export default function LandingPage() {
 
         <section
           id="diferenciais"
-          className="py-14 sm:py-18 lg:py-20"
+          className="relative overflow-hidden bg-[#F8F6F0] py-12 sm:py-14 lg:py-16"
           aria-labelledby="diferenciais-heading"
         >
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
             <div className="
-              text-center
-              max-w-3xl
-              mx-auto
-              mb-12
+              text-left
+              max-w-4xl
+              mx-0
+              mb-10
+              border-l-4
+              border-[#FF6954]
+              pl-5
+              sm:pl-7
             ">
 
               <div className="
                 inline-flex
                 items-center
                 gap-1.5
-                bg-[#009386]/15
+                bg-[#009386]/10
                 text-[#007491]
                 px-3.5
                 py-1
@@ -2280,7 +2321,6 @@ export default function LandingPage() {
                 sm:text-base
                 text-[#56635C]
                 max-w-3xl
-                mx-auto
                 leading-relaxed
               ">
                 O pilates na região do Tatuapé ajuda a fortalecer o corpo
@@ -2295,31 +2335,32 @@ export default function LandingPage() {
             <div className="
               grid
               md:grid-cols-2
-              lg:grid-cols-3
-              gap-6
-              sm:gap-8
+              md:gap-x-12
+              gap-x-8
+              gap-y-0
             ">
 
               <div className="
-                text-center
-                space-y-2.5
-                p-6
-                rounded-2xl
-                bg-white
-                border
-                border-[#E3DEC9]
-                shadow-sm
+                group
+                flex
+                items-start
+                gap-4
+                border-b
+                border-[#D8D2C5]
+                py-5
+                sm:py-6
+                transition-colors
               ">
                 <div className="
-                  w-12
-                  h-12
+                  w-11
+                  h-11
+                  shrink-0
                   bg-[#009386]
-                  rounded-full
+                  rounded-xl
                   flex
                   items-center
                   justify-center
                   text-white
-                  mx-auto
                   shadow-sm
                 ">
                   <CheckCircle
@@ -2328,44 +2369,49 @@ export default function LandingPage() {
                   />
                 </div>
 
-                <h3 className="
+                <div className="min-w-0 flex-1 pt-0.5">
+                  <h3 className="
                   text-base
                   font-bold
                   text-[#1B2E26]
+                  transition-colors
+                  group-hover:text-[#007491]
                 ">
-                  Melhora da Postura
-                </h3>
+                    Melhora da Postura
+                  </h3>
 
-                <p className="
+                  <p className="
                   text-xs
                   sm:text-sm
                   text-[#56635C]
                   leading-relaxed
                 ">
-                  Correção postural e alinhamento corporal adequado.
-                </p>
+                    Correção postural e alinhamento corporal adequado.
+                  </p>
+                </div>
               </div>
 
               <div className="
-                text-center
-                space-y-2.5
-                p-6
-                rounded-2xl
-                bg-white
-                border
-                border-[#E3DEC9]
-                shadow-sm
+                group
+                flex
+                items-start
+                gap-4
+                border-b
+                border-[#D8D2C5]
+                py-5
+                sm:py-6
+                transition-colors
               ">
                 <div className="
-                  w-12
-                  h-12
+                  w-11
+                  h-11
+                  shrink-0
                   bg-[#FF6954]
-                  rounded-full
+                  rounded-xl
                   flex
                   items-center
                   justify-center
                   text-white
-                  mx-auto
                   shadow-sm
                 ">
                   <Dumbbell
@@ -2374,44 +2420,49 @@ export default function LandingPage() {
                   />
                 </div>
 
-                <h3 className="
+                <div className="min-w-0 flex-1 pt-0.5">
+                  <h3 className="
                   text-base
                   font-bold
                   text-[#1B2E26]
+                  transition-colors
+                  group-hover:text-[#007491]
                 ">
-                  Fortalecimento Muscular
-                </h3>
+                    Fortalecimento Muscular
+                  </h3>
 
-                <p className="
+                  <p className="
                   text-xs
                   sm:text-sm
                   text-[#56635C]
                   leading-relaxed
                 ">
-                  Desenvolvimento equilibrado de força e resistência.
-                </p>
+                    Desenvolvimento equilibrado de força e resistência.
+                  </p>
+                </div>
               </div>
 
               <div className="
-                text-center
-                space-y-2.5
-                p-6
-                rounded-2xl
-                bg-white
-                border
-                border-[#E3DEC9]
-                shadow-sm
+                group
+                flex
+                items-start
+                gap-4
+                border-b
+                border-[#D8D2C5]
+                py-5
+                sm:py-6
+                transition-colors
               ">
                 <div className="
-                  w-12
-                  h-12
+                  w-11
+                  h-11
+                  shrink-0
                   bg-[#9E2A43]
-                  rounded-full
+                  rounded-xl
                   flex
                   items-center
                   justify-center
                   text-white
-                  mx-auto
                   shadow-sm
                 ">
                   <Activity
@@ -2420,44 +2471,49 @@ export default function LandingPage() {
                   />
                 </div>
 
-                <h3 className="
+                <div className="min-w-0 flex-1 pt-0.5">
+                  <h3 className="
                   text-base
                   font-bold
                   text-[#1B2E26]
+                  transition-colors
+                  group-hover:text-[#007491]
                 ">
-                  Alívio de Dores
-                </h3>
+                    Alívio de Dores
+                  </h3>
 
-                <p className="
+                  <p className="
                   text-xs
                   sm:text-sm
                   text-[#56635C]
                   leading-relaxed
                 ">
-                  Redução de dores crônicas e desconfortos musculares.
-                </p>
+                    Redução de dores crônicas e desconfortos musculares.
+                  </p>
+                </div>
               </div>
 
               <div className="
-                text-center
-                space-y-2.5
-                p-6
-                rounded-2xl
-                bg-white
-                border
-                border-[#E3DEC9]
-                shadow-sm
+                group
+                flex
+                items-start
+                gap-4
+                border-b
+                border-[#D8D2C5]
+                py-5
+                sm:py-6
+                transition-colors
               ">
                 <div className="
-                  w-12
-                  h-12
+                  w-11
+                  h-11
+                  shrink-0
                   bg-[#3CD099]
-                  rounded-full
+                  rounded-xl
                   flex
                   items-center
                   justify-center
                   text-[#0E2820]
-                  mx-auto
                   shadow-sm
                 ">
                   <Sparkles
@@ -2466,44 +2522,49 @@ export default function LandingPage() {
                   />
                 </div>
 
-                <h3 className="
+                <div className="min-w-0 flex-1 pt-0.5">
+                  <h3 className="
                   text-base
                   font-bold
                   text-[#1B2E26]
+                  transition-colors
+                  group-hover:text-[#007491]
                 ">
-                  Aumento da Mobilidade
-                </h3>
+                    Aumento da Mobilidade
+                  </h3>
 
-                <p className="
+                  <p className="
                   text-xs
                   sm:text-sm
                   text-[#56635C]
                   leading-relaxed
                 ">
-                  Mais flexibilidade e amplitude de movimento.
-                </p>
+                    Mais flexibilidade e amplitude de movimento.
+                  </p>
+                </div>
               </div>
 
               <div className="
-                text-center
-                space-y-2.5
-                p-6
-                rounded-2xl
-                bg-white
-                border
-                border-[#E3DEC9]
-                shadow-sm
+                group
+                flex
+                items-start
+                gap-4
+                border-b
+                border-[#D8D2C5]
+                py-5
+                sm:py-6
+                transition-colors
               ">
                 <div className="
-                  w-12
-                  h-12
+                  w-11
+                  h-11
+                  shrink-0
                   bg-[#007491]
-                  rounded-full
+                  rounded-xl
                   flex
                   items-center
                   justify-center
                   text-white
-                  mx-auto
                   shadow-sm
                 ">
                   <Shield
@@ -2512,44 +2573,49 @@ export default function LandingPage() {
                   />
                 </div>
 
-                <h3 className="
+                <div className="min-w-0 flex-1 pt-0.5">
+                  <h3 className="
                   text-base
                   font-bold
                   text-[#1B2E26]
+                  transition-colors
+                  group-hover:text-[#007491]
                 ">
-                  Prevenção de Lesões
-                </h3>
+                    Prevenção de Lesões
+                  </h3>
 
-                <p className="
+                  <p className="
                   text-xs
                   sm:text-sm
                   text-[#56635C]
                   leading-relaxed
                 ">
-                  Exercícios seguros que protegem seu corpo.
-                </p>
+                    Exercícios seguros que protegem seu corpo.
+                  </p>
+                </div>
               </div>
 
               <div className="
-                text-center
-                space-y-2.5
-                p-6
-                rounded-2xl
-                bg-white
-                border
-                border-[#E3DEC9]
-                shadow-sm
+                group
+                flex
+                items-start
+                gap-4
+                border-b
+                border-[#D8D2C5]
+                py-5
+                sm:py-6
+                transition-colors
               ">
                 <div className="
-                  w-12
-                  h-12
+                  w-11
+                  h-11
+                  shrink-0
                   bg-[#5168AB]
-                  rounded-full
+                  rounded-xl
                   flex
                   items-center
                   justify-center
                   text-white
-                  mx-auto
                   shadow-sm
                 ">
                   <Heart
@@ -2558,22 +2624,26 @@ export default function LandingPage() {
                   />
                 </div>
 
-                <h3 className="
+                <div className="min-w-0 flex-1 pt-0.5">
+                  <h3 className="
                   text-base
                   font-bold
                   text-[#1B2E26]
+                  transition-colors
+                  group-hover:text-[#007491]
                 ">
-                  Mais Qualidade de Vida
-                </h3>
+                    Mais Qualidade de Vida
+                  </h3>
 
-                <p className="
+                  <p className="
                   text-xs
                   sm:text-sm
                   text-[#56635C]
                   leading-relaxed
                 ">
-                  Bem-estar físico e mental no dia a dia.
-                </p>
+                    Bem-estar físico e mental no dia a dia.
+                  </p>
+                </div>
               </div>
 
             </div>
@@ -2582,392 +2652,186 @@ export default function LandingPage() {
         </section>
 
         {/* =========================================================
-            FAQ
+            FAQ — DÚVIDAS FREQUENTES
         ========================================================= */}
 
         <section
           id="faq"
-          className="
-            py-14
-            sm:py-18
-            bg-[#EFEAD9]/60
-            border-y
-            border-[#E3DEC9]
-          "
+          className="relative isolate overflow-hidden border-y border-[#E3DEC9] bg-[#EEF0F4] py-12 sm:py-16 lg:py-20"
           aria-labelledby="faq-heading"
         >
-          <div className="
-            max-w-3xl
-            mx-auto
-            px-4
-            sm:px-6
-            lg:px-8
-          ">
+          {/* Círculos decorativos suaves para conectar visualmente as seções */}
+          <div aria-hidden="true" className="pointer-events-none absolute -left-24 top-8 h-64 w-64 rounded-full border-[28px] border-[#009386]/[0.07]" />
+          <div aria-hidden="true" className="pointer-events-none absolute -right-20 bottom-[-5rem] h-72 w-72 rounded-full border-[34px] border-[#FF6954]/[0.08]" />
 
-            <div className="
-              text-center
-              mb-8
-            ">
+          <div className="relative mx-auto grid max-w-6xl gap-8 px-4 sm:px-6 lg:grid-cols-[0.78fr_1.22fr] lg:gap-14 lg:px-8">
+            {/* Coluna de apresentação e contato */}
+            <div className="flex flex-col items-start justify-between gap-8 lg:py-3">
+              <div>
+                <span className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#009386]/15 bg-white/80 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-[#00796F]">
+                  <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-[#FF6954]" />
+                  Dúvidas frequentes
+                </span>
+                <h2
+                  id="faq-heading"
+                  className="max-w-sm text-3xl font-extrabold leading-[1.08] tracking-tight text-[#1B2E26] sm:text-4xl"
+                >
+                  Como podemos <span className="text-[#009386]">ajudar?</span>
+                </h2>
+                <p className="mt-4 max-w-sm text-sm leading-6 text-[#56635C] sm:text-base">
+                  Reunimos as principais informações para você conhecer a FISA Saúde e se preparar para o seu atendimento.
+                </p>
+              </div>
 
-              <h2
-                id="faq-heading"
-                className="
-                  text-2xl
-                  sm:text-3xl
-                  font-extrabold
-                  text-[#1B2E26]
-                  mb-2
-                "
-              >
-                Dúvidas frequentes
-              </h2>
-
-              <p className="
-                text-xs
-                sm:text-sm
-                text-[#56635C]
-              ">
-                Respostas rápidas sobre pilates no Tatuapé,
-                fisioterapia e agendamento.
-              </p>
-
+              <div className="w-full rounded-2xl border border-white bg-white/75 p-5 shadow-sm sm:max-w-sm sm:p-6">
+                <div className="flex items-start gap-3">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#FFF0E9] text-[#E8533E]">
+                    <Phone size={18} aria-hidden="true" />
+                  </span>
+                  <div>
+                    <h3 className="text-sm font-bold text-[#1B2E26]">Ainda ficou com alguma dúvida?</h3>
+                    <p className="mt-1 text-xs leading-5 text-[#56635C]">
+                      Nossa equipe pode orientar você sobre horários, atendimentos e agendamento.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleWhatsAppClick('Olá! Tenho uma dúvida sobre os atendimentos da Fisa Saúde.')}
+                  className="mt-4 inline-flex min-h-10 items-center justify-center gap-2 rounded-full bg-[#FF6954] px-5 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-[#E8533E] focus:outline-none focus:ring-2 focus:ring-[#FF6954] focus:ring-offset-2"
+                >
+                  Fale com a nossa equipe <ArrowRight size={15} aria-hidden="true" />
+                </button>
+              </div>
             </div>
 
-            <Accordion
-              type="single"
-              collapsible
-              className="
-                w-full
-                text-left
-                bg-white
-                rounded-2xl
-                border
-                border-[#E3DEC9]
-                p-3.5
-                sm:p-5
-                shadow-sm
-              "
-            >
+            {/* Lista de perguntas */}
+            <div className="rounded-[1.5rem] border border-white/80 bg-white p-3 shadow-[0_20px_60px_rgba(27,46,38,0.07)] sm:rounded-[1.75rem] sm:p-5 lg:p-6">
+              <Accordion type="single" collapsible className="w-full">
+                <AccordionItem value="onde" className="mb-2 overflow-hidden rounded-xl border-0 bg-[#F7F7F9] px-3 sm:px-4">
+                  <AccordionTrigger className="gap-3 py-4 text-left text-[13px] font-semibold text-[#1B2E26] hover:no-underline hover:text-[#009386] sm:text-sm [&>svg]:h-4 [&>svg]:w-4">
+                    <span className="flex min-w-0 flex-1 items-center gap-3">
+                      <span className="shrink-0 font-medium tabular-nums text-[#8B8B9B]">01</span>
+                      <span>Onde fica a clínica de pilates no Tatuapé?</span>
+                    </span>
+                  </AccordionTrigger>
+                  <AccordionContent className="pb-4 pl-9 text-xs leading-6 text-[#626270] sm:text-sm">
+                    Na Rua Itapura, 1182, Tatuapé, Zona Leste de São Paulo. Abra o perfil no{' '}
+                    <a href={COMPANY.maps.profileUrl} target="_blank" rel="noopener noreferrer" className="font-semibold text-[#00877D] underline-offset-4 hover:underline">Google Maps</a>
+                    {' '}para traçar a rota.
+                  </AccordionContent>
+                </AccordionItem>
 
-              <AccordionItem
-                value="onde"
-                className="border-b border-[#E3DEC9]"
-              >
-                <AccordionTrigger className="
-                  text-sm
-                  sm:text-base
-                  font-semibold
-                  text-[#1B2E26]
-                  hover:text-[#009386]
-                ">
-                  Onde fica a clínica de pilates no Tatuapé?
-                </AccordionTrigger>
+                <AccordionItem value="experimental" className="mb-2 overflow-hidden rounded-xl border-0 bg-[#F7F7F9] px-3 sm:px-4">
+                  <AccordionTrigger className="gap-3 py-4 text-left text-[13px] font-semibold text-[#1B2E26] hover:no-underline hover:text-[#009386] sm:text-sm [&>svg]:h-4 [&>svg]:w-4">
+                    <span className="flex min-w-0 flex-1 items-center gap-3">
+                      <span className="shrink-0 font-medium tabular-nums text-[#8B8B9B]">02</span>
+                      <span>Vocês têm aula experimental de pilates?</span>
+                    </span>
+                  </AccordionTrigger>
+                  <AccordionContent className="pb-4 pl-9 text-xs leading-6 text-[#626270] sm:text-sm">
+                    Sim! Chame a equipe pelo WhatsApp para consultar os horários e combinar sua aula experimental.
+                  </AccordionContent>
+                </AccordionItem>
 
-                <AccordionContent className="
-                  text-[#56635C]
-                  text-xs
-                  sm:text-sm
-                  leading-relaxed
-                ">
-                  Na Rua Itapura, 1182, Tatuapé, Zona Leste de São Paulo.
-                  Abra o perfil no{' '}
+                <AccordionItem value="convenio" className="mb-2 overflow-hidden rounded-xl border-0 bg-[#F7F7F9] px-3 sm:px-4">
+                  <AccordionTrigger className="gap-3 py-4 text-left text-[13px] font-semibold text-[#1B2E26] hover:no-underline hover:text-[#009386] sm:text-sm [&>svg]:h-4 [&>svg]:w-4">
+                    <span className="flex min-w-0 flex-1 items-center gap-3">
+                      <span className="shrink-0 font-medium tabular-nums text-[#8B8B9B]">03</span>
+                      <span>A Fisa Saúde atende convênio?</span>
+                    </span>
+                  </AccordionTrigger>
+                  <AccordionContent className="pb-4 pl-9 text-xs leading-6 text-[#626270] sm:text-sm">
+                    A FISA também está listada no Wellhub e na TotalPass. A disponibilidade depende das regras de cada plataforma; confira os detalhes nos perfis ou fale com a recepção pelo WhatsApp.
+                  </AccordionContent>
+                </AccordionItem>
 
-                  <a
-                    href={COMPANY.maps.profileUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="
-                      text-[#009386]
-                      font-semibold
-                      hover:underline
-                    "
-                  >
-                    Google Maps
-                  </a>
+                <AccordionItem value="valor" className="mb-2 overflow-hidden rounded-xl border-0 bg-[#F7F7F9] px-3 sm:px-4">
+                  <AccordionTrigger className="gap-3 py-4 text-left text-[13px] font-semibold text-[#1B2E26] hover:no-underline hover:text-[#009386] sm:text-sm [&>svg]:h-4 [&>svg]:w-4">
+                    <span className="flex min-w-0 flex-1 items-center gap-3">
+                      <span className="shrink-0 font-medium tabular-nums text-[#8B8B9B]">04</span>
+                      <span>Qual o valor do pilates e da fisioterapia?</span>
+                    </span>
+                  </AccordionTrigger>
+                  <AccordionContent className="pb-4 pl-9 text-xs leading-6 text-[#626270] sm:text-sm">
+                    Os valores variam conforme o atendimento e a frequência. Envie uma mensagem para receber as opções atualizadas.
+                  </AccordionContent>
+                </AccordionItem>
 
-                  {' '}para traçar a rota.
-                </AccordionContent>
-              </AccordionItem>
+                <AccordionItem value="fisio" className="mb-2 overflow-hidden rounded-xl border-0 bg-[#F7F7F9] px-3 sm:px-4">
+                  <AccordionTrigger className="gap-3 py-4 text-left text-[13px] font-semibold text-[#1B2E26] hover:no-underline hover:text-[#009386] sm:text-sm [&>svg]:h-4 [&>svg]:w-4">
+                    <span className="flex min-w-0 flex-1 items-center gap-3">
+                      <span className="shrink-0 font-medium tabular-nums text-[#8B8B9B]">05</span>
+                      <span>Fazem fisioterapia na Zona Leste?</span>
+                    </span>
+                  </AccordionTrigger>
+                  <AccordionContent className="pb-4 pl-9 text-xs leading-6 text-[#626270] sm:text-sm">
+                    Sim. Atendemos fisioterapia e reabilitação no Tatuapé, com foco em dores, postura, pós-operatório e retorno seguro ao movimento.
+                  </AccordionContent>
+                </AccordionItem>
 
-              <AccordionItem
-                value="experimental"
-                className="border-b border-[#E3DEC9]"
-              >
-                <AccordionTrigger className="
-                  text-sm
-                  sm:text-base
-                  font-semibold
-                  text-[#1B2E26]
-                  hover:text-[#009386]
-                ">
-                  Vocês têm aula experimental de pilates?
-                </AccordionTrigger>
+                <AccordionItem value="avaliacao" className="mb-2 overflow-hidden rounded-xl border-0 bg-[#F7F7F9] px-3 sm:px-4">
+                  <AccordionTrigger className="gap-3 py-4 text-left text-[13px] font-semibold text-[#1B2E26] hover:no-underline hover:text-[#009386] sm:text-sm [&>svg]:h-4 [&>svg]:w-4">
+                    <span className="flex min-w-0 flex-1 items-center gap-3">
+                      <span className="shrink-0 font-medium tabular-nums text-[#8B8B9B]">06</span>
+                      <span>Como agendar uma avaliação de fisioterapia?</span>
+                    </span>
+                  </AccordionTrigger>
+                  <AccordionContent className="pb-4 pl-9 text-xs leading-6 text-[#626270] sm:text-sm">
+                    Clique em “Consultar horários” ou envie uma mensagem pelo WhatsApp. A equipe orienta você sobre os próximos horários disponíveis.
+                  </AccordionContent>
+                </AccordionItem>
 
-                <AccordionContent className="
-                  text-[#56635C]
-                  text-xs
-                  sm:text-sm
-                  leading-relaxed
-                ">
-                  Sim. Agende pelo WhatsApp uma aula experimental para
-                  conhecer o espaço, o método e a equipe antes de iniciar
-                  o plano.
-                </AccordionContent>
-              </AccordionItem>
-
-              <AccordionItem
-                value="convenio"
-                className="border-b border-[#E3DEC9]"
-              >
-                <AccordionTrigger className="
-                  text-sm
-                  sm:text-base
-                  font-semibold
-                  text-[#1B2E26]
-                  hover:text-[#009386]
-                ">
-                  A Fisa Saúde atende convênio?
-                </AccordionTrigger>
-
-                <AccordionContent className="
-                  text-[#56635C]
-                  text-xs
-                  sm:text-sm
-                  leading-relaxed
-                ">
-                  O atendimento é particular. Fale com a recepção no
-                  WhatsApp para confirmar valores e formas de pagamento.
-                </AccordionContent>
-              </AccordionItem>
-
-              <AccordionItem
-                value="valor"
-                className="border-b border-[#E3DEC9]"
-              >
-                <AccordionTrigger className="
-                  text-sm
-                  sm:text-base
-                  font-semibold
-                  text-[#1B2E26]
-                  hover:text-[#009386]
-                ">
-                  Qual o valor do pilates e da fisioterapia?
-                </AccordionTrigger>
-
-                <AccordionContent className="
-                  text-[#56635C]
-                  text-xs
-                  sm:text-sm
-                  leading-relaxed
-                ">
-                  Os valores dependem da frequência e do tipo de sessão.
-                  Peça a tabela atualizada no WhatsApp, que é o jeito mais
-                  rápido de receber a informação certa.
-                </AccordionContent>
-              </AccordionItem>
-
-              <AccordionItem
-                value="fisio"
-                className="border-b border-[#E3DEC9]"
-              >
-                <AccordionTrigger className="
-                  text-sm
-                  sm:text-base
-                  font-semibold
-                  text-[#1B2E26]
-                  hover:text-[#009386]
-                ">
-                  Fazem fisioterapia na Zona Leste?
-                </AccordionTrigger>
-
-                <AccordionContent className="
-                  text-[#56635C]
-                  text-xs
-                  sm:text-sm
-                  leading-relaxed
-                ">
-                  Sim. Atendemos fisioterapia e reabilitação no Tatuapé,
-                  com foco em dores, postura, pós-operatório e retorno
-                  seguro ao movimento.
-                </AccordionContent>
-              </AccordionItem>
-
-              <AccordionItem
-                value="avaliacao"
-                className="border-b border-[#E3DEC9]"
-              >
-                <AccordionTrigger className="
-                  text-sm
-                  sm:text-base
-                  font-semibold
-                  text-[#1B2E26]
-                  hover:text-[#009386]
-                ">
-                  Como agendar uma avaliação de fisioterapia?
-                </AccordionTrigger>
-
-                <AccordionContent className="
-                  text-[#56635C]
-                  text-xs
-                  sm:text-sm
-                  leading-relaxed
-                ">
-                  Use o botão Agendar avaliação ou mande uma mensagem
-                  no WhatsApp. Indicamos o melhor horário na clínica.
-                </AccordionContent>
-              </AccordionItem>
-
-              <AccordionItem
-                value="horario"
-                className="border-b-0"
-              >
-                <AccordionTrigger className="
-                  text-sm
-                  sm:text-base
-                  font-semibold
-                  text-[#1B2E26]
-                  hover:text-[#009386]
-                ">
-                  Qual o horário de atendimento?
-                </AccordionTrigger>
-
-                <AccordionContent className="
-                  text-[#56635C]
-                  text-xs
-                  sm:text-sm
-                  leading-relaxed
-                ">
-                  {COMPANY.schedule.weekdays}.{' '}
-                  {COMPANY.schedule.saturday}. Domingo fechado.
-                </AccordionContent>
-              </AccordionItem>
-
-            </Accordion>
-
+                <AccordionItem value="horario" className="overflow-hidden rounded-xl border-0 bg-[#F7F7F9] px-3 sm:px-4">
+                  <AccordionTrigger className="gap-3 py-4 text-left text-[13px] font-semibold text-[#1B2E26] hover:no-underline hover:text-[#009386] sm:text-sm [&>svg]:h-4 [&>svg]:w-4">
+                    <span className="flex min-w-0 flex-1 items-center gap-3">
+                      <span className="shrink-0 font-medium tabular-nums text-[#8B8B9B]">07</span>
+                      <span>Qual o horário de atendimento?</span>
+                    </span>
+                  </AccordionTrigger>
+                  <AccordionContent className="pb-4 pl-9 text-xs leading-6 text-[#626270] sm:text-sm">
+                    {COMPANY.schedule.weekdays}.{' '}{COMPANY.schedule.saturday}. Domingo fechado.
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
+            </div>
           </div>
         </section>
 
         {/* =========================================================
-            CTA
+            CTA — AGENDAMENTO
         ========================================================= */}
 
-        <section className="
-          py-14
-          sm:py-18
-          bg-[#F8F6F0]
-        ">
-          <div className="
-            max-w-5xl
-            mx-auto
-            px-4
-            sm:px-6
-            lg:px-8
-          ">
-
-            <div className="
-              bg-[#FF6954]
-              rounded-[36px]
-              p-6
-              sm:p-12
-              text-center
-              text-white
-              relative
-              overflow-hidden
-              shadow-xl
-            ">
-
-              <div className="
-                absolute
-                -top-12
-                -left-12
-                w-32
-                h-32
-                bg-white/10
-                rounded-full
-              " />
-
-              <div className="
-                absolute
-                -bottom-10
-                -right-10
-                w-40
-                h-40
-                bg-[#9E2A43]/30
-                rounded-tl-[50px]
-              " />
-
-              <h2 className="
-                text-2xl
-                sm:text-3xl
-                lg:text-4xl
-                font-extrabold
-                mb-3
-                relative
-                z-10
-              ">
-                Agende sua aula experimental
-              </h2>
-
-              <p className="
-                text-sm
-                sm:text-base
-                text-white/95
-                mb-6
-                max-w-xl
-                mx-auto
-                leading-relaxed
-                relative
-                z-10
-              ">
-                Comece no Tatuapé com pilates ou avaliação de fisioterapia.
-                A equipe da Fisa Saúde responde no WhatsApp.
-              </p>
-
+        <section className="bg-[#1B2E26] px-4 py-8 sm:px-6 sm:py-10">
+          <div className="mx-auto max-w-6xl">
+            <div className="relative overflow-hidden rounded-2xl bg-[#FF6954] px-5 py-6 text-white shadow-lg sm:px-8 sm:py-7 lg:flex lg:items-center lg:justify-between lg:gap-8">
+              <div aria-hidden="true" className="absolute -right-8 -top-10 h-32 w-32 rounded-full border-[18px] border-white/10" />
+              <div className="relative z-10 max-w-2xl">
+                <span className="mb-2 inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.16em] text-white/90">
+                  <Heart size={13} aria-hidden="true" />
+                  Seu próximo passo começa aqui
+                </span>
+                <h2 className="text-2xl font-extrabold leading-tight tracking-tight sm:text-3xl">
+                  Vamos cuidar do seu movimento?
+                </h2>
+                <p className="mt-2 max-w-xl text-sm leading-6 text-white/95">
+                  Tire suas dúvidas com a equipe e veja os horários disponíveis para uma aula experimental.
+                </p>
+              </div>
               <button
                 onClick={() =>
                   handleWhatsAppClick(
-                    'Olá! Quero agendar uma aula experimental de pilates na Fisa Saúde, no Tatuapé.'
+                    'Olá! Quero saber os horários disponíveis para uma aula experimental de Pilates na FISA Saúde, no Tatuapé.'
                   )
                 }
-                className="
-                  relative
-                  z-10
-                  bg-white
-                  hover:bg-[#F8F6F0]
-                  text-[#1B2E26]
-                  px-7
-                  py-3
-                  rounded-full
-                  uppercase
-                  tracking-wider
-                  text-xs
-                  font-extrabold
-                  transition-all
-                  shadow-md
-                  hover:scale-105
-                  inline-flex
-                  items-center
-                  gap-2
-                "
-                aria-label="Agendar aula experimental pelo WhatsApp"
+                className="relative z-10 mt-5 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-white px-5 py-3 text-xs font-extrabold text-[#1B2E26] shadow-sm transition hover:bg-[#F8F6F0] focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-[#FF6954] sm:w-auto lg:mt-0 lg:shrink-0"
+                aria-label="Consultar horários para aula experimental pelo WhatsApp"
               >
-                <Phone
-                  size={15}
-                  aria-hidden="true"
-                />
-
-                <span>
-                  Falar no WhatsApp
-                </span>
-
-                <ArrowRight
-                  size={15}
-                  aria-hidden="true"
-                />
+                <Phone size={15} aria-hidden="true" />
+                Consultar horários
+                <ArrowRight size={15} aria-hidden="true" />
               </button>
-
             </div>
-
           </div>
         </section>
 
@@ -2978,29 +2842,33 @@ export default function LandingPage() {
         <section
           id="localizacao"
           className="
-            py-14
-            sm:py-18
-            lg:py-20
-            bg-white
+            relative
+            overflow-hidden
+            py-10
+            sm:py-12
+            lg:py-14
+            bg-[#EAF3EF]
             border-t
-            border-[#E3DEC9]
+            border-[#D5E3DB]
           "
           aria-labelledby="contato-heading"
         >
+          <div aria-hidden="true" className="pointer-events-none absolute -right-20 top-6 h-56 w-56 rounded-full border-[24px] border-[#009386]/[0.08]" />
+          <div aria-hidden="true" className="pointer-events-none absolute -left-24 bottom-[-4rem] h-64 w-64 rounded-full border-[30px] border-[#FF6954]/[0.07]" />
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
             <div className="
-              text-center
+              text-left
               max-w-3xl
-              mx-auto
-              mb-12
+              mx-0
+              mb-7
             ">
 
               <div className="
                 inline-flex
                 items-center
                 gap-1.5
-                bg-[#009386]/15
+                bg-[#009386]/10
                 text-[#007491]
                 px-3.5
                 py-1
@@ -3047,21 +2915,21 @@ export default function LandingPage() {
 
             <div className="
               grid
-              lg:grid-cols-2
-              gap-8
-              lg:gap-12
-              items-center
+              lg:grid-cols-[0.85fr_1.15fr]
+              gap-5
+              lg:gap-7
+              items-stretch
             ">
 
               {/* INFORMAÇÕES */}
 
               <div className="
                 bg-[#F8F6F0]
-                rounded-3xl
-                p-7
+                rounded-2xl
+                p-5 sm:p-6
                 border
                 border-[#E3DEC9]
-                space-y-5
+                space-y-4
               ">
 
                 <h3 className="
@@ -3260,6 +3128,17 @@ export default function LandingPage() {
 
                 </div>
 
+                <a
+                  href={COMPANY.maps.profileUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-full bg-[#1B2E26] px-4 py-2.5 text-xs font-bold text-white transition hover:bg-[#009386] focus:outline-none focus:ring-2 focus:ring-[#009386] focus:ring-offset-2"
+                >
+                  <MapPin size={15} aria-hidden="true" />
+                  Traçar rota no Google Maps
+                  <ArrowRight size={14} aria-hidden="true" />
+                </a>
+
               </div>
 
               {/* MAPA */}
@@ -3271,7 +3150,8 @@ export default function LandingPage() {
                 shadow-lg
                 border
                 border-[#E3DEC9]
-                h-[400px]
+                h-[280px] sm:h-[320px] lg:h-full
+                min-h-[280px]
                 bg-[#EFEAD9]
               ">
 
