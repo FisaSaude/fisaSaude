@@ -14,3 +14,5 @@ node_modules/
 # Planejamento / notas locais (nunca commitar; não usar git add -f)
 CHECKLIST_EXECUTIVO.md
 AJUSTES_DER_REDIS.md
+
+.idea/
