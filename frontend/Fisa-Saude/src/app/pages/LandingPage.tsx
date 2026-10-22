@@ -335,7 +335,7 @@ export default function LandingPage() {
                 mr-8
               "
             >
-              <FisaLogo size="sm" />
+              <FisaLogo size="sm" tone={isDarkMode ? 'onDark' : 'onLight'} />
             </a>
 
             {/* =====================================================
