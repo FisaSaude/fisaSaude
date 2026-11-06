@@ -7,9 +7,10 @@ node_modules/
 # Logs
 *.log
 
-# Markdown só no repositório: README oficial da equipe
+# Markdown só no repositório: README oficial da equipe + AGENTS.md
 *.md
 !README.md
+!AGENTS.md
 
 # Planejamento / notas locais (nunca commitar; não usar git add -f)
 CHECKLIST_EXECUTIVO.md
