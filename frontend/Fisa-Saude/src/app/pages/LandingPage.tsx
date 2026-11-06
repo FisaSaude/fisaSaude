@@ -29,6 +29,7 @@ import { useState, useEffect } from 'react';
 import { ImageWithFallback } from '../components/figma/ImageWithFallback';
 import { FisaLogo } from '../components/FisaLogo';
 import { COMPANY } from '../constants/company';
+import { useTheme } from '../contexts/ThemeContext';
 
 import {
   Dialog,
@@ -53,18 +54,10 @@ import aboutImage from '../../imports/pilates_03.png';
 
 export default function LandingPage() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    return window.localStorage.getItem('fisa-theme') === 'dark';
-  });
+  const { theme, toggleTheme } = useTheme();
+  const isDarkMode = theme === 'dark';
   const [isoOpen, setIsoOpen] = useState(false);
   const [activeSection, setActiveSection] = useState<string>('hero');
-
-  useEffect(() => {
-    window.localStorage.setItem('fisa-theme', isDarkMode ? 'dark' : 'light');
-  }, [isDarkMode]);
-
-  const toggleTheme = () => setIsDarkMode((current) => !current);
 
   const navLinks = [
     { id: 'hero', label: 'Início' },
@@ -188,6 +181,7 @@ export default function LandingPage() {
         #fisa-landing.fisa-theme-dark [class~="bg-[#EEF0F4]"],
         #fisa-landing.fisa-theme-dark [class~="bg-[#F7F4ED]"],
         #fisa-landing.fisa-theme-dark [class~="bg-[#F7F2E9]"],
+        #fisa-landing.fisa-theme-dark [class~="bg-[#F7F7F9]"],
         #fisa-landing.fisa-theme-dark [class~="bg-[#EBE5D3]"],
         #fisa-landing.fisa-theme-dark [class~="bg-[#E3DEC9]"] {
           background-color: var(--fisa-dark-surface) !important;
@@ -195,6 +189,10 @@ export default function LandingPage() {
         #fisa-landing.fisa-theme-dark [class~="bg-[#EBE5D3]/60"],
         #fisa-landing.fisa-theme-dark [class~="bg-[#009386]/10"],
         #fisa-landing.fisa-theme-dark [class~="bg-[#E4F5E9]"],
+        #fisa-landing.fisa-theme-dark [class~="bg-[#EAF3EF]"],
+        #fisa-landing.fisa-theme-dark [class~="bg-[#E0F7E9]"],
+        #fisa-landing.fisa-theme-dark [class~="bg-[#EFEAD9]"],
+        #fisa-landing.fisa-theme-dark [class~="bg-[#F2DCC0]"],
         #fisa-landing.fisa-theme-dark [class~="bg-[#FFF0E9]"],
         #fisa-landing.fisa-theme-dark [class~="bg-[#FCE7EE]"] {
           background-color: var(--fisa-dark-surface-raised) !important;
@@ -204,6 +202,7 @@ export default function LandingPage() {
         #fisa-landing.fisa-theme-dark [class~="text-[#292820]"],
         #fisa-landing.fisa-theme-dark [class~="text-[#171717]"],
         #fisa-landing.fisa-theme-dark [class~="text-[#06190F]"],
+        #fisa-landing.fisa-theme-dark [class~="text-[#101010]"],
         #fisa-landing.fisa-theme-dark [class~="text-[#475E54]"] {
           color: var(--fisa-dark-text) !important;
         }
@@ -211,23 +210,65 @@ export default function LandingPage() {
         #fisa-landing.fisa-theme-dark [class~="text-[#57544D]"],
         #fisa-landing.fisa-theme-dark [class~="text-[#4E5851]"],
         #fisa-landing.fisa-theme-dark [class~="text-[#6B6B78]"],
-        #fisa-landing.fisa-theme-dark [class~="text-[#777268]"] {
+        #fisa-landing.fisa-theme-dark [class~="text-[#777268]"],
+        #fisa-landing.fisa-theme-dark [class~="text-[#A2BAAF]"],
+        #fisa-landing.fisa-theme-dark [class~="text-[#8B8B9B]"],
+        #fisa-landing.fisa-theme-dark [class~="text-[#626270]"],
+        #fisa-landing.fisa-theme-dark [class~="text-[#5A655E]"],
+        #fisa-landing.fisa-theme-dark [class~="text-[#6D8A7E]"] {
           color: var(--fisa-dark-muted) !important;
         }
         #fisa-landing.fisa-theme-dark [class~="text-[#FF6954]"],
         #fisa-landing.fisa-theme-dark [class~="text-[#E8795C]"],
+        #fisa-landing.fisa-theme-dark [class~="text-[#E8533E]"],
         #fisa-landing.fisa-theme-dark [class~="text-[#D8385E]"] {
           color: var(--fisa-dark-coral) !important;
         }
         #fisa-landing.fisa-theme-dark [class~="text-[#009386]"],
         #fisa-landing.fisa-theme-dark [class~="text-[#007491]"],
-        #fisa-landing.fisa-theme-dark [class~="text-[#268B65]"] {
+        #fisa-landing.fisa-theme-dark [class~="text-[#268B65]"],
+        #fisa-landing.fisa-theme-dark [class~="text-[#008A49]"],
+        #fisa-landing.fisa-theme-dark [class~="text-[#00877D]"],
+        #fisa-landing.fisa-theme-dark [class~="text-[#00796F]"],
+        #fisa-landing.fisa-theme-dark [class~="text-[#1D856C]"],
+        #fisa-landing.fisa-theme-dark [class~="text-[#00A859]"] {
           color: var(--fisa-dark-mint) !important;
         }
         #fisa-landing.fisa-theme-dark [class~="border-[#E3DEC9]"],
+        #fisa-landing.fisa-theme-dark [class~="border-[#D8D2C5]"],
+        #fisa-landing.fisa-theme-dark [class~="border-[#F0E7D8]"],
+        #fisa-landing.fisa-theme-dark [class~="border-[#DDF3E8]"],
+        #fisa-landing.fisa-theme-dark [class~="border-[#D5E3DB]"],
+        #fisa-landing.fisa-theme-dark [class~="border-[#E9CDA6]/70"],
+        #fisa-landing.fisa-theme-dark [class~="border-[#1A1A1A]/10"],
+        #fisa-landing.fisa-theme-dark [class~="border-[#1B2E26]"],
         #fisa-landing.fisa-theme-dark [class~="border-white"],
         #fisa-landing.fisa-theme-dark [class~="border-[#1B2E26]/15"] {
           border-color: var(--fisa-dark-border) !important;
+        }
+        #fisa-landing.fisa-theme-dark [class~="bg-[#F8F6F0]/95"] {
+          background-color: rgba(16, 27, 25, 0.95) !important;
+        }
+        #fisa-landing.fisa-theme-dark [class~="focus:bg-white"]:focus {
+          background-color: var(--fisa-dark-surface) !important;
+        }
+        #fisa-landing.fisa-theme-dark [class~="hover:bg-[#EBE5D3]"]:hover,
+        #fisa-landing.fisa-theme-dark [class~="hover:bg-[#F8F6F0]"]:hover {
+          background-color: var(--fisa-dark-surface-raised) !important;
+        }
+        #fisa-landing.fisa-theme-dark [class~="hover:text-[#1B2E26]"]:hover,
+        #fisa-landing.fisa-theme-dark [class~="focus:text-[#1B2E26]"]:focus,
+        #fisa-landing.fisa-theme-dark [class~="hover:text-[#101010]"]:hover {
+          color: var(--fisa-dark-text) !important;
+        }
+        #fisa-landing.fisa-theme-dark .group:hover [class~="group-hover:text-[#007491]"] {
+          color: var(--fisa-dark-mint) !important;
+        }
+        #fisa-landing.fisa-theme-dark [class~="hover:text-[#009386]"]:hover {
+          color: var(--fisa-dark-mint) !important;
+        }
+        #fisa-landing.fisa-theme-dark [class~="hover:text-[#FF6954]"]:hover {
+          color: var(--fisa-dark-coral) !important;
         }
         #fisa-landing.fisa-theme-dark [class~="bg-[#FF6954]"] {
           background-color: #e96f60 !important;

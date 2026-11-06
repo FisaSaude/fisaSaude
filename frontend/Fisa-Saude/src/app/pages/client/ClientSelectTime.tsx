@@ -27,25 +27,25 @@ export default function ClientSelectTime() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-teal-50">
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 dark:from-background to-teal-50 dark:to-background">
       <a href="#main-content" className="skip-to-content">
         Pular para o conteúdo principal
       </a>
 
       {/* Header */}
-      <header className="bg-white shadow-sm" role="banner">
+      <header className="bg-white dark:bg-card shadow-sm" role="banner">
         <div className="max-w-md mx-auto px-4 py-4">
           <div className="flex items-center gap-4">
             <button
               onClick={() => navigate('/agendar')}
-              className="p-3 min-h-[44px] min-w-[44px] hover:bg-gray-100 rounded-lg transition-colors focus:outline-2 focus:outline-offset-2 focus:outline-gray-900"
+              className="p-3 min-h-[44px] min-w-[44px] hover:bg-gray-100 dark:hover:bg-muted rounded-lg transition-colors focus:outline-2 focus:outline-offset-2 focus:outline-gray-900 dark:focus:outline-foreground"
               aria-label="Voltar para página anterior"
             >
-              <ArrowLeft className="text-gray-600" size={24} aria-hidden="true" />
+              <ArrowLeft className="text-gray-600 dark:text-muted-foreground" size={24} aria-hidden="true" />
             </button>
             <div>
-              <h1 className="text-xl sm:text-2xl text-gray-900 font-bold">Escolher Horário</h1>
-              <p className="text-sm text-gray-600">Selecione data e horário</p>
+              <h1 className="text-xl sm:text-2xl text-gray-900 dark:text-foreground font-bold">Escolher Horário</h1>
+              <p className="text-sm text-gray-600 dark:text-muted-foreground">Selecione data e horário</p>
             </div>
           </div>
         </div>
@@ -54,30 +54,30 @@ export default function ClientSelectTime() {
       {/* Content */}
       <main id="main-content" className="max-w-md mx-auto p-4 space-y-6">
         {/* Date Selector */}
-        <section className="bg-white rounded-2xl p-6 shadow-lg" aria-labelledby="date-selector-heading">
+        <section className="bg-white dark:bg-card rounded-2xl p-6 shadow-lg" aria-labelledby="date-selector-heading">
           <div className="flex items-center justify-between mb-6">
             <button
-              className="p-3 min-h-[44px] min-w-[44px] hover:bg-gray-100 rounded-lg transition-colors focus:outline-2 focus:outline-offset-2 focus:outline-emerald-600"
+              className="p-3 min-h-[44px] min-w-[44px] hover:bg-gray-100 dark:hover:bg-muted rounded-lg transition-colors focus:outline-2 focus:outline-offset-2 focus:outline-emerald-600 dark:focus:outline-[#3CD099]"
               aria-label="Mês anterior"
             >
-              <ChevronLeft className="text-gray-600" size={20} aria-hidden="true" />
+              <ChevronLeft className="text-gray-600 dark:text-muted-foreground" size={20} aria-hidden="true" />
             </button>
             <div className="text-center" id="date-selector-heading">
-              <div className="text-sm text-gray-600 font-medium">Abril 2026</div>
-              <div className="text-lg text-gray-900 font-semibold">Quarta-feira, 2</div>
+              <div className="text-sm text-gray-600 dark:text-muted-foreground font-medium">Abril 2026</div>
+              <div className="text-lg text-gray-900 dark:text-foreground font-semibold">Quarta-feira, 2</div>
             </div>
             <button
-              className="p-3 min-h-[44px] min-w-[44px] hover:bg-gray-100 rounded-lg transition-colors focus:outline-2 focus:outline-offset-2 focus:outline-emerald-600"
+              className="p-3 min-h-[44px] min-w-[44px] hover:bg-gray-100 dark:hover:bg-muted rounded-lg transition-colors focus:outline-2 focus:outline-offset-2 focus:outline-emerald-600 dark:focus:outline-[#3CD099]"
               aria-label="Próximo mês"
             >
-              <ChevronRight className="text-gray-600" size={20} aria-hidden="true" />
+              <ChevronRight className="text-gray-600 dark:text-muted-foreground" size={20} aria-hidden="true" />
             </button>
           </div>
 
           {/* Week Days */}
           <div role="grid" aria-label="Calendário de seleção de data" className="grid grid-cols-7 gap-2">
             {['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'].map((day, index) => (
-              <div key={index} role="columnheader" className="text-center text-sm text-gray-600 font-medium">
+              <div key={index} role="columnheader" className="text-center text-sm text-gray-600 dark:text-muted-foreground font-medium">
                 {day[0]}
               </div>
             ))}
@@ -93,8 +93,8 @@ export default function ClientSelectTime() {
                   ${day === 2
                     ? 'bg-emerald-600 text-white shadow-lg scale-105'
                     : day < 30
-                    ? 'text-gray-300 cursor-default'
-                    : 'hover:bg-emerald-50 text-gray-900 hover:scale-105 active:scale-95 focus:outline-2 focus:outline-offset-2 focus:outline-emerald-600'
+                    ? 'text-gray-300 dark:text-muted-foreground/50 cursor-default'
+                    : 'hover:bg-emerald-50 dark:hover:bg-muted text-gray-900 dark:text-foreground hover:scale-105 active:scale-95 focus:outline-2 focus:outline-offset-2 focus:outline-emerald-600 dark:focus:outline-[#3CD099]'
                   }
                 `}
                 disabled={day < 30}
@@ -106,10 +106,10 @@ export default function ClientSelectTime() {
         </section>
 
         {/* Available Slots */}
-        <section className="bg-white rounded-2xl p-6 shadow-lg" aria-labelledby="available-slots-heading">
+        <section className="bg-white dark:bg-card rounded-2xl p-6 shadow-lg" aria-labelledby="available-slots-heading">
           <div className="flex items-center gap-3 mb-4">
-            <Calendar className="text-emerald-600" size={20} aria-hidden="true" />
-            <h2 id="available-slots-heading" className="text-lg text-gray-900 font-bold">Horários Disponíveis</h2>
+            <Calendar className="text-emerald-600 dark:text-[#3CD099]" size={20} aria-hidden="true" />
+            <h2 id="available-slots-heading" className="text-lg text-gray-900 dark:text-foreground font-bold">Horários Disponíveis</h2>
           </div>
 
           <div className="space-y-3" role="radiogroup" aria-labelledby="available-slots-heading">
@@ -124,10 +124,10 @@ export default function ClientSelectTime() {
                 className={`
                   w-full p-4 min-h-[72px] rounded-lg border-2 transition-all text-left
                   ${!slot.available
-                    ? 'border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed opacity-60'
+                    ? 'border-gray-200 dark:border-border bg-gray-50 dark:bg-muted text-gray-400 dark:text-muted-foreground cursor-not-allowed opacity-60'
                     : selectedTime === slot.time
-                    ? 'border-emerald-600 bg-emerald-50 text-emerald-900 shadow-md scale-105'
-                    : 'border-gray-200 hover:border-emerald-300 text-gray-900 hover:shadow-sm hover:scale-102 active:scale-95 focus:outline-2 focus:outline-offset-2 focus:outline-emerald-600'
+                    ? 'border-emerald-600 bg-emerald-50 dark:bg-muted text-emerald-900 dark:text-[#3CD099] shadow-md scale-105'
+                    : 'border-gray-200 dark:border-border hover:border-emerald-300 dark:hover:border-[#3CD099]/40 text-gray-900 dark:text-foreground hover:shadow-sm hover:scale-102 active:scale-95 focus:outline-2 focus:outline-offset-2 focus:outline-emerald-600 dark:focus:outline-[#3CD099]'
                   }
                 `}
               >
@@ -136,29 +136,29 @@ export default function ClientSelectTime() {
                     <div className={`
                       w-10 h-10 rounded-lg flex items-center justify-center
                       ${!slot.available 
-                        ? 'bg-gray-200' 
+                        ? 'bg-gray-200 dark:bg-muted' 
                         : selectedTime === slot.time
                         ? 'bg-emerald-600'
-                        : 'bg-emerald-100'
+                        : 'bg-emerald-100 dark:bg-[#3CD099]/15'
                       }
                     `}>
                       <span className={`
                         text-sm
                         ${!slot.available 
-                          ? 'text-gray-400' 
+                          ? 'text-gray-400 dark:text-muted-foreground' 
                           : selectedTime === slot.time
                           ? 'text-white'
-                          : 'text-emerald-600'
+                          : 'text-emerald-600 dark:text-[#3CD099]'
                         }
                       `}>
                         {slot.time}
                       </span>
                     </div>
                     <div>
-                      <div className={slot.available ? 'text-gray-900' : 'text-gray-400'}>
+                      <div className={slot.available ? 'text-gray-900 dark:text-foreground' : 'text-gray-400 dark:text-muted-foreground'}>
                         {slot.time}
                       </div>
-                      <div className="text-xs text-gray-500">
+                      <div className="text-xs text-gray-500 dark:text-muted-foreground">
                         {slot.available ? '50 minutos' : 'Indisponível'}
                       </div>
                     </div>
@@ -182,8 +182,8 @@ export default function ClientSelectTime() {
           className={`
             w-full px-8 py-4 min-h-[52px] rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 font-medium text-lg
             ${selectedTime
-              ? 'bg-emerald-600 hover:bg-emerald-700 text-white hover:shadow-xl hover:scale-105 active:scale-95 focus:outline-2 focus:outline-offset-2 focus:outline-emerald-600'
-              : 'bg-gray-300 text-gray-500 cursor-not-allowed opacity-60'
+              ? 'bg-emerald-600 hover:bg-emerald-700 text-white hover:shadow-xl hover:scale-105 active:scale-95 focus:outline-2 focus:outline-offset-2 focus:outline-emerald-600 dark:focus:outline-[#3CD099]'
+              : 'bg-gray-300 dark:bg-muted text-gray-500 dark:text-muted-foreground cursor-not-allowed opacity-60'
             }
           `}
           aria-label={selectedTime ? `Continuar com horário ${selectedTime}` : 'Selecione um horário para continuar'}

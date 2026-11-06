@@ -5,7 +5,10 @@ import {
   ArrowUpDown,
   ChevronRight,
   X,
-  Phone
+  Phone,
+  ChevronLeft,
+  ChevronRight as ChevronRightPage,
+  AlertCircle
 } from 'lucide-react';
 import React, { useState, useEffect, useMemo } from 'react';
 import { api } from '../../services/api';
@@ -37,6 +40,10 @@ export default function Clients() {
   const [selectedClient, setSelectedClient] = useState<ClienteResponseDto | null>(null);
   const [showNewClientModal, setShowNewClientModal] = useState(false);
   const [sortAsc, setSortAsc] = useState(true);
+  const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
+  const [total, setTotal] = useState(0);
+  const [errorMessage, setErrorMessage] = useState('');
 
   const [formData, setFormData] = useState({
     nome: '',
@@ -49,20 +56,24 @@ export default function Clients() {
   const carregarClientes = async () => {
     try {
       setLoading(true);
+      setErrorMessage('');
       const res = await api.get('/clientes');
       const data = Array.isArray(res.data) ? res.data : res.data?.content || [];
       setClients(data);
+      setTotal(Array.isArray(res.data) ? data.length : res.data?.totalElements ?? data.length);
     } catch (err) {
       console.error('Erro ao buscar clientes:', err);
       setClients([]);
+      setTotal(0);
+      setErrorMessage('Não foi possível carregar os alunos. Tente novamente.');
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    carregarClientes();
-  }, []);
+  useEffect(() => { carregarClientes(); }, []);
+
+  useEffect(() => { setPage(0); }, [searchTerm, sortAsc, pageSize]);
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let val = e.target.value.replace(/\D/g, '');
@@ -83,7 +94,7 @@ export default function Clients() {
     const telefoneNumeros = formData.telefone.replace(/\D/g, '');
 
     if (!nomeLimpo || telefoneNumeros.length < 10) {
-      alert('Preencha os dados do paciente corretamente com DDD.');
+      alert('Preencha os dados do aluno corretamente com DDD.');
       return;
     }
 
@@ -107,37 +118,34 @@ export default function Clients() {
         fotoLink: ''
       });
       await carregarClientes();
-      alert('Paciente cadastrado com sucesso!');
+      alert('Aluno cadastrado com sucesso!');
     } catch (err: any) {
-      alert('Erro ao salvar paciente no sistema.');
+      alert('Erro ao salvar aluno no sistema.');
     }
   };
 
-  const filteredClients = useMemo(() => {
-    return clients
-      .filter((c) =>
-        c.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        c.telefone?.includes(searchTerm)
-      )
-      .sort((a, b) => {
-        return sortAsc ? a.nome.localeCompare(b.nome) : b.nome.localeCompare(a.nome);
-      });
-  }, [clients, searchTerm, sortAsc]);
+  const filteredAllClients = useMemo(() => clients.filter((client) => {
+    const term = searchTerm.trim().toLowerCase();
+    return !term || client.nome?.toLowerCase().includes(term) || client.telefone?.includes(term);
+  }).sort((a, b) => sortAsc ? a.nome.localeCompare(b.nome) : b.nome.localeCompare(a.nome)), [clients, searchTerm, sortAsc]);
+  const totalRecords = filteredAllClients.length;
+  const filteredClients = useMemo(() => filteredAllClients.slice(page * pageSize, (page + 1) * pageSize), [filteredAllClients, page, pageSize]);
+  const totalPages = Math.max(1, Math.ceil(totalRecords / pageSize));
 
   return (
-    <div className="h-full flex flex-col bg-[#F8F6F0] text-[#1B2E26] overflow-hidden">
+    <div className="h-full flex flex-col bg-[#F8F6F0] dark:bg-background text-[#1B2E26] dark:text-foreground overflow-hidden">
       {/* Top Header Mobile */}
-      <div className="p-3.5 sm:p-5 border-b border-[#E3DEC9] bg-white flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 flex-shrink-0">
+      <div className="p-3.5 sm:p-5 border-b border-[#E3DEC9] dark:border-border bg-white dark:bg-card flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 flex-shrink-0">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-[#009386]/10 text-[#009386] flex items-center justify-center">
+            <div className="w-8 h-8 rounded-xl bg-[#009386]/10 text-[#009386] dark:text-[#3CD099] flex items-center justify-center">
               <User size={16} />
             </div>
             <div>
               <div className="flex items-center gap-1.5">
-                <h1 className="text-base sm:text-xl font-bold text-[#1B2E26]">Pacientes</h1>
-                <span className="bg-[#009386]/10 text-[#009386] text-[10px] px-2 py-0.5 rounded-full font-bold">
-                  {filteredClients.length}
+                <h1 className="text-base sm:text-xl font-bold text-[#1B2E26] dark:text-foreground">Alunos</h1>
+                <span className="bg-[#009386]/10 text-[#009386] dark:text-[#3CD099] text-[10px] px-2 py-0.5 rounded-full font-bold">
+                  {totalRecords}
                 </span>
               </div>
             </div>
@@ -153,19 +161,19 @@ export default function Clients() {
 
         <div className="flex items-center gap-2">
           <div className="relative flex-1 sm:w-64">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#56635C]" size={14} />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#56635C] dark:text-muted-foreground" size={14} />
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Buscar por nome ou celular..."
-              className="w-full pl-8 pr-3 py-1.5 bg-[#F8F6F0] border border-[#E3DEC9] rounded-xl text-xs font-medium focus:bg-white focus:outline-none focus:border-[#009386]"
+              placeholder="Buscar por nome ou telefone..."
+              className="w-full pl-8 pr-3 py-1.5 bg-[#F8F6F0] dark:bg-background border border-[#E3DEC9] dark:border-border rounded-xl text-xs font-medium focus:bg-white dark:focus:bg-card focus:outline-none focus:border-[#009386]"
             />
           </div>
 
           <button
             onClick={() => setSortAsc(!sortAsc)}
-            className="p-2 bg-white border border-[#E3DEC9] rounded-xl text-[#56635C] active:bg-[#F8F6F0] cursor-pointer"
+            className="p-2 bg-white dark:bg-card border border-[#E3DEC9] dark:border-border rounded-xl text-[#56635C] dark:text-muted-foreground active:bg-[#F8F6F0] dark:active:bg-muted cursor-pointer"
             title="Ordenar"
           >
             <ArrowUpDown size={14} />
@@ -175,14 +183,15 @@ export default function Clients() {
             onClick={() => setShowNewClientModal(true)}
             className="hidden sm:flex bg-[#009386] hover:bg-[#007491] text-white px-3.5 py-2 rounded-xl text-xs font-bold items-center gap-1.5 cursor-pointer shadow-xs"
           >
-            <Plus size={15} /> Novo Paciente
+            <Plus size={15} /> Novo Aluno
           </button>
         </div>
       </div>
 
       {/* Área Central com Lista */}
       <div className="flex-1 flex overflow-hidden p-3 sm:p-5 lg:p-6 gap-4">
-        <div className="flex-1 bg-white rounded-2xl sm:rounded-3xl border border-[#E3DEC9] shadow-xs flex flex-col overflow-hidden">
+        <div className="flex-1 bg-white dark:bg-card rounded-2xl sm:rounded-3xl border border-[#E3DEC9] dark:border-border shadow-xs flex flex-col overflow-hidden">
+          {errorMessage && <div className="m-3 p-2.5 rounded-xl bg-[#D94F3C]/10 text-[#D94F3C] dark:text-[#FF8FA3] text-xs flex gap-2"><AlertCircle size={15}/>{errorMessage}</div>}
           <div className="flex-1 overflow-y-auto">
             {loading ? (
               <div className="flex justify-center items-center h-48">
@@ -191,26 +200,26 @@ export default function Clients() {
             ) : filteredClients.length > 0 ? (
               <>
                 {/* Lista em Cartões para Telas Pequenas */}
-                <div className="sm:hidden divide-y divide-[#E3DEC9]/60">
+                <div className="sm:hidden divide-y divide-[#E3DEC9]/60 dark:divide-border/60">
                   {filteredClients.map((client) => (
                     <div
                       key={client.id}
                       onClick={() => setSelectedClient(client)}
-                      className="p-3.5 flex items-center justify-between gap-3 active:bg-[#F8F6F0] cursor-pointer"
+                      className="p-3.5 flex items-center justify-between gap-3 active:bg-[#F8F6F0] dark:active:bg-muted cursor-pointer"
                     >
                       <div className="flex items-center gap-2.5 min-w-0">
-                        <div className="w-9 h-9 rounded-full bg-[#009386]/10 text-[#009386] font-black text-xs flex items-center justify-center flex-shrink-0">
+                        <div className="w-9 h-9 rounded-full bg-[#009386]/10 text-[#009386] dark:text-[#3CD099] font-black text-xs flex items-center justify-center flex-shrink-0">
                           {client.nome.charAt(0).toUpperCase()}
                         </div>
                         <div className="min-w-0">
-                          <p className="text-xs font-bold text-[#1B2E26] truncate">{client.nome}</p>
-                          <div className="flex items-center gap-1.5 text-[10px] text-[#56635C] mt-0.5">
+                          <p className="text-xs font-bold text-[#1B2E26] dark:text-foreground truncate">{client.nome}</p>
+                          <div className="flex items-center gap-1.5 text-[10px] text-[#56635C] dark:text-muted-foreground mt-0.5">
                             <Phone size={10} />
                             <span>{client.telefone || 'Sem número'}</span>
                           </div>
                         </div>
                       </div>
-                      <ChevronRight size={16} className="text-[#56635C]" />
+                      <ChevronRight size={16} className="text-[#56635C] dark:text-muted-foreground" />
                     </div>
                   ))}
                 </div>
@@ -218,27 +227,27 @@ export default function Clients() {
                 {/* Tabela para Desktop */}
                 <table className="hidden sm:table w-full border-collapse">
                   <thead>
-                    <tr className="border-b border-[#E3DEC9] text-[11px] font-extrabold uppercase text-[#56635C] text-left bg-white sticky top-0">
-                      <th className="px-5 py-3">Paciente</th>
+                    <tr className="border-b border-[#E3DEC9] dark:border-border text-[11px] font-extrabold uppercase text-[#56635C] dark:text-muted-foreground text-left bg-white dark:bg-card sticky top-0">
+                      <th className="px-5 py-3">Aluno</th>
                       <th className="px-5 py-3">Telefone</th>
                       <th className="px-5 py-3">Nascimento</th>
                       <th className="px-5 py-3">Gênero</th>
                       <th className="px-5 py-3 text-right">Ação</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#E3DEC9]/60 text-xs">
+                  <tbody className="divide-y divide-[#E3DEC9]/60 dark:divide-border/60 text-xs">
                     {filteredClients.map((client) => (
                       <tr
                         key={client.id}
                         onClick={() => setSelectedClient(client)}
-                        className="hover:bg-[#F8F6F0]/70 cursor-pointer"
+                        className="hover:bg-[#F8F6F0]/70 dark:hover:bg-muted/70 cursor-pointer"
                       >
-                        <td className="px-5 py-3 font-bold text-[#1B2E26]">{client.nome}</td>
-                        <td className="px-5 py-3 text-[#56635C] font-semibold">{client.telefone || '-'}</td>
-                        <td className="px-5 py-3 text-[#56635C]">{formatDateBR(client.dataNascimento) || '-'}</td>
-                        <td className="px-5 py-3 text-[#56635C]">{client.sexo === 'F' ? 'Feminino' : 'Masculino'}</td>
+                        <td className="px-5 py-3 font-bold text-[#1B2E26] dark:text-foreground">{client.nome}</td>
+                        <td className="px-5 py-3 text-[#56635C] dark:text-muted-foreground font-semibold">{client.telefone || '-'}</td>
+                        <td className="px-5 py-3 text-[#56635C] dark:text-muted-foreground">{formatDateBR(client.dataNascimento) || '-'}</td>
+                        <td className="px-5 py-3 text-[#56635C] dark:text-muted-foreground">{client.sexo === 'F' ? 'Feminino' : 'Masculino'}</td>
                         <td className="px-5 py-3 text-right">
-                          <button className="p-1 hover:bg-[#EBE5D3]/60 rounded-lg text-[#56635C]">
+                          <button className="p-1 hover:bg-[#EBE5D3]/60 dark:hover:bg-muted/60 rounded-lg text-[#56635C] dark:text-muted-foreground">
                             <ChevronRight size={16} />
                           </button>
                         </td>
@@ -248,11 +257,15 @@ export default function Clients() {
                 </table>
               </>
             ) : (
-              <div className="p-10 text-center text-xs text-[#56635C]">
-                Nenhum paciente encontrado.
+              <div className="p-10 text-center text-xs text-[#56635C] dark:text-muted-foreground">
+                Nenhum aluno encontrado para os filtros informados.
               </div>
             )}
           </div>
+          {!loading && totalRecords > 0 && <div className="border-t border-[#E3DEC9] dark:border-border px-3 py-2.5 flex flex-wrap items-center justify-between gap-2 text-[11px] text-[#56635C] dark:text-muted-foreground">
+            <span>{Math.min(page * pageSize + 1, totalRecords)}–{Math.min((page + 1) * pageSize, totalRecords)} de {totalRecords} alunos</span>
+            <div className="flex items-center gap-2"><select value={pageSize} onChange={e=>{setPageSize(Number(e.target.value));setPage(0)}} className="border border-[#E3DEC9] dark:border-border rounded-lg px-2 py-1 bg-white dark:bg-card"><option value={10}>10/página</option><option value={25}>25/página</option><option value={50}>50/página</option></select><button disabled={page===0} onClick={()=>setPage(p=>p-1)} className="p-1 disabled:opacity-40"><ChevronLeft size={16}/></button><span>{page + 1}/{totalPages}</span><button disabled={page >= totalPages - 1} onClick={()=>setPage(p=>p+1)} className="p-1 disabled:opacity-40"><ChevronRightPage size={16}/></button></div>
+          </div>}
         </div>
 
         {/* Modal/Drawer de Perfil */}
@@ -264,7 +277,7 @@ export default function Clients() {
         )}
       </div>
 
-      {/* Modal Bottom-Sheet: Novo Paciente */}
+      {/* Modal Bottom-Sheet: Novo Aluno */}
       {showNewClientModal && (
         <div
           className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-end sm:items-center justify-center z-50 p-0 sm:p-4"
@@ -273,11 +286,11 @@ export default function Clients() {
           <form
             onSubmit={handleCriarCliente}
             onClick={(e) => e.stopPropagation()}
-            className="bg-white rounded-t-3xl sm:rounded-3xl max-w-md w-full max-h-[90vh] overflow-y-auto border border-[#E3DEC9] shadow-2xl p-5 sm:p-6 space-y-3.5"
+            className="bg-white dark:bg-card rounded-t-3xl sm:rounded-3xl max-w-md w-full max-h-[90vh] overflow-y-auto border border-[#E3DEC9] dark:border-border shadow-2xl p-5 sm:p-6 space-y-3.5"
           >
             <div className="flex items-center justify-between border-b pb-3">
-              <h2 className="text-base font-bold text-[#1B2E26]">Novo Paciente</h2>
-              <button type="button" onClick={() => setShowNewClientModal(false)} className="p-1 text-[#56635C]">
+              <h2 className="text-base font-bold text-[#1B2E26] dark:text-foreground">Novo Aluno</h2>
+              <button type="button" onClick={() => setShowNewClientModal(false)} className="p-1 text-[#56635C] dark:text-muted-foreground">
                 <X size={18} />
               </button>
             </div>
@@ -289,7 +302,7 @@ export default function Clients() {
                 required
                 value={formData.nome}
                 onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
-                className="w-full px-3 py-2 bg-[#F8F6F0] border border-[#E3DEC9] rounded-xl text-xs font-medium"
+                className="w-full px-3 py-2 bg-[#F8F6F0] dark:bg-background border border-[#E3DEC9] dark:border-border rounded-xl text-xs font-medium"
               />
             </div>
 
@@ -301,7 +314,7 @@ export default function Clients() {
                 value={formData.telefone}
                 onChange={handlePhoneChange}
                 placeholder="(11) 99999-9999"
-                className="w-full px-3 py-2 bg-[#F8F6F0] border border-[#E3DEC9] rounded-xl text-xs font-medium"
+                className="w-full px-3 py-2 bg-[#F8F6F0] dark:bg-background border border-[#E3DEC9] dark:border-border rounded-xl text-xs font-medium"
               />
             </div>
 
@@ -313,7 +326,7 @@ export default function Clients() {
                   required
                   value={formData.dataNascimento}
                   onChange={(e) => setFormData({ ...formData, dataNascimento: e.target.value })}
-                  className="w-full px-3 py-2 bg-[#F8F6F0] border border-[#E3DEC9] rounded-xl text-xs font-medium"
+                  className="w-full px-3 py-2 bg-[#F8F6F0] dark:bg-background border border-[#E3DEC9] dark:border-border rounded-xl text-xs font-medium"
                 />
               </div>
 
@@ -322,7 +335,7 @@ export default function Clients() {
                 <select
                   value={formData.sexo}
                   onChange={(e) => setFormData({ ...formData, sexo: e.target.value as SexoEnum })}
-                  className="w-full px-3 py-2 bg-[#F8F6F0] border border-[#E3DEC9] rounded-xl text-xs font-medium"
+                  className="w-full px-3 py-2 bg-[#F8F6F0] dark:bg-background border border-[#E3DEC9] dark:border-border rounded-xl text-xs font-medium"
                 >
                   <option value="F">Feminino</option>
                   <option value="M">Masculino</option>
@@ -335,7 +348,7 @@ export default function Clients() {
               <button
                 type="button"
                 onClick={() => setShowNewClientModal(false)}
-                className="flex-1 bg-[#EBE5D3]/60 py-2.5 rounded-xl font-bold text-xs uppercase"
+                className="flex-1 bg-[#EBE5D3]/60 dark:bg-muted/60 py-2.5 rounded-xl font-bold text-xs uppercase"
               >
                 Cancelar
               </button>

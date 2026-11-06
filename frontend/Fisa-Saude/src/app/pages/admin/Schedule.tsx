@@ -156,15 +156,10 @@ export default function Schedule() {
 
   const carregarFeriados = useCallback(async (ano: number) => {
     try {
-      const res = await api.get(`/feriados/${ano}`, { timeout: 4000 });
-      setFeriados(Array.isArray(res.data) ? res.data : []);
-    } catch {
-      try {
-        const fallback = await axios.get(`https://brasilapi.com.br/api/feriados/v1/${ano}`, { timeout: 4000 });
-        setFeriados(Array.isArray(fallback.data) ? fallback.data : []);
-      } catch (err) {
-        console.warn('Não foi possível carregar os feriados nacionais:', err);
-      }
+      const response = await axios.get(`https://brasilapi.com.br/api/feriados/v1/${ano}`, { timeout: 4000 });
+      setFeriados(Array.isArray(response.data) ? response.data : []);
+    } catch (err) {
+      console.warn('Não foi possível carregar os feriados nacionais:', err);
     }
   }, []);
 
@@ -351,6 +346,11 @@ export default function Schedule() {
   const handleCriarAgendamento = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // A API exige servicoId, mas o backend não disponibiliza catálogo de serviços.
+    // Não é seguro criar agendamentos com um ID fixo ou presumido.
+    alert('Não é possível criar agendamentos enquanto a API não disponibilizar a lista de serviços.');
+    return;
+
     let clienteId = clienteSelecionado;
     if (!clienteId) {
       const match = clientes.find(
@@ -360,7 +360,7 @@ export default function Schedule() {
     }
 
     if (!clienteId) {
-      alert('Selecione um cliente válido.');
+        alert('Selecione um aluno válido.');
       return;
     }
 
@@ -372,7 +372,6 @@ export default function Schedule() {
     try {
       await api.post('/agendamentos', {
         clienteId: Number(clienteId),
-        servicoId: 1,
         usuarioId: Number(usuarioId),
         data: formData.data,
         horaInicio: `${formData.horaInicio.substring(0, 5)}:00`,
@@ -450,7 +449,7 @@ export default function Schedule() {
   const feriadoDoDiaSelecionado = getFeriadoDoDia(selectedDate);
 
   return (
-    <div className="w-full h-full min-h-0 bg-[#F8F6F0] text-[#1B2E26] flex flex-col overflow-y-auto sm:overflow-hidden">
+    <div className="w-full h-full min-h-0 bg-[#F8F6F0] dark:bg-background text-[#1B2E26] dark:text-foreground flex flex-col overflow-y-auto sm:overflow-hidden">
       {showSuccess && (
         <div className="fixed top-4 left-4 right-4 sm:left-1/2 sm:-translate-x-1/2 sm:w-auto z-[100] bg-[#009386] text-white px-4 py-3 rounded-2xl shadow-xl flex items-center justify-center gap-2 text-xs sm:text-sm font-semibold">
           <CheckCircle2 size={16} />
@@ -463,7 +462,7 @@ export default function Schedule() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3 sm:mb-4 flex-shrink-0">
           <div>
             <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold">Agenda</h1>
-            <p className="text-[11px] sm:text-xs text-[#56635C] mt-0.5">
+            <p className="text-[11px] sm:text-xs text-[#56635C] dark:text-muted-foreground mt-0.5">
               Gerencie seus horários e atendimentos
             </p>
           </div>
@@ -475,9 +474,9 @@ export default function Schedule() {
                 setBlockData({ data: dateToKey(selectedDate), horaInicio: '', horaFim: '' });
                 setShowBlockModal(true);
               }}
-              className="flex-1 sm:flex-none px-3 py-2 sm:px-4 sm:py-2.5 bg-white border border-[#E3DEC9] rounded-xl text-[11px] sm:text-xs font-bold hover:bg-[#EBE5D3]/50 transition-colors cursor-pointer flex items-center justify-center gap-1.5"
+              className="flex-1 sm:flex-none px-3 py-2 sm:px-4 sm:py-2.5 bg-white dark:bg-card border border-[#E3DEC9] dark:border-border rounded-xl text-[11px] sm:text-xs font-bold hover:bg-[#EBE5D3]/50 dark:hover:bg-muted/50 transition-colors cursor-pointer flex items-center justify-center gap-1.5"
             >
-              <Ban size={13} className="text-[#FF6954]" />
+              <Ban size={13} className="text-[#FF6954] dark:text-[#FF8FA3]" />
               Bloquear
             </button>
 
@@ -493,38 +492,38 @@ export default function Schedule() {
         </div>
 
         {errorMessage && (
-          <div className="mb-3 p-2.5 rounded-xl bg-[#FF6954]/10 border border-[#FF6954]/30 text-[#D94F3C] text-[11px] font-medium flex items-center gap-2">
+          <div className="mb-3 p-2.5 rounded-xl bg-[#FF6954]/10 border border-[#FF6954]/30 text-[#D94F3C] dark:text-[#FF8FA3] text-[11px] font-medium flex items-center gap-2">
             <ShieldAlert size={15} className="flex-shrink-0" />
             <span className="truncate">{errorMessage}</span>
           </div>
         )}
 
         {/* Card Principal */}
-        <div className="flex-1 min-h-[500px] sm:min-h-0 bg-white border border-[#E3DEC9] rounded-2xl shadow-xs flex flex-col overflow-hidden">
+        <div className="flex-1 min-h-[500px] sm:min-h-0 bg-white dark:bg-card border border-[#E3DEC9] dark:border-border rounded-2xl shadow-xs flex flex-col overflow-hidden">
           {/* Barra de Período e Views */}
-          <div className="p-2.5 sm:p-4 border-b border-[#E3DEC9] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 flex-shrink-0">
+          <div className="p-2.5 sm:p-4 border-b border-[#E3DEC9] dark:border-border flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 flex-shrink-0">
             <div className="flex items-center justify-between sm:justify-start gap-2">
-              <div className="flex items-center border border-[#E3DEC9] rounded-xl overflow-hidden bg-white">
+              <div className="flex items-center border border-[#E3DEC9] dark:border-border rounded-xl overflow-hidden bg-white dark:bg-card">
                 <button
                   type="button"
                   onClick={previousPeriod}
-                  className="p-2 hover:bg-[#F8F6F0] transition-colors cursor-pointer"
+                  className="p-2 hover:bg-[#F8F6F0] dark:hover:bg-muted transition-colors cursor-pointer"
                 >
-                  <ChevronLeft size={16} className="text-[#56635C]" />
+                  <ChevronLeft size={16} className="text-[#56635C] dark:text-muted-foreground" />
                 </button>
                 <button
                   type="button"
                   onClick={nextPeriod}
-                  className="p-2 hover:bg-[#F8F6F0] transition-colors cursor-pointer"
+                  className="p-2 hover:bg-[#F8F6F0] dark:hover:bg-muted transition-colors cursor-pointer"
                 >
-                  <ChevronRight size={16} className="text-[#56635C]" />
+                  <ChevronRight size={16} className="text-[#56635C] dark:text-muted-foreground" />
                 </button>
               </div>
 
               <button
                 type="button"
                 onClick={goToday}
-                className="px-2.5 py-1.5 rounded-xl bg-[#F8F6F0] hover:bg-[#EBE5D3] text-xs font-bold transition-colors cursor-pointer"
+                className="px-2.5 py-1.5 rounded-xl bg-[#F8F6F0] dark:bg-background hover:bg-[#EBE5D3] dark:hover:bg-muted text-xs font-bold transition-colors cursor-pointer"
               >
                 Hoje
               </button>
@@ -533,7 +532,7 @@ export default function Schedule() {
             </div>
 
             {/* Alternador Semana / Mês */}
-            <div className="flex bg-[#F8F6F0] border border-[#E3DEC9] p-0.5 rounded-xl w-full sm:w-auto">
+            <div className="flex bg-[#F8F6F0] dark:bg-background border border-[#E3DEC9] dark:border-border p-0.5 rounded-xl w-full sm:w-auto">
               {[
                 { value: 'week' as ViewType, label: 'Semana' },
                 { value: 'month' as ViewType, label: 'Mês' }
@@ -544,7 +543,7 @@ export default function Schedule() {
                   onClick={() => setView(item.value)}
                   className={`flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${view === item.value
                       ? 'bg-[#009386] text-white shadow-xs'
-                      : 'text-[#56635C] hover:text-[#1B2E26]'
+                      : 'text-[#56635C] dark:text-muted-foreground hover:text-[#1B2E26] dark:hover:text-foreground'
                     }`}
                 >
                   {item.label}
@@ -555,7 +554,7 @@ export default function Schedule() {
 
           <div className="flex-1 min-h-0 overflow-hidden relative">
             {loading && (
-              <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/70">
+              <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/70 dark:bg-card/70">
                 <div className="w-8 h-8 border-4 border-[#009386] border-t-transparent rounded-full animate-spin" />
               </div>
             )}
@@ -564,9 +563,9 @@ export default function Schedule() {
               {view === 'month' && (
                 <div className="h-full flex flex-col">
                   {/* Cabeçalho dias da semana */}
-                  <div className="grid grid-cols-7 border-b border-[#E3DEC9] bg-[#F8F6F0] flex-shrink-0">
+                  <div className="grid grid-cols-7 border-b border-[#E3DEC9] dark:border-border bg-[#F8F6F0] dark:bg-background flex-shrink-0">
                     {weekDays.map((day) => (
-                      <div key={day} className="py-2 sm:py-3 text-center text-[9px] sm:text-xs font-bold uppercase text-[#56635C]">
+                      <div key={day} className="py-2 sm:py-3 text-center text-[9px] sm:text-xs font-bold uppercase text-[#56635C] dark:text-muted-foreground">
                         {day}
                       </div>
                     ))}
@@ -576,7 +575,7 @@ export default function Schedule() {
                   <div className="grid grid-cols-7 grid-rows-5 flex-1 min-h-0">
                     {calendarDays.map((date, index) => {
                       if (!date) {
-                        return <div key={`empty-${index}`} className="border-r border-b border-[#E3DEC9]/50 bg-[#F8F6F0]/30" />;
+                        return <div key={`empty-${index}`} className="border-r border-b border-[#E3DEC9]/50 dark:border-border/50 bg-[#F8F6F0]/30 dark:bg-background/30" />;
                       }
 
                       const bookings = getBookingsForDate(date);
@@ -588,14 +587,14 @@ export default function Schedule() {
                           type="button"
                           key={dateToKey(date)}
                           onClick={() => abrirModalHorariosDoDia(date)}
-                          className={`relative border-r border-b border-[#E3DEC9]/50 p-1 sm:p-2.5 text-left flex flex-col hover:bg-[#F8F6F0] transition-all cursor-pointer ${feriado ? 'bg-[#FF6954]/5' : ''
+                          className={`relative border-r border-b border-[#E3DEC9]/50 dark:border-border/50 p-1 sm:p-2.5 text-left flex flex-col hover:bg-[#F8F6F0] dark:hover:bg-muted transition-all cursor-pointer ${feriado ? 'bg-[#FF6954]/5' : ''
                             }`}
                         >
                           <div className="flex items-center justify-between">
                             <span
                               className={`w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center rounded-full text-[11px] sm:text-xs font-bold ${isToday
-                                  ? 'bg-[#EBE5D3] text-[#007491]'
-                                  : 'text-[#1B2E26]'
+                                  ? 'bg-[#EBE5D3] dark:bg-muted text-[#007491] dark:text-[#3CD099]'
+                                  : 'text-[#1B2E26] dark:text-foreground'
                                 }`}
                             >
                               {date.getDate()}
@@ -609,7 +608,7 @@ export default function Schedule() {
 
                           {feriado && (
                             <div className="mt-0.5">
-                              <span className="text-[8px] sm:text-[9px] font-bold text-[#D94F3C] bg-[#FF6954]/15 px-1 py-0.2 rounded sm:truncate block leading-tight">
+                              <span className="text-[8px] sm:text-[9px] font-bold text-[#D94F3C] dark:text-[#FF8FA3] bg-[#FF6954]/15 px-1 py-0.2 rounded sm:truncate block leading-tight">
                                 {feriado.name}
                               </span>
                             </div>
@@ -618,8 +617,8 @@ export default function Schedule() {
                           {bookings.length > 0 && (
                             <div className="mt-auto hidden sm:block pt-1">
                               <div className="flex items-center gap-1">
-                                <CalendarCheck size={11} className="text-[#009386]" />
-                                <span className="text-[10px] font-bold text-[#009386] truncate">
+                                <CalendarCheck size={11} className="text-[#009386] dark:text-[#3CD099]" />
+                                <span className="text-[10px] font-bold text-[#009386] dark:text-[#3CD099] truncate">
                                   {bookings.length} {bookings.length === 1 ? 'horário' : 'horários'}
                                 </span>
                               </div>
@@ -636,7 +635,7 @@ export default function Schedule() {
               {view === 'week' && (
                 <div className="h-full flex flex-col overflow-x-auto">
                   <div className="min-w-[560px] sm:min-w-full flex-1 flex flex-col">
-                    <div className="grid grid-cols-7 border-b border-[#E3DEC9] flex-shrink-0 bg-white">
+                    <div className="grid grid-cols-7 border-b border-[#E3DEC9] dark:border-border flex-shrink-0 bg-white dark:bg-card">
                       {weekDates.map((date) => {
                         const bookings = getBookingsForDate(date);
                         const feriado = getFeriadoDoDia(date);
@@ -647,26 +646,26 @@ export default function Schedule() {
                             type="button"
                             key={dateToKey(date)}
                             onClick={() => abrirModalHorariosDoDia(date)}
-                            className="p-2 sm:p-3 border-r border-[#E3DEC9] text-center hover:bg-[#F8F6F0] transition-colors cursor-pointer"
+                            className="p-2 sm:p-3 border-r border-[#E3DEC9] dark:border-border text-center hover:bg-[#F8F6F0] dark:hover:bg-muted transition-colors cursor-pointer"
                           >
-                            <div className="text-[9px] sm:text-[10px] uppercase font-bold text-[#56635C]">
+                            <div className="text-[9px] sm:text-[10px] uppercase font-bold text-[#56635C] dark:text-muted-foreground">
                               {weekDays[date.getDay()]}
                             </div>
                             <div
                               className={`mx-auto mt-0.5 sm:mt-1 w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs sm:text-sm font-bold ${isToday
-                                  ? 'bg-[#EBE5D3] text-[#007491]'
-                                  : 'text-[#1B2E26]'
+                                  ? 'bg-[#EBE5D3] dark:bg-muted text-[#007491] dark:text-[#3CD099]'
+                                  : 'text-[#1B2E26] dark:text-foreground'
                                 }`}
                             >
                               {date.getDate()}
                             </div>
                             {feriado ? (
-                              <div className="mt-0.5 text-[8px] font-bold text-[#D94F3C] truncate">
+                              <div className="mt-0.5 text-[8px] font-bold text-[#D94F3C] dark:text-[#FF8FA3] truncate">
                                 {feriado.name}
                               </div>
                             ) : (
                               bookings.length > 0 && (
-                                <div className="mt-0.5 text-[8px] sm:text-[9px] font-bold text-[#009386]">
+                                <div className="mt-0.5 text-[8px] sm:text-[9px] font-bold text-[#009386] dark:text-[#3CD099]">
                                   {bookings.length} agend.
                                 </div>
                               )
@@ -680,7 +679,7 @@ export default function Schedule() {
                       <div className="grid grid-cols-7" style={{ minHeight: defaultTimeSlots.length * 52 }}>
                         {weekDates.map((date) => {
                           return (
-                            <div key={dateToKey(date)} className="border-r border-[#E3DEC9] p-1 space-y-1">
+                            <div key={dateToKey(date)} className="border-r border-[#E3DEC9] dark:border-border p-1 space-y-1">
                               {defaultTimeSlots.map((time) => {
                                 const slot = getSlotStatus(date, time);
 
@@ -701,19 +700,19 @@ export default function Schedule() {
                                         ? 'bg-[#009386]/10 border border-[#009386]/20'
                                         : slot.type === 'blocked'
                                           ? 'bg-[#FF6954]/15 border border-[#FF6954]/30'
-                                          : 'border border-transparent hover:bg-[#F8F6F0]'
+                                          : 'border border-transparent hover:bg-[#F8F6F0] dark:hover:bg-muted'
                                       }`}
                                   >
-                                    <div className="text-[8px] sm:text-[9px] font-bold text-[#56635C]">{time}</div>
+                                    <div className="text-[8px] sm:text-[9px] font-bold text-[#56635C] dark:text-muted-foreground">{time}</div>
                                     {slot.type === 'booking' && (
                                       <div className="mt-0.5">
-                                        <span className="text-[8px] sm:text-[9px] font-bold text-[#1B2E26] truncate block">
+                                        <span className="text-[8px] sm:text-[9px] font-bold text-[#1B2E26] dark:text-foreground truncate block">
                                           {slot.data?.nomeCliente || 'Atendimento'}
                                         </span>
                                       </div>
                                     )}
                                     {slot.type === 'blocked' && (
-                                      <div className="mt-0.5 text-[8px] font-bold text-[#D94F3C] flex items-center gap-0.5">
+                                      <div className="mt-0.5 text-[8px] font-bold text-[#D94F3C] dark:text-[#FF8FA3] flex items-center gap-0.5">
                                         <Ban size={9} /> Bloq.
                                       </div>
                                     )}
@@ -743,12 +742,12 @@ export default function Schedule() {
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="bg-white w-full max-w-lg max-h-[85vh] sm:max-h-[80vh] rounded-t-3xl sm:rounded-3xl p-4 sm:p-6 shadow-2xl flex flex-col"
+            className="bg-white dark:bg-card w-full max-w-lg max-h-[85vh] sm:max-h-[80vh] rounded-t-3xl sm:rounded-3xl p-4 sm:p-6 shadow-2xl flex flex-col"
           >
             {/* Header Modal Dia */}
-            <div className="flex items-center justify-between pb-3 border-b border-[#E3DEC9] flex-shrink-0">
+            <div className="flex items-center justify-between pb-3 border-b border-[#E3DEC9] dark:border-border flex-shrink-0">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-[#009386]/10 flex items-center justify-center text-[#009386]">
+                <div className="w-8 h-8 rounded-xl bg-[#009386]/10 flex items-center justify-center text-[#009386] dark:text-[#3CD099]">
                   <CalendarIcon size={16} />
                 </div>
                 <div>
@@ -756,18 +755,18 @@ export default function Schedule() {
                     {selectedDate.getDate()} de {monthNames[selectedDate.getMonth()]}
                   </h2>
                   {feriadoDoDiaSelecionado ? (
-                    <span className="text-[10px] font-bold text-[#D94F3C] bg-[#FF6954]/15 px-1.5 py-0.5 rounded inline-block mt-0.5">
+                    <span className="text-[10px] font-bold text-[#D94F3C] dark:text-[#FF8FA3] bg-[#FF6954]/15 px-1.5 py-0.5 rounded inline-block mt-0.5">
                       Feriado: {feriadoDoDiaSelecionado.name}
                     </span>
                   ) : (
-                    <p className="text-[10px] text-[#56635C]">Horários disponíveis e agendamentos</p>
+                    <p className="text-[10px] text-[#56635C] dark:text-muted-foreground">Horários disponíveis e agendamentos</p>
                   )}
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setShowDayScheduleModal(false)}
-                className="p-1.5 hover:bg-[#F8F6F0] rounded-xl text-[#56635C] cursor-pointer"
+                className="p-1.5 hover:bg-[#F8F6F0] dark:hover:bg-muted rounded-xl text-[#56635C] dark:text-muted-foreground cursor-pointer"
               >
                 <X size={18} />
               </button>
@@ -795,21 +794,21 @@ export default function Schedule() {
                         ? 'bg-[#009386]/10 border-[#009386]/30'
                         : slot.type === 'blocked'
                           ? 'bg-[#FF6954]/10 border-[#FF6954]/25 opacity-80'
-                          : 'bg-white border-[#E3DEC9] hover:bg-[#F8F6F0]'
+                          : 'bg-white dark:bg-card border-[#E3DEC9] dark:border-border hover:bg-[#F8F6F0] dark:hover:bg-muted'
                       }`}
                   >
                     <div className="flex items-center gap-2.5">
-                      <div className="text-xs font-bold text-[#56635C] flex items-center gap-1.5">
+                      <div className="text-xs font-bold text-[#56635C] dark:text-muted-foreground flex items-center gap-1.5">
                         <Clock size={13} />
                         {time}
                       </div>
 
                       {slot.type === 'booking' && (
                         <div>
-                          <div className="font-bold text-[#1B2E26] text-xs">
+                          <div className="font-bold text-[#1B2E26] dark:text-foreground text-xs">
                             {slot.data?.nomeCliente || 'Atendimento'}
                           </div>
-                          <span className="text-[10px] text-[#56635C]">
+                          <span className="text-[10px] text-[#56635C] dark:text-muted-foreground">
                             {slot.data?.preco ? `R$ ${slot.data.preco}` : 'Confirmado'}
                           </span>
                         </div>
@@ -817,10 +816,10 @@ export default function Schedule() {
 
                       {slot.type === 'blocked' && (
                         <div>
-                          <div className="font-bold text-[#D94F3C] text-xs flex items-center gap-1">
+                          <div className="font-bold text-[#D94F3C] dark:text-[#FF8FA3] text-xs flex items-center gap-1">
                             <Ban size={12} /> Bloqueado
                           </div>
-                          <span className="text-[9px] text-[#56635C]">
+                          <span className="text-[9px] text-[#56635C] dark:text-muted-foreground">
                             {normalizeTime(slot.data?.horaInicio)} até {normalizeTime(slot.data?.horaFim)}
                           </span>
                         </div>
@@ -828,7 +827,7 @@ export default function Schedule() {
 
                       {slot.type === 'free' && (
                         <div>
-                          <span className="text-xs font-semibold text-[#56635C]">Horário livre</span>
+                          <span className="text-xs font-semibold text-[#56635C] dark:text-muted-foreground">Horário livre</span>
                         </div>
                       )}
                     </div>
@@ -840,7 +839,7 @@ export default function Schedule() {
                               ? 'bg-[#009386] text-white'
                               : slot.data?.status === 'AGENDADO'
                                 ? 'bg-[#3CD099] text-[#0E2820]'
-                                : 'bg-[#EBE5D3] text-[#1B2E26]'
+                                : 'bg-[#EBE5D3] dark:bg-muted text-[#1B2E26] dark:text-foreground'
                             }`}
                         >
                           {slot.data?.status}
@@ -854,7 +853,7 @@ export default function Schedule() {
                       )}
 
                       {slot.type === 'free' && (
-                        <span className="p-1 rounded-lg bg-[#009386]/10 text-[#009386] flex items-center">
+                        <span className="p-1 rounded-lg bg-[#009386]/10 text-[#009386] dark:text-[#3CD099] flex items-center">
                           <Plus size={14} />
                         </span>
                       )}
@@ -864,11 +863,11 @@ export default function Schedule() {
               })}
             </div>
 
-            <div className="pt-3 border-t border-[#E3DEC9]">
+            <div className="pt-3 border-t border-[#E3DEC9] dark:border-border">
               <button
                 type="button"
                 onClick={() => setShowDayScheduleModal(false)}
-                className="w-full py-2.5 rounded-xl bg-[#EBE5D3]/70 hover:bg-[#EBE5D3] text-[#1B2E26] font-bold text-xs uppercase cursor-pointer"
+                className="w-full py-2.5 rounded-xl bg-[#EBE5D3]/70 dark:bg-muted/70 hover:bg-[#EBE5D3] dark:hover:bg-muted text-[#1B2E26] dark:text-foreground font-bold text-xs uppercase cursor-pointer"
               >
                 Fechar
               </button>
@@ -886,26 +885,26 @@ export default function Schedule() {
           <form
             onSubmit={handleCriarAgendamento}
             onClick={(e) => e.stopPropagation()}
-            className="bg-white w-full max-w-md max-h-[90vh] rounded-t-3xl sm:rounded-3xl p-5 sm:p-6 shadow-2xl overflow-y-auto"
+            className="bg-white dark:bg-card w-full max-w-md max-h-[90vh] rounded-t-3xl sm:rounded-3xl p-5 sm:p-6 shadow-2xl overflow-y-auto"
           >
-            <div className="flex items-center justify-between border-b border-[#E3DEC9] pb-3 mb-4">
+            <div className="flex items-center justify-between border-b border-[#E3DEC9] dark:border-border pb-3 mb-4">
               <div>
                 <h2 className="text-lg font-bold">Novo Agendamento</h2>
-                <p className="text-[11px] text-[#56635C]">Preencha os dados do atendimento</p>
+                <p className="text-[11px] text-[#56635C] dark:text-muted-foreground">Preencha os dados do atendimento</p>
               </div>
               <button
                 type="button"
                 onClick={() => setShowNewBookingModal(false)}
-                className="p-1.5 rounded-lg hover:bg-[#F8F6F0] cursor-pointer"
+                className="p-1.5 rounded-lg hover:bg-[#F8F6F0] dark:hover:bg-muted cursor-pointer"
               >
                 <X size={18} />
               </button>
             </div>
 
             <div className="mb-3.5 relative">
-              <label className="text-[11px] font-bold uppercase block mb-1">Cliente *</label>
+              <label className="text-[11px] font-bold uppercase block mb-1">Aluno *</label>
               <div className="relative">
-                <User size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#56635C]" />
+                <User size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#56635C] dark:text-muted-foreground" />
                 <input
                   required
                   value={clienteInput}
@@ -914,13 +913,13 @@ export default function Schedule() {
                     setClienteSelecionado(null);
                     setShowSuggestions(true);
                   }}
-                  placeholder="Nome do cliente"
-                  className="w-full pl-8 pr-3 py-2 bg-[#F8F6F0] border border-[#E3DEC9] rounded-xl text-xs outline-none focus:border-[#009386]"
+                  placeholder="Nome do aluno"
+                  className="w-full pl-8 pr-3 py-2 bg-[#F8F6F0] dark:bg-background border border-[#E3DEC9] dark:border-border rounded-xl text-xs outline-none focus:border-[#009386]"
                 />
               </div>
 
               {showSuggestions && filteredClients.length > 0 && (
-                <div className="absolute left-0 right-0 mt-1 bg-white border border-[#E3DEC9] rounded-xl shadow-xl z-20 max-h-36 overflow-y-auto">
+                <div className="absolute left-0 right-0 mt-1 bg-white dark:bg-card border border-[#E3DEC9] dark:border-border rounded-xl shadow-xl z-20 max-h-36 overflow-y-auto">
                   {filteredClients.map((c) => (
                     <button
                       type="button"
@@ -930,7 +929,7 @@ export default function Schedule() {
                         setClienteSelecionado(c.id);
                         setShowSuggestions(false);
                       }}
-                      className="w-full text-left px-3 py-2 hover:bg-[#F8F6F0] text-xs font-medium cursor-pointer"
+                      className="w-full text-left px-3 py-2 hover:bg-[#F8F6F0] dark:hover:bg-muted text-xs font-medium cursor-pointer"
                     >
                       {c.nome}
                     </button>
@@ -946,7 +945,7 @@ export default function Schedule() {
                 type="date"
                 value={formData.data}
                 onChange={(e) => setFormData({ ...formData, data: e.target.value })}
-                className="w-full px-3 py-2 bg-[#F8F6F0] border border-[#E3DEC9] rounded-xl text-xs outline-none focus:border-[#009386]"
+                className="w-full px-3 py-2 bg-[#F8F6F0] dark:bg-background border border-[#E3DEC9] dark:border-border rounded-xl text-xs outline-none focus:border-[#009386]"
               />
             </div>
 
@@ -964,7 +963,7 @@ export default function Schedule() {
                       horaFim: calcularHoraFim(e.target.value)
                     })
                   }
-                  className="w-full px-3 py-2 bg-[#F8F6F0] border border-[#E3DEC9] rounded-xl text-xs outline-none focus:border-[#009386]"
+                  className="w-full px-3 py-2 bg-[#F8F6F0] dark:bg-background border border-[#E3DEC9] dark:border-border rounded-xl text-xs outline-none focus:border-[#009386]"
                 />
               </div>
               <div>
@@ -974,7 +973,7 @@ export default function Schedule() {
                   type="time"
                   value={formData.horaFim}
                   onChange={(e) => setFormData({ ...formData, horaFim: e.target.value })}
-                  className="w-full px-3 py-2 bg-[#F8F6F0] border border-[#E3DEC9] rounded-xl text-xs outline-none focus:border-[#009386]"
+                  className="w-full px-3 py-2 bg-[#F8F6F0] dark:bg-background border border-[#E3DEC9] dark:border-border rounded-xl text-xs outline-none focus:border-[#009386]"
                 />
               </div>
             </div>
@@ -986,7 +985,7 @@ export default function Schedule() {
                 value={formData.observacoes}
                 onChange={(e) => setFormData({ ...formData, observacoes: e.target.value })}
                 placeholder="Observações adicionais..."
-                className="w-full px-3 py-2 bg-[#F8F6F0] border border-[#E3DEC9] rounded-xl text-xs outline-none focus:border-[#009386] resize-none"
+                className="w-full px-3 py-2 bg-[#F8F6F0] dark:bg-background border border-[#E3DEC9] dark:border-border rounded-xl text-xs outline-none focus:border-[#009386] resize-none"
               />
             </div>
 
@@ -994,7 +993,7 @@ export default function Schedule() {
               <button
                 type="button"
                 onClick={() => setShowNewBookingModal(false)}
-                className="flex-1 py-2.5 rounded-xl bg-[#EBE5D3]/60 hover:bg-[#EBE5D3] font-bold text-xs cursor-pointer"
+                className="flex-1 py-2.5 rounded-xl bg-[#EBE5D3]/60 dark:bg-muted/60 hover:bg-[#EBE5D3] dark:hover:bg-muted font-bold text-xs cursor-pointer"
               >
                 Cancelar
               </button>
@@ -1017,7 +1016,7 @@ export default function Schedule() {
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 sm:p-6 shadow-2xl"
+            className="bg-white dark:bg-card w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 sm:p-6 shadow-2xl"
           >
             <div className="flex items-start justify-between">
               <div>
@@ -1029,15 +1028,15 @@ export default function Schedule() {
               <button
                 type="button"
                 onClick={() => setSelectedBooking(null)}
-                className="p-1.5 hover:bg-[#F8F6F0] rounded-lg cursor-pointer"
+                className="p-1.5 hover:bg-[#F8F6F0] dark:hover:bg-muted rounded-lg cursor-pointer"
               >
                 <X size={18} />
               </button>
             </div>
 
-            <div className="mt-4 space-y-2 text-xs text-[#56635C]">
+            <div className="mt-4 space-y-2 text-xs text-[#56635C] dark:text-muted-foreground">
               <div className="flex items-center gap-2">
-                <Clock size={14} className="text-[#009386]" />
+                <Clock size={14} className="text-[#009386] dark:text-[#3CD099]" />
                 <span>
                   {normalizeTime(selectedBooking.horaInicio)} às {normalizeTime(selectedBooking.horaFim)}
                 </span>
@@ -1045,12 +1044,12 @@ export default function Schedule() {
 
               {selectedBooking.preco && (
                 <div>
-                  <strong className="text-[#1B2E26]">Valor:</strong> R$ {selectedBooking.preco}
+                  <strong className="text-[#1B2E26] dark:text-foreground">Valor:</strong> R$ {selectedBooking.preco}
                 </div>
               )}
             </div>
 
-            <div className="flex gap-2 mt-5 pt-3 border-t border-[#E3DEC9]">
+            <div className="flex gap-2 mt-5 pt-3 border-t border-[#E3DEC9] dark:border-border">
               {selectedBooking.status !== 'CONCLUIDO' && selectedBooking.status !== 'CANCELADO' && (
                 <button
                   type="button"
@@ -1083,14 +1082,14 @@ export default function Schedule() {
           <form
             onSubmit={handleBloquearPeriodo}
             onClick={(e) => e.stopPropagation()}
-            className="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 sm:p-6 shadow-2xl"
+            className="bg-white dark:bg-card w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 sm:p-6 shadow-2xl"
           >
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-bold">Bloquear Intervalo</h2>
               <button
                 type="button"
                 onClick={() => setShowBlockModal(false)}
-                className="p-1.5 hover:bg-[#F8F6F0] rounded-lg cursor-pointer"
+                className="p-1.5 hover:bg-[#F8F6F0] dark:hover:bg-muted rounded-lg cursor-pointer"
               >
                 <X size={18} />
               </button>
@@ -1104,7 +1103,7 @@ export default function Schedule() {
                   type="date"
                   value={blockData.data}
                   onChange={(e) => setBlockData({ ...blockData, data: e.target.value })}
-                  className="w-full p-2 bg-[#F8F6F0] border border-[#E3DEC9] rounded-xl text-xs"
+                  className="w-full p-2 bg-[#F8F6F0] dark:bg-background border border-[#E3DEC9] dark:border-border rounded-xl text-xs"
                 />
               </div>
 
@@ -1116,7 +1115,7 @@ export default function Schedule() {
                     type="time"
                     value={blockData.horaInicio}
                     onChange={(e) => setBlockData({ ...blockData, horaInicio: e.target.value })}
-                    className="w-full p-2 bg-[#F8F6F0] border border-[#E3DEC9] rounded-xl text-xs"
+                    className="w-full p-2 bg-[#F8F6F0] dark:bg-background border border-[#E3DEC9] dark:border-border rounded-xl text-xs"
                   />
                 </div>
                 <div>
@@ -1126,11 +1125,11 @@ export default function Schedule() {
                     type="time"
                     value={blockData.horaFim}
                     onChange={(e) => setBlockData({ ...blockData, horaFim: e.target.value })}
-                    className="w-full p-2 bg-[#F8F6F0] border border-[#E3DEC9] rounded-xl text-xs"
+                    className="w-full p-2 bg-[#F8F6F0] dark:bg-background border border-[#E3DEC9] dark:border-border rounded-xl text-xs"
                   />
                 </div>
               </div>
-              <p className="text-[10px] text-[#56635C]">
+              <p className="text-[10px] text-[#56635C] dark:text-muted-foreground">
                 Todos os horários nesse intervalo ficarão indisponíveis para agendamento.
               </p>
             </div>
@@ -1139,7 +1138,7 @@ export default function Schedule() {
               <button
                 type="button"
                 onClick={() => setShowBlockModal(false)}
-                className="flex-1 py-2.5 rounded-xl bg-[#EBE5D3] font-bold text-xs cursor-pointer"
+                className="flex-1 py-2.5 rounded-xl bg-[#EBE5D3] dark:bg-muted font-bold text-xs cursor-pointer"
               >
                 Cancelar
               </button>

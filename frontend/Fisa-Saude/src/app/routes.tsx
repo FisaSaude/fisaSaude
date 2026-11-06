@@ -1,4 +1,4 @@
-import { createBrowserRouter } from "react-router";
+import { createBrowserRouter, Navigate } from "react-router";
 import LandingPage from "./pages/LandingPage";
 import ClientBooking from "./pages/client/ClientBooking";
 import ClientSelectTime from "./pages/client/ClientSelectTime";
@@ -16,6 +16,8 @@ import Logs from "./pages/admin/Logs";
 import AdminLayout from "./layouts/AdminLayout";
 import RootLayout from "./layouts/RootLayout";
 import TeamManagement from './pages/admin/TeamManagement';
+import Profile from './pages/admin/Profile';
+import Packages from './pages/admin/Packages';
 
 export const router = createBrowserRouter([
   {
@@ -57,8 +59,11 @@ export const router = createBrowserRouter([
           { path: "equipe", Component: TeamManagement },
           { path: "relacionamento", Component: RelacionamentoComercial },
           { path: "financeiro", Component: Financial },
+          { path: "pacotes", Component: Packages },
+          { path: "perfil", Component: Profile },
           { path: "logs", Component: Logs },
-          { path: "configuracoes", Component: Settings },
+          { path: "ajustes", Component: Settings },
+          { path: "configuracoes", element: <Navigate to="/admin/ajustes" replace /> },
         ],
       },
     ],

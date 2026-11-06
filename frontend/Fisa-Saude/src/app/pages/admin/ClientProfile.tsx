@@ -109,18 +109,18 @@ export default function ClientProfile({ client, onClose }: ClientProfileProps) {
 
   return (
     <div className="fixed sm:static inset-0 z-50 sm:z-auto bg-black/50 sm:bg-transparent flex items-end sm:items-stretch">
-      <div className="w-full sm:w-80 md:w-96 bg-white sm:border border-[#E3DEC9] rounded-t-3xl sm:rounded-3xl flex flex-col max-h-[85vh] sm:max-h-full h-full shadow-2xl overflow-hidden animate-in slide-in-from-bottom sm:slide-in-from-right duration-200">
+      <div className="w-full sm:w-80 md:w-96 bg-white dark:bg-card sm:border border-[#E3DEC9] dark:border-border rounded-t-3xl sm:rounded-3xl flex flex-col max-h-[85vh] sm:max-h-full h-full shadow-2xl overflow-hidden animate-in slide-in-from-bottom sm:slide-in-from-right duration-200">
         {/* Header Drawer */}
-        <div className="p-3.5 sm:p-4 border-b border-[#E3DEC9] bg-[#F8F6F0]/60 flex items-center justify-between flex-shrink-0">
+        <div className="p-3.5 sm:p-4 border-b border-[#E3DEC9] dark:border-border bg-[#F8F6F0]/60 dark:bg-background/60 flex items-center justify-between flex-shrink-0">
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-[#009386]" />
-            <h2 className="text-xs font-bold uppercase text-[#1B2E26]">
-              Ficha do Paciente #{client.id}
+            <h2 className="text-xs font-bold uppercase text-[#1B2E26] dark:text-foreground">
+              Ficha do Aluno #{client.id}
             </h2>
           </div>
           <button
             onClick={onClose}
-            className="p-1 rounded-lg text-[#56635C] active:bg-[#EBE5D3]/60 cursor-pointer"
+            className="p-1 rounded-lg text-[#56635C] dark:text-muted-foreground active:bg-[#EBE5D3]/60 dark:active:bg-muted/60 cursor-pointer"
           >
             <X size={18} />
           </button>
@@ -128,52 +128,52 @@ export default function ClientProfile({ client, onClose }: ClientProfileProps) {
 
         {/* Conteúdo com Scroll */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          <div className="flex flex-col items-center text-center pb-3 border-b border-[#E3DEC9]/60">
-            <div className="w-14 h-14 rounded-full bg-[#009386]/10 text-[#009386] font-black text-xl flex items-center justify-center mb-1.5 border border-[#009386]/20">
+          <div className="flex flex-col items-center text-center pb-3 border-b border-[#E3DEC9]/60 dark:border-border/60">
+            <div className="w-14 h-14 rounded-full bg-[#009386]/10 text-[#009386] dark:text-[#3CD099] font-black text-xl flex items-center justify-center mb-1.5 border border-[#009386]/20">
               {client.nome.charAt(0).toUpperCase()}
             </div>
-            <h3 className="text-sm sm:text-base font-bold text-[#1B2E26]">{client.nome}</h3>
-            <span className="mt-1 text-[9px] font-bold uppercase px-2 py-0.5 rounded-full bg-[#3CD099]/15 text-[#0E2820] flex items-center gap-1">
-              <CheckCircle2 size={11} className="text-[#009386]" /> WhatsApp Ativo
+            <h3 className="text-sm sm:text-base font-bold text-[#1B2E26] dark:text-foreground">{client.nome}</h3>
+            <span className="mt-1 text-[9px] font-bold uppercase px-2 py-0.5 rounded-full bg-[#3CD099]/15 text-[#0E2820] dark:text-foreground flex items-center gap-1">
+              <CheckCircle2 size={11} className="text-[#009386] dark:text-[#3CD099]" /> WhatsApp Ativo
             </span>
           </div>
 
-          {/* Dados do Paciente */}
+          {/* Dados do Aluno */}
           <div className="space-y-2">
-            <div className="p-2.5 bg-[#F8F6F0] rounded-xl flex items-center justify-between text-xs">
+            <div className="p-2.5 bg-[#F8F6F0] dark:bg-background rounded-xl flex items-center justify-between text-xs">
               <div className="flex items-center gap-2">
-                <Phone size={13} className="text-[#009386]" />
-                <span className="font-bold text-[#1B2E26]">{formatTelefone(client.telefone)}</span>
+                <Phone size={13} className="text-[#009386] dark:text-[#3CD099]" />
+                <span className="font-bold text-[#1B2E26] dark:text-foreground">{formatTelefone(client.telefone)}</span>
               </div>
               {telNumeros && (
                 <a
                   href={`https://wa.me/${telNumeros.startsWith('55') ? telNumeros : `55${telNumeros}`}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="p-1 text-[#009386] bg-white rounded-md shadow-2xs"
+                  className="p-1 text-[#009386] dark:text-[#3CD099] bg-white dark:bg-card rounded-md shadow-2xs"
                 >
                   <ExternalLink size={12} />
                 </a>
               )}
             </div>
 
-            <div className="p-2.5 bg-[#F8F6F0] rounded-xl flex items-center gap-2 text-xs">
-              <Calendar size={13} className="text-[#009386]" />
-              <span className="text-[#56635C]">Nascimento:</span>
-              <strong className="text-[#1B2E26]">{formatDateBR(client.dataNascimento)}</strong>
+            <div className="p-2.5 bg-[#F8F6F0] dark:bg-background rounded-xl flex items-center gap-2 text-xs">
+              <Calendar size={13} className="text-[#009386] dark:text-[#3CD099]" />
+              <span className="text-[#56635C] dark:text-muted-foreground">Nascimento:</span>
+              <strong className="text-[#1B2E26] dark:text-foreground">{formatDateBR(client.dataNascimento)}</strong>
             </div>
 
-            <div className="p-2.5 bg-[#F8F6F0] rounded-xl flex items-center gap-2 text-xs">
-              <HeartHandshake size={13} className="text-[#009386]" />
-              <span className="text-[#56635C]">Gênero:</span>
-              <strong className="text-[#1B2E26]">{client.sexo === 'F' ? 'Feminino' : 'Masculino'}</strong>
+            <div className="p-2.5 bg-[#F8F6F0] dark:bg-background rounded-xl flex items-center gap-2 text-xs">
+              <HeartHandshake size={13} className="text-[#009386] dark:text-[#3CD099]" />
+              <span className="text-[#56635C] dark:text-muted-foreground">Gênero:</span>
+              <strong className="text-[#1B2E26] dark:text-foreground">{client.sexo === 'F' ? 'Feminino' : 'Masculino'}</strong>
             </div>
           </div>
 
           {/* Prontuário Rápido */}
           <div className="pt-2 space-y-2">
-            <h4 className="text-[11px] font-bold uppercase text-[#56635C] flex items-center gap-1">
-              <FileText size={13} className="text-[#009386]" /> Adicionar Evolução
+            <h4 className="text-[11px] font-bold uppercase text-[#56635C] dark:text-muted-foreground flex items-center gap-1">
+              <FileText size={13} className="text-[#009386] dark:text-[#3CD099]" /> Adicionar Evolução
             </h4>
             <form onSubmit={handleSalvarObservacao} className="space-y-2">
               <textarea
@@ -181,7 +181,7 @@ export default function ClientProfile({ client, onClose }: ClientProfileProps) {
                 value={novaObservacao}
                 onChange={(e) => setNovaObservacao(e.target.value)}
                 placeholder="Anotações sobre a sessão..."
-                className="w-full p-2.5 bg-[#F8F6F0] border border-[#E3DEC9] rounded-xl text-xs resize-none"
+                className="w-full p-2.5 bg-[#F8F6F0] dark:bg-background border border-[#E3DEC9] dark:border-border rounded-xl text-xs resize-none"
               />
               <button
                 type="submit"
@@ -193,21 +193,21 @@ export default function ClientProfile({ client, onClose }: ClientProfileProps) {
             </form>
 
             <div className="space-y-2 pt-2">
-              <div className="text-[10px] font-bold uppercase text-[#56635C]">
+              <div className="text-[10px] font-bold uppercase text-[#56635C] dark:text-muted-foreground">
                 Histórico ({prontuarios.length})
               </div>
               {prontuarios.length > 0 ? (
                 prontuarios.map((item) => (
-                  <div key={item.id} className="p-2.5 bg-[#F8F6F0] rounded-xl border border-[#E3DEC9]/70 text-xs">
-                    <div className="flex items-center gap-1 text-[9px] text-[#56635C] font-semibold mb-1">
-                      <Clock size={10} className="text-[#009386]" />
+                  <div key={item.id} className="p-2.5 bg-[#F8F6F0] dark:bg-background rounded-xl border border-[#E3DEC9]/70 dark:border-border/70 text-xs">
+                    <div className="flex items-center gap-1 text-[9px] text-[#56635C] dark:text-muted-foreground font-semibold mb-1">
+                      <Clock size={10} className="text-[#009386] dark:text-[#3CD099]" />
                       <span>{formatDateTimeBR(item.criadoEm)}</span>
                     </div>
-                    <p className="text-[#1B2E26] leading-snug">{item.observacoes}</p>
+                    <p className="text-[#1B2E26] dark:text-foreground leading-snug">{item.observacoes}</p>
                   </div>
                 ))
               ) : (
-                <div className="p-3 bg-[#F8F6F0]/40 rounded-xl text-center text-[11px] text-[#56635C]">
+                <div className="p-3 bg-[#F8F6F0]/40 dark:bg-background/40 rounded-xl text-center text-[11px] text-[#56635C] dark:text-muted-foreground">
                   Sem histórico registrado.
                 </div>
               )}
@@ -216,10 +216,10 @@ export default function ClientProfile({ client, onClose }: ClientProfileProps) {
         </div>
 
         {/* Rodapé Drawer */}
-        <div className="p-3 border-t border-[#E3DEC9] bg-white flex-shrink-0">
+        <div className="p-3 border-t border-[#E3DEC9] dark:border-border bg-white dark:bg-card flex-shrink-0">
           <button
             onClick={onClose}
-            className="w-full py-2 bg-[#EBE5D3]/70 rounded-xl text-xs font-bold uppercase"
+            className="w-full py-2 bg-[#EBE5D3]/70 dark:bg-muted/70 rounded-xl text-xs font-bold uppercase"
           >
             Fechar
           </button>

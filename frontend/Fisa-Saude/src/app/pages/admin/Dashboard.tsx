@@ -149,13 +149,13 @@ export default function Dashboard() {
   const stats = useMemo(() => [
     {
       icon: Users,
-      label: 'Pacientes Ativos',
+      label: 'Alunos Ativos',
       value: String(clientes.length),
       change: `${clientes.filter((c) => c.whatsappAtivo !== false).length} c/ WhatsApp`,
       changeType: 'positive',
       color: 'from-primary to-emerald-600',
       tooltip:
-        'Total de pacientes cadastrados na clínica. O número reflete todos os registros ativos no sistema.'
+        'Total de alunos cadastrados na clínica. O número reflete todos os registros ativos no sistema.'
     },
     {
       icon: Calendar,
@@ -237,7 +237,7 @@ export default function Dashboard() {
   const primeiroNome = usuarioNome.split(' ')[0] || 'Profissional';
 
   return (
-    <div className="w-full h-full min-h-0 bg-[#F8F6F0] text-[#1B2E26] flex flex-col overflow-y-auto lg:overflow-hidden">
+    <div className="w-full h-full min-h-0 bg-[#F8F6F0] dark:bg-background text-[#1B2E26] dark:text-foreground flex flex-col overflow-y-auto lg:overflow-hidden">
       <div className="flex-1 min-h-0 p-3.5 sm:p-5 lg:p-6 flex flex-col">
         <div className="max-w-7xl mx-auto w-full flex-1 flex flex-col lg:min-h-0 space-y-3.5 sm:space-y-4">
 
@@ -247,8 +247,8 @@ export default function Dashboard() {
               <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold leading-tight">
                 Central Operacional
               </h1>
-              <p className="text-[11px] sm:text-xs text-[#56635C] mt-0.5">
-                Olá, <span className="font-semibold text-[#1B2E26]">{primeiroNome}</span>! Visão da clínica.
+              <p className="text-[11px] sm:text-xs text-[#56635C] dark:text-muted-foreground mt-0.5">
+                Olá, <span className="font-semibold text-[#1B2E26] dark:text-foreground">{primeiroNome}</span>! Visão da clínica.
               </p>
             </div>
             <button
@@ -266,7 +266,7 @@ export default function Dashboard() {
               return (
                 <div
                   key={index}
-                  className="bg-white rounded-2xl p-3 sm:p-4 shadow-xs border border-[#E3DEC9] flex flex-col justify-between overflow-visible"
+                  className="bg-white dark:bg-card rounded-2xl p-3 sm:p-4 shadow-xs border border-[#E3DEC9] dark:border-border flex flex-col justify-between overflow-visible"
                 >
                   <div className="flex items-start justify-between gap-1 mb-1.5 min-h-[1.75rem]">
                     <div className="flex items-center gap-2 min-w-0">
@@ -275,7 +275,7 @@ export default function Dashboard() {
                       >
                         <Icon size={14} />
                       </div>
-                      <span className="text-[9px] sm:text-[11px] font-bold text-[#56635C] uppercase tracking-wider truncate pt-0.5">
+                      <span className="text-[9px] sm:text-[11px] font-bold text-[#56635C] dark:text-muted-foreground uppercase tracking-wider truncate pt-0.5">
                         {stat.label}
                       </span>
                     </div>
@@ -283,8 +283,8 @@ export default function Dashboard() {
                   </div>
 
                   <div className="flex items-baseline justify-between mt-1">
-                    <div className="text-lg sm:text-2xl font-black text-[#1B2E26]">{stat.value}</div>
-                    <div className="text-[9px] sm:text-[10px] font-bold text-[#009386] truncate">
+                    <div className="text-lg sm:text-2xl font-black text-[#1B2E26] dark:text-foreground">{stat.value}</div>
+                    <div className="text-[9px] sm:text-[10px] font-bold text-[#009386] dark:text-[#3CD099] truncate">
                       {stat.change}
                     </div>
                   </div>
@@ -294,19 +294,19 @@ export default function Dashboard() {
           </div>
 
           {/* Resumo Semanal de Atendimentos */}
-          <div className="bg-white rounded-2xl p-3 sm:p-4 border border-[#E3DEC9] flex-shrink-0 shadow-xs">
-            <div className="grid grid-cols-3 gap-2 text-center divide-x divide-[#E3DEC9]/70">
+          <div className="bg-white dark:bg-card rounded-2xl p-3 sm:p-4 border border-[#E3DEC9] dark:border-border flex-shrink-0 shadow-xs">
+            <div className="grid grid-cols-3 gap-2 text-center divide-x divide-[#E3DEC9]/70 dark:divide-border/70">
               <div>
-                <div className="text-base sm:text-xl font-black text-[#009386] leading-none mb-0.5">{statsWeekly.completed}</div>
-                <div className="text-[9px] sm:text-[10px] text-[#56635C] font-bold">Concluídos</div>
+                <div className="text-base sm:text-xl font-black text-[#009386] dark:text-[#3CD099] leading-none mb-0.5">{statsWeekly.completed}</div>
+                <div className="text-[9px] sm:text-[10px] text-[#56635C] dark:text-muted-foreground font-bold">Concluídos</div>
               </div>
               <div className="pl-2">
-                <div className="text-base sm:text-xl font-black text-[#007491] leading-none mb-0.5">{statsWeekly.scheduled}</div>
-                <div className="text-[9px] sm:text-[10px] text-[#56635C] font-bold">Agendados</div>
+                <div className="text-base sm:text-xl font-black text-[#007491] dark:text-[#3CD099] leading-none mb-0.5">{statsWeekly.scheduled}</div>
+                <div className="text-[9px] sm:text-[10px] text-[#56635C] dark:text-muted-foreground font-bold">Agendados</div>
               </div>
               <div className="pl-2">
-                <div className="text-base sm:text-xl font-black text-[#D94F3C] leading-none mb-0.5">{statsWeekly.cancelled}</div>
-                <div className="text-[9px] sm:text-[10px] text-[#56635C] font-bold">Cancelados</div>
+                <div className="text-base sm:text-xl font-black text-[#D94F3C] dark:text-[#FF8FA3] leading-none mb-0.5">{statsWeekly.cancelled}</div>
+                <div className="text-[9px] sm:text-[10px] text-[#56635C] dark:text-muted-foreground font-bold">Cancelados</div>
               </div>
             </div>
           </div>
@@ -314,11 +314,11 @@ export default function Dashboard() {
           {/* Grid Principal */}
           <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-3.5 sm:gap-4 lg:min-h-0">
             {/* Agenda de Hoje (Sempre Visível no Mobile e no Desktop) */}
-            <div className="lg:col-span-2 flex flex-col bg-white rounded-2xl sm:rounded-3xl border border-[#E3DEC9] shadow-xs overflow-hidden">
-              <div className="p-3 sm:p-4 border-b border-[#E3DEC9] flex items-center justify-between flex-shrink-0 bg-[#F8F6F0]/50">
+            <div className="lg:col-span-2 flex flex-col bg-white dark:bg-card rounded-2xl sm:rounded-3xl border border-[#E3DEC9] dark:border-border shadow-xs overflow-hidden">
+              <div className="p-3 sm:p-4 border-b border-[#E3DEC9] dark:border-border flex items-center justify-between flex-shrink-0 bg-[#F8F6F0]/50 dark:bg-background/50">
                 <div>
-                  <h2 className="text-sm sm:text-base font-bold text-[#1B2E26]">Agenda de Hoje</h2>
-                  <p className="text-[10px] sm:text-xs text-[#56635C] capitalize">{dataHojeFormatada}</p>
+                  <h2 className="text-sm sm:text-base font-bold text-[#1B2E26] dark:text-foreground">Agenda de Hoje</h2>
+                  <p className="text-[10px] sm:text-xs text-[#56635C] dark:text-muted-foreground capitalize">{dataHojeFormatada}</p>
                 </div>
                 <button
                   onClick={() => navigate('/admin/agenda')}
@@ -328,41 +328,41 @@ export default function Dashboard() {
                 </button>
               </div>
 
-              <div className="flex-1 divide-y divide-[#E3DEC9]/60 overflow-y-auto min-h-[260px] max-h-[380px] lg:max-h-none">
+              <div className="flex-1 divide-y divide-[#E3DEC9]/60 dark:divide-border/60 overflow-y-auto min-h-[260px] max-h-[380px] lg:max-h-none">
                 {agendamentosHoje.length > 0 ? (
                   agendamentosHoje.map((item, index) => (
-                    <div key={index} className="p-2.5 sm:p-3 hover:bg-[#F8F6F0]/60 transition-colors flex items-center gap-2.5 sm:gap-3">
-                      <div className="w-12 sm:w-14 text-center py-1 rounded-lg text-xs font-bold bg-[#009386]/10 text-[#009386] flex-shrink-0">
+                    <div key={index} className="p-2.5 sm:p-3 hover:bg-[#F8F6F0]/60 dark:hover:bg-muted/60 transition-colors flex items-center gap-2.5 sm:gap-3">
+                      <div className="w-12 sm:w-14 text-center py-1 rounded-lg text-xs font-bold bg-[#009386]/10 text-[#009386] dark:text-[#3CD099] flex-shrink-0">
                         {normalizeTime(item.horaInicio)}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="text-xs sm:text-sm font-bold text-[#1B2E26] truncate">
+                        <div className="text-xs sm:text-sm font-bold text-[#1B2E26] dark:text-foreground truncate">
                           {item.nomeCliente || 'Atendimento Reservado'}
                         </div>
-                        <div className="text-[10px] sm:text-xs text-[#56635C] flex items-center gap-1 mt-0.5 truncate">
+                        <div className="text-[10px] sm:text-xs text-[#56635C] dark:text-muted-foreground flex items-center gap-1 mt-0.5 truncate">
                           <Clock size={11} />
                           {item.preco ? `R$ ${item.preco}` : 'Sessão'} • 50 min
                         </div>
                       </div>
                       <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase flex-shrink-0 ${item.status === 'CONCLUIDO'
-                          ? 'bg-[#009386]/10 text-[#009386]'
-                          : 'bg-[#3CD099]/15 text-[#0E2820]'
+                          ? 'bg-[#009386]/10 text-[#009386] dark:text-[#3CD099]'
+                          : 'bg-[#3CD099]/15 text-[#0E2820] dark:text-foreground'
                         }`}>
                         {item.status}
                       </span>
                     </div>
                   ))
                 ) : (
-                  <div className="p-10 text-center text-xs text-[#56635C]">
+                  <div className="p-10 text-center text-xs text-[#56635C] dark:text-muted-foreground">
                     Nenhum atendimento marcado para o dia de hoje.
                   </div>
                 )}
               </div>
 
-              <div className="p-2.5 border-t border-[#E3DEC9] bg-[#F8F6F0]/40 flex-shrink-0 text-right">
+              <div className="p-2.5 border-t border-[#E3DEC9] dark:border-border bg-[#F8F6F0]/40 dark:bg-background/40 flex-shrink-0 text-right">
                 <button
                   onClick={() => navigate('/admin/agenda')}
-                  className="text-[#009386] hover:underline text-xs font-bold inline-flex items-center gap-1 cursor-pointer"
+                  className="text-[#009386] dark:text-[#3CD099] hover:underline text-xs font-bold inline-flex items-center gap-1 cursor-pointer"
                 >
                   Ver agenda completa <ChevronRight size={13} />
                 </button>
@@ -373,13 +373,13 @@ export default function Dashboard() {
             {/* hidden lg:flex garante que em telas mobile este bloco seja totalmente removido */}
             <div className="hidden lg:flex flex-col gap-4 min-h-0 overflow-hidden">
               {/* Bloco Complementar 1: Ações e Acesso Rápido */}
-              <div className="bg-white rounded-3xl p-4 border border-[#E3DEC9] shadow-xs flex-shrink-0">
+              <div className="bg-white dark:bg-card rounded-3xl p-4 border border-[#E3DEC9] dark:border-border shadow-xs flex-shrink-0">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
-                    <Sparkles size={16} className="text-[#009386]" />
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-[#1B2E26]">Planos & Operação</h3>
+                    <Sparkles size={16} className="text-[#009386] dark:text-[#3CD099]" />
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-[#1B2E26] dark:text-foreground">Planos & Operação</h3>
                   </div>
-                  <span className="text-[10px] font-bold text-[#009386] bg-[#009386]/10 px-2 py-0.5 rounded-full">
+                  <span className="text-[10px] font-bold text-[#009386] dark:text-[#3CD099] bg-[#009386]/10 px-2 py-0.5 rounded-full">
                     Ativo
                   </span>
                 </div>
@@ -387,33 +387,33 @@ export default function Dashboard() {
                 <div className="space-y-2">
                   <div
                     onClick={() => navigate('/admin/financeiro')}
-                    className="p-2.5 rounded-2xl bg-[#F8F6F0] hover:bg-[#EBE5D3]/60 transition-colors cursor-pointer flex items-center justify-between"
+                    className="p-2.5 rounded-2xl bg-[#F8F6F0] dark:bg-background hover:bg-[#EBE5D3]/60 dark:hover:bg-muted/60 transition-colors cursor-pointer flex items-center justify-between"
                   >
                     <div>
-                      <p className="text-xs font-bold text-[#1B2E26]">Pacote Fisa Movimento</p>
-                      <span className="text-[10px] text-[#56635C]">Pilates 2x/sem + Fisioterapia</span>
+                      <p className="text-xs font-bold text-[#1B2E26] dark:text-foreground">Pacote Fisa Movimento</p>
+                      <span className="text-[10px] text-[#56635C] dark:text-muted-foreground">Pilates 2x/sem + Fisioterapia</span>
                     </div>
-                    <ArrowUpRight size={15} className="text-[#009386]" />
+                    <ArrowUpRight size={15} className="text-[#009386] dark:text-[#3CD099]" />
                   </div>
 
                   <div
                     onClick={() => navigate('/admin/clientes')}
-                    className="p-2.5 rounded-2xl bg-[#F8F6F0] hover:bg-[#EBE5D3]/60 transition-colors cursor-pointer flex items-center justify-between"
+                    className="p-2.5 rounded-2xl bg-[#F8F6F0] dark:bg-background hover:bg-[#EBE5D3]/60 dark:hover:bg-muted/60 transition-colors cursor-pointer flex items-center justify-between"
                   >
                     <div>
-                      <p className="text-xs font-bold text-[#1B2E26]">Base de Pacientes</p>
-                      <span className="text-[10px] text-[#56635C]">{clientes.length} cadastrados no sistema</span>
+                      <p className="text-xs font-bold text-[#1B2E26] dark:text-foreground">Base de Alunos</p>
+                      <span className="text-[10px] text-[#56635C] dark:text-muted-foreground">{clientes.length} cadastrados no sistema</span>
                     </div>
-                    <ArrowUpRight size={15} className="text-[#009386]" />
+                    <ArrowUpRight size={15} className="text-[#009386] dark:text-[#3CD099]" />
                   </div>
                 </div>
               </div>
 
               {/* Bloco Complementar 2: Atividades Recentes */}
-              <div className="flex-1 bg-white rounded-3xl p-4 border border-[#E3DEC9] shadow-xs flex flex-col min-h-0 overflow-hidden">
+              <div className="flex-1 bg-white dark:bg-card rounded-3xl p-4 border border-[#E3DEC9] dark:border-border shadow-xs flex flex-col min-h-0 overflow-hidden">
                 <div className="flex items-center justify-between mb-3 flex-shrink-0">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-[#1B2E26]">Atividades Recentes</h3>
-                  <span className="text-[9px] font-bold bg-[#009386]/10 text-[#009386] px-2 py-0.5 rounded-full">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-[#1B2E26] dark:text-foreground">Atividades Recentes</h3>
+                  <span className="text-[9px] font-bold bg-[#009386]/10 text-[#009386] dark:text-[#3CD099] px-2 py-0.5 rounded-full">
                     Últimas
                   </span>
                 </div>
@@ -429,21 +429,21 @@ export default function Dashboard() {
                     const Icon = iconMap[activity.type as keyof typeof iconMap] || Info;
 
                     return (
-                      <div key={index} className="flex gap-2.5 text-xs p-2.5 rounded-2xl bg-[#F8F6F0]/60 border border-[#E3DEC9]/50">
+                      <div key={index} className="flex gap-2.5 text-xs p-2.5 rounded-2xl bg-[#F8F6F0]/60 dark:bg-background/60 border border-[#E3DEC9]/50 dark:border-border/50">
                         <div className={`w-7 h-7 rounded-xl flex items-center justify-center flex-shrink-0 ${activity.type === 'success'
-                            ? 'bg-[#009386]/10 text-[#009386]'
+                            ? 'bg-[#009386]/10 text-[#009386] dark:text-[#3CD099]'
                             : activity.type === 'booking'
-                              ? 'bg-[#007491]/10 text-[#007491]'
+                              ? 'bg-[#007491]/10 text-[#007491] dark:text-[#3CD099]'
                               : activity.type === 'alert'
-                                ? 'bg-[#FF6954]/10 text-[#D94F3C]'
-                                : 'bg-[#EBE5D3] text-[#1B2E26]'
+                                ? 'bg-[#FF6954]/10 text-[#D94F3C] dark:text-[#FF8FA3]'
+                                : 'bg-[#EBE5D3] dark:bg-muted text-[#1B2E26] dark:text-foreground'
                           }`}>
                           <Icon size={14} />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="font-bold text-[#1B2E26] text-[11px] truncate">{activity.title}</div>
-                          <div className="text-[#56635C] text-[10px] truncate mt-0.5">{activity.description}</div>
-                          <div className="text-[9px] text-[#56635C]/70 font-semibold mt-0.5">{activity.time}</div>
+                          <div className="font-bold text-[#1B2E26] dark:text-foreground text-[11px] truncate">{activity.title}</div>
+                          <div className="text-[#56635C] dark:text-muted-foreground text-[10px] truncate mt-0.5">{activity.description}</div>
+                          <div className="text-[9px] text-[#56635C]/70 dark:text-muted-foreground/70 font-semibold mt-0.5">{activity.time}</div>
                         </div>
                       </div>
                     );
