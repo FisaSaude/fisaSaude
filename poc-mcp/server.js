@@ -1,258 +1,40 @@
-/** POC: MCP → API Java (:8080). Rode: node server.js */
+/**
+ * POC Fisa Saúde — MCP (Streamable HTTP) + proxy Twilio num único ngrok (:3333).
+ * Subir: node server.js | ngrok: ngrok http 3333 + MCP_PUBLIC_URL=https://....ngrok-free.app
+ */
 import { createHash, randomBytes } from "node:crypto";
 import { createServer, request as httpRequest } from "node:http";
 import { z } from "zod";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 
+// —— 1. CONFIGURAÇÕES ——
 const API = "http://localhost:8080";
 const PORT = 3333;
 const NOTIFICACAO_PORT = 8081;
-const SERVICO_ID_PADRAO = 1;
-const USUARIO_ID_PADRAO = 1;
+const ESTABELECIMENTO_PADRAO = 1;
 const MCP_PUBLIC_URL = process.env.MCP_PUBLIC_URL?.replace(/\/$/, "");
+const STATUS_AGENDA = ["AGENDADO", "CONFIRMADO", "CONCLUIDO", "BLOQUEADO"];
+
 let token;
 let accessCookie;
-
-/** OAuth mínimo para conector customizado da Claude (DCR + PKCE). */
 const oauthClients = new Map();
 const oauthCodes = new Map();
 const oauthTokens = new Map();
 
-function publicBase(req) {
-  if (MCP_PUBLIC_URL) return MCP_PUBLIC_URL;
-  const proto = req.headers["x-forwarded-proto"] || "http";
-  const host = req.headers["x-forwarded-host"] || req.headers.host || `localhost:${PORT}`;
-  return `${proto}://${host}`;
-}
-
-function mcpResourceUrl(req) {
-  return `${publicBase(req)}/mcp`;
-}
-
-function protectedResourceMetadata(req) {
-  const base = publicBase(req);
-  return {
-    resource: mcpResourceUrl(req),
-    authorization_servers: [base],
-    bearer_methods_supported: ["header"],
-    scopes_supported: ["mcp"],
-  };
-}
-
-function authServerMetadata(req) {
-  const base = publicBase(req);
-  return {
-    issuer: base,
-    authorization_endpoint: `${base}/authorize`,
-    token_endpoint: `${base}/token`,
-    registration_endpoint: `${base}/register`,
-    response_types_supported: ["code"],
-    grant_types_supported: ["authorization_code", "refresh_token"],
-    token_endpoint_auth_methods_supported: ["none", "client_secret_post"],
-    code_challenge_methods_supported: ["S256"],
-    scopes_supported: ["mcp"],
-  };
-}
-
-function id(bytes = 16) {
-  return randomBytes(bytes).toString("base64url");
-}
-
-/** Soma 1h em HH:mm ou HH:mm:ss (mesmo formato de entrada). */
-function addOneHour(horaInicio) {
-  const parts = horaInicio.trim().split(":");
-  const h = Number(parts[0]) || 0;
-  const m = Number(parts[1]) || 0;
-  const hasSeconds = parts.length >= 3;
-  const s = hasSeconds ? Number(parts[2]) || 0 : 0;
-  const nh = (h + 1) % 24;
-  const pad = (n) => String(n).padStart(2, "0");
-  return hasSeconds ? `${pad(nh)}:${pad(m)}:${pad(s)}` : `${pad(nh)}:${pad(m)}`;
-}
-
-function pkceOk(verifier, challenge) {
-  if (!verifier || !challenge) return false;
-  const digest = createHash("sha256").update(verifier).digest("base64url");
-  return digest === challenge;
-}
-
-function sendJson(res, status, body) {
-  res.statusCode = status;
-  res.setHeader("Content-Type", "application/json; charset=utf-8");
-  res.end(JSON.stringify(body));
-}
-
-async function readBodyText(req) {
-  const buf = await new Promise((res, rej) => {
-    const c = [];
-    req.on("data", (x) => c.push(x));
-    req.on("end", () => res(Buffer.concat(c)));
-    req.on("error", rej);
-  });
-  return buf.toString("utf8");
-}
-
-async function readBodyJson(req) {
-  const s = await readBodyText(req);
-  return s ? JSON.parse(s) : undefined;
-}
-
-function parseFormBody(raw) {
-  return Object.fromEntries(new URLSearchParams(raw));
-}
-
-function allowedRedirect(uri) {
-  if (!uri) return false;
-  try {
-    const u = new URL(uri);
-    if (u.hostname === "claude.ai" && u.pathname === "/api/mcp/auth_callback") return true;
-    if (u.hostname === "localhost" || u.hostname === "127.0.0.1") return true;
-  } catch {
-    return false;
-  }
-  return false;
-}
-
-async function handleOAuth(req, res, path) {
-  if (path === "/.well-known/oauth-protected-resource" || path === "/.well-known/oauth-protected-resource/mcp") {
-    sendJson(res, 200, protectedResourceMetadata(req));
-    return true;
-  }
-  if (path === "/.well-known/oauth-authorization-server") {
-    sendJson(res, 200, authServerMetadata(req));
-    return true;
-  }
-  if (path === "/register" && req.method === "POST") {
-    let body;
-    try {
-      body = await readBodyJson(req);
-    } catch {
-      sendJson(res, 400, { error: "invalid_client_metadata" });
-      return true;
-    }
-    const redirectUris = body?.redirect_uris || [];
-    if (!redirectUris.some(allowedRedirect)) {
-      sendJson(res, 400, { error: "invalid_redirect_uri" });
-      return true;
-    }
-    const clientId = id();
-    const now = Math.floor(Date.now() / 1000);
-    const client = {
-      client_id: clientId,
-      client_id_issued_at: now,
-      client_secret_expires_at: 0,
-      redirect_uris: redirectUris,
-      grant_types: body.grant_types || ["authorization_code"],
-      response_types: body.response_types || ["code"],
-      token_endpoint_auth_method: body.token_endpoint_auth_method || "none",
-      client_name: body.client_name || "Claude",
-    };
-    oauthClients.set(clientId, client);
-    console.log("OAuth client registrado:", clientId);
-    sendJson(res, 201, client);
-    return true;
-  }
-  if (path === "/authorize" && req.method === "GET") {
-    const q = new URL(req.url || "", `${publicBase(req)}/`);
-    const clientId = q.searchParams.get("client_id");
-    const redirectUri = q.searchParams.get("redirect_uri");
-    const state = q.searchParams.get("state");
-    const codeChallenge = q.searchParams.get("code_challenge");
-    const responseType = q.searchParams.get("response_type") || "code";
-    const client = oauthClients.get(clientId);
-    if (!client || responseType !== "code" || !allowedRedirect(redirectUri)) {
-      sendJson(res, 400, { error: "invalid_request" });
-      return true;
-    }
-    if (!client.redirect_uris.includes(redirectUri)) {
-      sendJson(res, 400, { error: "invalid_redirect_uri" });
-      return true;
-    }
-    const code = id(24);
-    oauthCodes.set(code, {
-      clientId,
-      redirectUri,
-      codeChallenge,
-      exp: Date.now() + 10 * 60 * 1000,
-    });
-    const dest = new URL(redirectUri);
-    dest.searchParams.set("code", code);
-    if (state) dest.searchParams.set("state", state);
-    res.writeHead(302, { Location: dest.toString() });
-    res.end();
-    console.log("OAuth authorize OK →", redirectUri);
-    return true;
-  }
-  if (path === "/token" && req.method === "POST") {
-    const raw = await readBodyText(req);
-    const body = parseFormBody(raw);
-    const grant = body.grant_type;
-    if (grant === "authorization_code") {
-      const code = body.code;
-      const clientId = body.client_id;
-      const redirectUri = body.redirect_uri;
-      const verifier = body.code_verifier;
-      const entry = oauthCodes.get(code);
-      oauthCodes.delete(code);
-      if (!entry || entry.exp < Date.now() || entry.clientId !== clientId || entry.redirectUri !== redirectUri) {
-        sendJson(res, 400, { error: "invalid_grant" });
-        return true;
-      }
-      if (!pkceOk(verifier, entry.codeChallenge)) {
-        sendJson(res, 400, { error: "invalid_grant", error_description: "PKCE verification failed" });
-        return true;
-      }
-      const access = id(32);
-      oauthTokens.set(access, { clientId, exp: Date.now() + 3600 * 1000 });
-      sendJson(res, 200, {
-        access_token: access,
-        token_type: "Bearer",
-        expires_in: 3600,
-        scope: "mcp",
-      });
-      console.log("OAuth token emitido para client", clientId);
-      return true;
-    }
-    if (grant === "refresh_token") {
-      sendJson(res, 400, { error: "unsupported_grant_type" });
-      return true;
-    }
-    sendJson(res, 400, { error: "unsupported_grant_type" });
-    return true;
-  }
-  return false;
-}
-
-// Mantém o webhook do Twilio no mesmo túnel ngrok do MCP (só /webhook/, nunca /internal/).
-function proxyNotificacao(req, res) {
-  const up = httpRequest(
-    { host: "localhost", port: NOTIFICACAO_PORT, path: req.url, method: req.method, headers: req.headers },
-    (r) => {
-      res.writeHead(r.statusCode, r.headers);
-      r.pipe(res);
-    }
-  );
-  up.on("error", (e) => {
-    console.log("Proxy notificacao falhou:", e.message);
-    res.statusCode = 502;
-    res.end("notificacao indisponivel");
-  });
-  req.pipe(up);
-}
-
+// —— 2. LOGIN E JWT ——
 function cookieFromSetCookie(headerValue) {
   if (!headerValue) return null;
-  const first = Array.isArray(headerValue) ? headerValue[0] : String(headerValue).split(",")[0];
-  const match = /(?:^|,\s*)access_token=([^;]+)/.exec(first) || /access_token=([^;]+)/.exec(String(headerValue));
-  return match ? match[1] : null;
+  const raw = Array.isArray(headerValue) ? headerValue.join(",") : String(headerValue);
+  const m = /access_token=([^;]+)/.exec(raw);
+  return m ? m[1] : null;
 }
 
 function authHeaders() {
-  const headers = { "Content-Type": "application/json" };
-  if (token) headers.Authorization = `Bearer ${token}`;
-  if (accessCookie) headers.Cookie = `access_token=${accessCookie}`;
-  return headers;
+  const h = { "Content-Type": "application/json" };
+  if (token) h.Authorization = `Bearer ${token}`;
+  if (accessCookie) h.Cookie = `access_token=${accessCookie}`;
+  return h;
 }
 
 async function login() {
@@ -268,302 +50,249 @@ async function login() {
     (typeof r.headers.getSetCookie === "function" && r.headers.getSetCookie()) ||
     r.headers.get("set-cookie");
   accessCookie = cookieFromSetCookie(setCookie) || token;
-  if (!token && !accessCookie) throw new Error("login sem token e sem cookie");
-  console.log("Login realizado com sucesso");
+  if (!token && !accessCookie) throw new Error("login sem token");
+  console.log("Login API Java OK");
 }
 
+// —— 3. FUNÇÃO DE CHAMADA DA API ——
 async function api(path, opt = {}) {
   if (!token && !accessCookie) await login();
-  const method = opt.method || "GET";
-  console.log(`Chamando endpoint: ${method} ${path}`);
-  const headers = { ...authHeaders(), ...(opt.headers || {}) };
-  let r = await fetch(`${API}${path}`, { ...opt, headers });
+  let r = await fetch(`${API}${path}`, { ...opt, headers: { ...authHeaders(), ...(opt.headers || {}) } });
   if (r.status === 401) {
     await login();
     r = await fetch(`${API}${path}`, { ...opt, headers: authHeaders() });
   }
-  if (!r.ok) {
-    const msg = await r.text();
-    console.log("Erro ao chamar API", r.status, msg);
-    throw new Error(msg || `HTTP ${r.status}`);
-  }
+  if (!r.ok) throw new Error((await r.text()) || `HTTP ${r.status}`);
   if (r.status === 204) return null;
   const t = await r.text();
   return t ? JSON.parse(t) : null;
 }
 
-const out = (data) => ({
-  content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
-});
+const out = (data) => ({ content: [{ type: "text", text: JSON.stringify(data, null, 2) }] });
 
-function formatarClientes(lista) {
-  const clientes = (lista || []).map((c) => ({
-    id: c.id,
-    nome: c.nome,
-    telefone: c.telefone ?? null,
-  }));
-  const nomes = clientes.map((c) => c.nome).filter(Boolean);
+function fmtHora(h) {
+  if (!h) return null;
+  const s = String(h);
+  const [hh, mm] = s.split(":");
+  return `${hh.padStart(2, "0")}:${(mm || "00").padStart(2, "0")}`;
+}
+
+function somarFinanceiro(raw) {
+  const lista = raw || [];
+  let entradas = 0;
+  let saidas = 0;
+  for (const d of lista) {
+    const v = Number(d.valor) || 0;
+    if (String(d.tipo).toLowerCase() === "receita") entradas += v;
+    else saidas += v;
+  }
   return {
-    total: clientes.length,
-    nomes,
-    clientes,
-    como_responder:
-      "Fale em português, de forma natural e curta. Cite só os nomes (e telefone se pedirem). Não mostre ID, não monte tabela técnica, não fale de MCP, API, filtro, letra ou truque de busca. Se a lista estiver vazia, diga que não há cliente cadastrado. O id fica só para as próximas tools (agendar, financeiro).",
+    quantidadeLancamentos: lista.length,
+    totalEntradas: entradas,
+    totalSaidas: saidas,
+    resultadoLiquido: entradas - saidas,
   };
 }
 
+// —— 4. TOOLS ——
 const tools = [
   {
-    name: "listar_clientes",
-    desc: "Lista todos os clientes da Fisa Saúde. Use isto quando perguntarem quem são os clientes, quantos tem ou 'meus clientes'. Não peça nome. Depois responda só com os nomes, em linguagem natural, sem ID e sem explicar a ferramenta.",
-    schema: z.object({}),
-    async run() {
-      return formatarClientes(await api("/clientes"));
-    },
-  },
-  {
-    name: "buscar_cliente",
-    desc: "Busca cliente por nome (trecho) ou, se já souber, por id interno. Se nome e id vierem vazios, lista todos — não invente filtro por letra. Na resposta ao usuário, cite só os nomes; não mostre ID nem fale de MCP/API.",
-    schema: { nome: z.string().optional(), id: z.number().int().positive().optional() },
-    async run({ nome, id }) {
-      if (id != null) {
-        const c = await api(`/clientes/${id}`);
-        return formatarClientes([c]);
-      }
-      const lista = await api("/clientes");
-      if (!nome?.trim()) return formatarClientes(lista);
-      const n = nome.trim().toLowerCase();
-      return formatarClientes((lista || []).filter((c) => c.nome?.toLowerCase().includes(n)));
-    },
-  },
-  {
-    name: "listar_agendamentos_cliente",
-    desc: "Agendamentos de um cliente. Use o id interno obtido em listar_clientes ou buscar_cliente. Ao responder, fale data, horário e status; não mostre o id.",
-    schema: { clienteId: z.number().int().positive() },
-    async run({ clienteId }) {
-      const lista = await api(`/agendamentos/cliente/${clienteId}`);
+    name: "consultar_agenda",
+    desc: "Consulta disponibilidade operacional da agenda em uma data (YYYY-MM-DD). Retorna se há atendimentos, quantidade e horários ocupados, sem dados pessoais.",
+    schema: z.object({ data: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }),
+    async run({ data }) {
+      const porStatus = await Promise.all(
+        STATUS_AGENDA.map((status) =>
+          api(`/agendamentos?status=${status}&dataInicio=${data}&dataFim=${data}`).catch(() => [])
+        )
+      );
+      const todos = porStatus.flat();
+      const horarios = [...new Set(todos.map((a) => fmtHora(a.horaInicio)).filter(Boolean))].sort();
       return {
-        agendamentos: (lista || []).map((a) => ({
-          data: a.data,
-          horaInicio: a.horaInicio,
-          horaFim: a.horaFim,
-          status: a.status,
-          servico: a.servico?.nome ?? null,
-        })),
-      };
-    },
-  },
-  {
-    name: "listar_financeiro_periodo",
-    desc: "Despesas no período (receitas = 0 no backend).",
-    schema: {
-      estabelecimentoId: z.number().int().positive(),
-      dataInicio: z.string(),
-      dataFim: z.string(),
-    },
-    async run({ estabelecimentoId, dataInicio, dataFim }) {
-      const qs = new URLSearchParams({ dataInicio, dataFim });
-      const raw = await api(`/despesas/estabelecimento/${estabelecimentoId}?${qs}`);
-      const despesas = (raw || []).map((d) => ({
-        nome: d.nome,
-        tipo: d.tipo,
-        dataDespesa: d.dataDespesa,
-        valor: Number(d.valor) || 0,
-      }));
-      const totalDespesas = despesas.reduce((s, d) => s + d.valor, 0);
-      return {
-        totalDespesas,
-        totalReceitas: 0,
-        resultadoLiquido: -totalDespesas,
-        quantidadeDespesas: despesas.length,
-        despesas,
-      };
-    },
-  },
-  {
-    name: "criar_agendamento",
-    desc: `Cria agendamento (POST /agendamentos). Campos obrigatórios: clienteId, data (YYYY-MM-DD), horaInicio (HH:mm). horaFim opcional (+1h se omitido). NÃO pergunte servicoId nem usuarioId ao usuário — omita esses campos e o servidor usa serviço padrão id ${SERVICO_ID_PADRAO} e professor padrão id ${USUARIO_ID_PADRAO}. Só envie servicoId/usuarioId se o usuário informar números explicitamente.`,
-    schema: {
-      clienteId: z.number().int().positive(),
-      data: z.string(),
-      horaInicio: z.string(),
-      horaFim: z.string().optional(),
-      servicoId: z.number().int().positive().optional(),
-      usuarioId: z.number().int().positive().optional(),
-    },
-    async run({ clienteId, data, horaInicio, horaFim, servicoId, usuarioId }) {
-      const servicoIdFinal = servicoId ?? SERVICO_ID_PADRAO;
-      const usuarioIdFinal = usuarioId ?? USUARIO_ID_PADRAO;
-      if (servicoId == null) console.log("Usando serviço padrão:", SERVICO_ID_PADRAO);
-      if (usuarioId == null) console.log("Usando usuário padrão:", USUARIO_ID_PADRAO);
-
-      const horaFimFinal = horaFim ?? addOneHour(horaInicio);
-      const payload = {
-        clienteId,
-        servicoId: servicoIdFinal,
-        usuarioId: usuarioIdFinal,
         data,
-        horaInicio,
-        horaFim: horaFimFinal,
-      };
-
-      console.log("criar_agendamento payload:", JSON.stringify(payload));
-      const criado = await api("/agendamentos", {
-        method: "POST",
-        body: JSON.stringify(payload),
-      });
-      console.log("criar_agendamento resposta:", JSON.stringify(criado));
-      return {
-        id: criado.id,
-        data: criado.data,
-        horaInicio: criado.horaInicio,
-        horaFim: criado.horaFim,
-        status: criado.status,
-        servicoId: servicoIdFinal,
-        usuarioId: usuarioIdFinal,
+        possuiAtendimento: horarios.length > 0,
+        quantidade: todos.length,
+        horariosOcupados: horarios,
       };
     },
   },
-
   {
-  name: "criar_cliente",
-  desc: "Cadastra cliente (POST /clientes). sexo: M, F ou OUTRO.",
-  schema: {
-    nome: z.string().min(1),
-    telefone: z.string().min(1),
-    dataNascimento: z.string(), // YYYY-MM-DD
-    sexo: z.enum(["M", "F", "OUTRO"]),
-    whatsappAtivo: z.boolean().optional(),
-    fotoLink: z.string().optional(),
+    name: "financeiro",
+    desc: "Financeiro da clínica: operacao=consultar (dataInicio, dataFim) para totais do período; registrar_entrada ou registrar_despesa (nome, valor, dataDespesa YYYY-MM-DD). Estabelecimento padrão 1.",
+    schema: z.object({
+      operacao: z.enum(["consultar", "registrar_entrada", "registrar_despesa"]),
+      dataInicio: z.string().optional(),
+      dataFim: z.string().optional(),
+      nome: z.string().min(1).optional(),
+      valor: z.number().positive().optional(),
+      dataDespesa: z.string().optional(),
+      estabelecimentoId: z.number().int().positive().optional(),
+      descricao: z.string().optional(),
+      tipo: z.string().optional(),
+    }),
+    async run(args) {
+      const estId = args.estabelecimentoId ?? ESTABELECIMENTO_PADRAO;
+      if (args.operacao === "consultar") {
+        if (!args.dataInicio || !args.dataFim) throw new Error("consultar exige dataInicio e dataFim");
+        const qs = new URLSearchParams({ dataInicio: args.dataInicio, dataFim: args.dataFim });
+        const raw = await api(`/despesas/estabelecimento/${estId}?${qs}`);
+        return { periodo: { dataInicio: args.dataInicio, dataFim: args.dataFim, estabelecimentoId: estId }, ...somarFinanceiro(raw) };
+      }
+      if (!args.nome || !args.valor || !args.dataDespesa) {
+        throw new Error("registro exige nome, valor e dataDespesa");
+      }
+      const entrada = args.operacao === "registrar_entrada";
+      const payload = {
+        nome: entrada && args.descricao ? `${args.nome} — ${args.descricao}` : args.nome,
+        dataDespesa: args.dataDespesa,
+        tipo: entrada ? "Receita" : args.tipo || "Operacional",
+        valor: args.valor,
+        estabelecimentoId: estId,
+      };
+      const criado = await api("/despesas", { method: "POST", body: JSON.stringify(payload) });
+      return {
+        ok: true,
+        operacao: args.operacao,
+        valor: Number(criado.valor),
+        descricao: criado.nome,
+        data: criado.dataDespesa,
+        tipo: criado.tipo,
+      };
+    },
   },
-  async run({ nome, telefone, dataNascimento, sexo, whatsappAtivo, fotoLink }) {
-    const criado = await api("/clientes", {
-      method: "POST",
-      body: JSON.stringify({
-        nome,
-        telefone,
-        dataNascimento,
-        sexo,
-        whatsappAtivo: whatsappAtivo ?? true,
-        fotoLink: fotoLink ?? null,
-      }),
-    });
-    return {
-      ok: true,
-      nome: criado.nome,
-      telefone: criado.telefone,
-      id: criado.id,
-      como_responder: `Confirme o cadastro em uma frase: ${criado.nome} foi cadastrado. Não mostre o id.`,
-    };
-  },
-},
-{
-  name: "registrar_entrada",
-  desc: "Registra receita/entrada via POST /despesas com tipo Receita (workaround até API de receitas).",
-  schema: {
-    nome: z.string().min(1),
-    valor: z.number().positive(),
-    dataDespesa: z.string(), // YYYY-MM-DD
-    estabelecimentoId: z.number().int().positive().default(1),
-    descricao: z.string().optional(),
-  },
-  async run({ nome, valor, dataDespesa, estabelecimentoId, descricao }) {
-    const criado = await api("/despesas", {
-      method: "POST",
-      body: JSON.stringify({
-        nome: descricao ? `${nome} — ${descricao}` : nome,
-        dataDespesa,
-        tipo: "Receita",
-        valor,
-        estabelecimentoId: estabelecimentoId ?? 1,
-      }),
-    });
-    return {
-      id: criado.id,
-      nome: criado.nome,
-      tipo: criado.tipo,
-      valor: Number(criado.valor),
-      dataDespesa: criado.dataDespesa,
-    };
-  },
-},
-{
-  name: "registrar_despesa",
-  desc: "Registra despesa/saída (POST /despesas).",
-  schema: {
-    nome: z.string().min(1),
-    valor: z.number().positive(),
-    dataDespesa: z.string(), // YYYY-MM-DD
-    estabelecimentoId: z.number().int().positive().default(1),
-    tipo: z.string().default("Operacional"), // ex.: Operacional, Fixa, Variável
-  },
-  async run({ nome, valor, dataDespesa, estabelecimentoId, tipo }) {
-    const criado = await api("/despesas", {
-      method: "POST",
-      body: JSON.stringify({
-        nome,
-        dataDespesa,
-        tipo: tipo ?? "Operacional",
-        valor,
-        estabelecimentoId: estabelecimentoId ?? 1,
-      }),
-    });
-    return {
-      id: criado.id,
-      nome: criado.nome,
-      tipo: criado.tipo,
-      valor: Number(criado.valor),
-      dataDespesa: criado.dataDespesa,
-    };
-  },
-},
-
 ];
 
+// —— 5. INICIALIZAÇÃO DO MCP ——
 function buildMcp() {
   const mcp = new McpServer(
-    { name: "fisa-poc", version: "1.1.0" },
+    { name: "fisa-poc", version: "2.0.0" },
     {
       instructions:
-        "Assistente da clínica Fisa Saúde. Responda em português, curto e humano. Ao falar de clientes, use os nomes. Nunca cite ID, MCP, API, endpoint, cookie, token nem truques de filtro. Se pedirem 'quem são os clientes', chame listar_clientes sem argumentos.",
+        "Assistente Fisa Saúde. Use consultar_agenda para ocupação por data; financeiro para relatórios e lançamentos. Português, respostas curtas. Nunca invente dados pessoais.",
     }
   );
   for (const t of tools) {
-    mcp.registerTool(
-      t.name,
-      { description: t.desc, inputSchema: t.schema },
-      async (args) => {
-        try {
-          return out(await t.run(args));
-        } catch (e) {
-          return { content: [{ type: "text", text: e.message }], isError: true };
-        }
+    mcp.registerTool(t.name, { description: t.desc, inputSchema: t.schema }, async (a) => {
+      try {
+        return out(await t.run(a));
+      } catch (e) {
+        return { content: [{ type: "text", text: e.message }], isError: true };
       }
-    );
+    });
   }
   return mcp;
 }
 
-async function readBody(req) {
-  const s = await readBodyText(req);
-  return s ? JSON.parse(s) : undefined;
+// —— OAuth (Claude remoto): metadados + DCR + PKCE ——
+const id = (n = 16) => randomBytes(n).toString("base64url");
+const pkceOk = (v, c) => c && createHash("sha256").update(v).digest("base64url") === c;
+const sendJson = (res, s, b) => {
+  res.statusCode = s;
+  res.setHeader("Content-Type", "application/json; charset=utf-8");
+  res.end(JSON.stringify(b));
+};
+const readText = (req) =>
+  new Promise((res, rej) => {
+    const c = [];
+    req.on("data", (x) => c.push(x));
+    req.on("end", () => res(Buffer.concat(c).toString("utf8")));
+    req.on("error", rej);
+  });
+const publicBase = (req) =>
+  MCP_PUBLIC_URL || `${req.headers["x-forwarded-proto"] || "http"}://${req.headers["x-forwarded-host"] || req.headers.host || `localhost:${PORT}`}`;
+const allowedRedirect = (uri) => {
+  try {
+    const u = new URL(uri);
+    return (u.hostname === "claude.ai" && u.pathname === "/api/mcp/auth_callback") || u.hostname === "localhost" || u.hostname === "127.0.0.1";
+  } catch {
+    return false;
+  }
+};
+
+async function handleOAuth(req, res, path) {
+  const base = publicBase(req);
+  if (path === "/.well-known/oauth-protected-resource" || path === "/.well-known/oauth-protected-resource/mcp") {
+    sendJson(res, 200, { resource: `${base}/mcp`, authorization_servers: [base], bearer_methods_supported: ["header"], scopes_supported: ["mcp"] });
+    return true;
+  }
+  if (path === "/.well-known/oauth-authorization-server") {
+    sendJson(res, 200, {
+      issuer: base,
+      authorization_endpoint: `${base}/authorize`,
+      token_endpoint: `${base}/token`,
+      registration_endpoint: `${base}/register`,
+      response_types_supported: ["code"],
+      grant_types_supported: ["authorization_code"],
+      token_endpoint_auth_methods_supported: ["none"],
+      code_challenge_methods_supported: ["S256"],
+      scopes_supported: ["mcp"],
+    });
+    return true;
+  }
+  if (path === "/register" && req.method === "POST") {
+    const body = JSON.parse(await readText(req));
+    if (!(body?.redirect_uris || []).some(allowedRedirect)) return sendJson(res, 400, { error: "invalid_redirect_uri" }), true;
+    const clientId = id();
+    oauthClients.set(clientId, { client_id: clientId, redirect_uris: body.redirect_uris });
+    return sendJson(res, 201, { client_id: clientId, redirect_uris: body.redirect_uris, token_endpoint_auth_method: "none" }), true;
+  }
+  if (path === "/authorize" && req.method === "GET") {
+    const q = new URL(req.url || "", `${base}/`);
+    const client = oauthClients.get(q.get("client_id"));
+    const redirectUri = q.get("redirect_uri");
+    if (!client || q.get("response_type") !== "code" || !allowedRedirect(redirectUri) || !client.redirect_uris.includes(redirectUri)) {
+      sendJson(res, 400, { error: "invalid_request" });
+      return true;
+    }
+    const code = id(24);
+    oauthCodes.set(code, { clientId: client.client_id, redirectUri, codeChallenge: q.get("code_challenge"), exp: Date.now() + 600000 });
+    const dest = new URL(redirectUri);
+    dest.searchParams.set("code", code);
+    if (q.get("state")) dest.searchParams.set("state", q.get("state"));
+    res.writeHead(302, { Location: dest.toString() });
+    res.end();
+    return true;
+  }
+  if (path === "/token" && req.method === "POST") {
+    const body = Object.fromEntries(new URLSearchParams(await readText(req)));
+    if (body.grant_type !== "authorization_code") return sendJson(res, 400, { error: "unsupported_grant_type" }), true;
+    const entry = oauthCodes.get(body.code);
+    oauthCodes.delete(body.code);
+    if (!entry || entry.exp < Date.now() || entry.clientId !== body.client_id || entry.redirectUri !== body.redirect_uri || !pkceOk(body.code_verifier, entry.codeChallenge)) {
+      sendJson(res, 400, { error: "invalid_grant" });
+      return true;
+    }
+    const access = id(32);
+    oauthTokens.set(access, { exp: Date.now() + 3600000 });
+    sendJson(res, 200, { access_token: access, token_type: "Bearer", expires_in: 3600, scope: "mcp" });
+    return true;
+  }
+  return false;
 }
 
-function bearerToken(req) {
-  const h = req.headers.authorization || "";
-  if (!h.startsWith("Bearer ")) return null;
-  return h.slice(7).trim();
+function proxyNotificacao(req, res) {
+  const up = httpRequest(
+    { host: "localhost", port: NOTIFICACAO_PORT, path: req.url, method: req.method, headers: req.headers },
+    (r) => {
+      res.writeHead(r.statusCode, r.headers);
+      r.pipe(res);
+    }
+  );
+  up.on("error", () => {
+    res.statusCode = 502;
+    res.end("notificacao indisponivel");
+  });
+  req.pipe(up);
 }
 
-function mcpAllowsAnonymous(body) {
-  const method = body?.method;
-  return method === "initialize" || method === "notifications/initialized" || method === "tools/list";
-}
+const mcpAnon = (body) => ["initialize", "notifications/initialized", "tools/list"].includes(body?.method);
 
+// —— 6. SERVIDOR HTTP E HEALTHCHECK ——
 createServer(async (req, res) => {
   const path = (req.url || "").split("?")[0];
   if (path === "/health") {
-    res.end(JSON.stringify({ status: "ok" }));
+    res.setHeader("Content-Type", "application/json");
+    res.end(JSON.stringify({ status: "ok", tools: tools.map((t) => t.name) }));
     return;
   }
   if (path.startsWith("/webhook/")) {
@@ -573,38 +302,32 @@ createServer(async (req, res) => {
   if (await handleOAuth(req, res, path)) return;
   if (path !== "/mcp") {
     res.statusCode = path === "/" ? 200 : 404;
-    res.end(path === "/" ? "MCP: /mcp | /health | OAuth\n" : "not found");
+    res.end(path === "/" ? "Fisa MCP: /mcp | /health | /webhook/* (Twilio)\n" : "not found");
     return;
   }
   try {
-    const body =
-      req.method === "POST" ? await readBody(req) : undefined;
-    const access = bearerToken(req);
-    const tokenOk = access && oauthTokens.has(access) && oauthTokens.get(access).exp > Date.now();
-    if (!tokenOk && !mcpAllowsAnonymous(body)) {
+    const body = req.method === "POST" ? JSON.parse((await readText(req)) || "null") : undefined;
+    const access = (req.headers.authorization || "").replace(/^Bearer\s+/i, "").trim();
+    const ok = access && oauthTokens.get(access)?.exp > Date.now();
+    if (!ok && !mcpAnon(body)) {
       const meta = `${publicBase(req)}/.well-known/oauth-protected-resource/mcp`;
-      res.statusCode = 401;
-      res.setHeader(
-        "WWW-Authenticate",
-        `Bearer resource_metadata="${meta}", scope="mcp"`
-      );
-      sendJson(res, 401, {
-        error: "invalid_token",
-        error_description: "Authentication required",
-      });
+      res.setHeader("WWW-Authenticate", `Bearer resource_metadata="${meta}", scope="mcp"`);
+      sendJson(res, 401, { error: "invalid_token" });
       return;
     }
-    const transport = new StreamableHTTPServerTransport({
-      sessionIdGenerator: undefined,
-    });
+    const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });
     const mcp = buildMcp();
     await mcp.connect(transport);
     await transport.handleRequest(req, res, body);
   } catch (e) {
-    console.log("Erro ao chamar API", e.message);
+    console.error(e.message);
     if (!res.headersSent) res.end("erro mcp");
   }
 }).listen(PORT, async () => {
-  await login();
-  console.log(`MCP iniciado na porta ${PORT} → http://localhost:${PORT}/mcp`);
+  try {
+    await login();
+  } catch (e) {
+    console.warn("API Java ainda indisponível:", e.message);
+  }
+  console.log(`MCP :${PORT} → http://localhost:${PORT}/mcp (webhook → :${NOTIFICACAO_PORT})`);
 });
