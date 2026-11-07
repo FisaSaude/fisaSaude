@@ -237,7 +237,7 @@ async function handleOAuth(req, res, path) {
     return sendJson(res, 201, { client_id: clientId, redirect_uris: body.redirect_uris, token_endpoint_auth_method: "none" }), true;
   }
   if (path === "/authorize" && req.method === "GET") {
-    const q = new URL(req.url || "", `${base}/`);
+    const q = new URL(req.url || "", `${base}/`).searchParams;
     const client = oauthClients.get(q.get("client_id"));
     const redirectUri = q.get("redirect_uri");
     if (!client || q.get("response_type") !== "code" || !allowedRedirect(redirectUri) || !client.redirect_uris.includes(redirectUri)) {
@@ -248,7 +248,8 @@ async function handleOAuth(req, res, path) {
     oauthCodes.set(code, { clientId: client.client_id, redirectUri, codeChallenge: q.get("code_challenge"), exp: Date.now() + 600000 });
     const dest = new URL(redirectUri);
     dest.searchParams.set("code", code);
-    if (q.get("state")) dest.searchParams.set("state", q.get("state"));
+    const state = q.get("state");
+    if (state) dest.searchParams.set("state", state);
     res.writeHead(302, { Location: dest.toString() });
     res.end();
     return true;
