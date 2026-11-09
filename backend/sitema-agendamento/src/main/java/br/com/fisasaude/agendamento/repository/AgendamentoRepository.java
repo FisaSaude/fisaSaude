@@ -13,6 +13,8 @@ import org.springframework.data.repository.query.Param;
 
 public interface AgendamentoRepository extends JpaRepository<Agendamento, Integer> {
 
+    boolean existsByServicoId(Integer servicoId);
+
     long countByDataBetweenAndStatus(LocalDate dataInicio, LocalDate dataFim, StatusAgendamentoEnum status);
 
     long countByDataAndUsuarioId(LocalDate data, Integer usuarioId);
