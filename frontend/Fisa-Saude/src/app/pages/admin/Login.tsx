@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { Lock, Mail, ArrowRight, ShieldCheck, Eye, EyeOff, Sparkles } from 'lucide-react';
 import { FisaLogo } from '../../components/FisaLogo';
@@ -13,6 +13,15 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [info, setInfo] = useState('');
+
+  useEffect(() => {
+    const flash = sessionStorage.getItem('@FisaSaude:flash');
+    if (flash) {
+      setInfo(flash);
+      sessionStorage.removeItem('@FisaSaude:flash');
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -101,6 +110,13 @@ export default function Login() {
               Painel de Gestão e Atendimento da FISA Saúde
             </p>
           </div>
+
+          {info && (
+            <div className="mb-5 p-3.5 border rounded-2xl text-xs font-semibold flex items-center gap-2 bg-[#009386]/10 border-[#009386]/30 text-[#007491] dark:bg-[#3CD099]/10 dark:border-[#3CD099]/30 dark:text-[#3CD099]">
+              <span className="w-1.5 h-1.5 rounded-full flex-shrink-0 bg-[#009386] dark:bg-[#3CD099]" />
+              <span>{info}</span>
+            </div>
+          )}
 
           {error && (
             <div className="mb-5 p-3.5 border rounded-2xl text-xs font-semibold flex items-center gap-2 bg-[#9E2A43]/10 dark:bg-[#FF8FA3]/10 border-[#9E2A43]/30 dark:border-[#FF8FA3]/30 text-[#9E2A43] dark:text-[#FF8FA3]">

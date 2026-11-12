@@ -31,6 +31,11 @@ export default function TeamManagement() {
   const [showModal, setShowModal] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const [atualizandoId, setAtualizandoId] = useState<number | null>(null);
+  const [usuarioParaConfirmar, setUsuarioParaConfirmar] = useState<UsuarioResponseDto | null>(null);
+  const [usuarioLogadoId] = useState(() => Number(localStorage.getItem('@FisaSaude:usuarioId')) || 0);
+
+  const estaAtivo = (user: UsuarioResponseDto) => user.ativo !== false;
 
   const [formData, setFormData] = useState({
     nome: '',
@@ -75,7 +80,6 @@ export default function TeamManagement() {
         email: emailLimpo,
         senha: formData.senha,
         role: formData.role,
-        ativo: true,
         estabelecimentoId: Number(formData.estabelecimentoId) || 1
       });
 
@@ -95,20 +99,42 @@ export default function TeamManagement() {
     }
   };
 
-  const handleToggleAtivo = async (user: UsuarioResponseDto) => {
-    const novoStatus = !user.ativo;
+  const solicitarToggleAtivo = (user: UsuarioResponseDto) => {
+    if (user.id === usuarioLogadoId) {
+      setErrorMessage('Você não pode ativar ou desativar a própria conta.');
+      return;
+    }
+
+    if (estaAtivo(user)) {
+      setUsuarioParaConfirmar(user);
+      return;
+    }
+
+    executarToggleAtivo(user);
+  };
+
+  const executarToggleAtivo = async (user: UsuarioResponseDto) => {
+    const novoStatus = !estaAtivo(user);
     try {
-      await api.put(`/usuarios/${user.id}`, {
-        ...user,
-        ativo: novoStatus
-      });
+      setAtualizandoId(user.id);
+      setErrorMessage('');
+      const res = await api.patch(`/usuarios/${user.id}/ativo`, { ativo: novoStatus });
 
       setUsuarios((prev) =>
-        prev.map((u) => (u.id === user.id ? { ...u, ativo: novoStatus } : u))
+        prev.map((u) => (u.id === user.id ? { ...u, ...res.data } : u))
       );
-      showSuccess(`Status de ${user.nome} atualizado!`);
+      showSuccess(
+        novoStatus
+          ? `${user.nome} foi ativado com sucesso!`
+          : `${user.nome} foi desativado com sucesso!`
+      );
     } catch (err: any) {
-      setErrorMessage(err.response?.data?.message || `Não foi possível atualizar o status de ${user.nome}.`);
+      setErrorMessage(
+        err.response?.data?.message || `Não foi possível atualizar o status de ${user.nome}.`
+      );
+    } finally {
+      setAtualizandoId(null);
+      setUsuarioParaConfirmar(null);
     }
   };
 
@@ -208,15 +234,23 @@ export default function TeamManagement() {
                       </div>
 
                       <button
-                        onClick={() => handleToggleAtivo(user)}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1 cursor-pointer transition-colors ${
-                          user.ativo
+                        onClick={() => solicitarToggleAtivo(user)}
+                        disabled={atualizandoId === user.id || user.id === usuarioLogadoId}
+                        title={user.id === usuarioLogadoId ? 'Você não pode alterar a própria conta' : undefined}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1 cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                          estaAtivo(user)
                             ? 'bg-[#3CD099]/15 text-[#0E2820] dark:text-foreground border border-[#3CD099]/30'
                             : 'bg-[#FF6954]/10 text-[#D94F3C] dark:text-[#FF8FA3] border border-[#FF6954]/30'
                         }`}
                       >
-                        {user.ativo ? <UserCheck size={13} /> : <UserX size={13} />}
-                        <span>{user.ativo ? 'Ativo' : 'Inativo'}</span>
+                        {atualizandoId === user.id ? (
+                          <span className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                        ) : estaAtivo(user) ? (
+                          <UserCheck size={13} />
+                        ) : (
+                          <UserX size={13} />
+                        )}
+                        <span>{estaAtivo(user) ? 'Ativo' : 'Inativo'}</span>
                       </button>
                     </div>
                   ))}
@@ -260,24 +294,30 @@ export default function TeamManagement() {
                         <td className="px-5 py-3.5 text-center">
                           <span
                             className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${
-                              user.ativo
+                              estaAtivo(user)
                                 ? 'bg-[#3CD099]/15 text-[#0E2820] dark:text-foreground'
                                 : 'bg-[#FF6954]/10 text-[#D94F3C] dark:text-[#FF8FA3]'
                             }`}
                           >
-                            {user.ativo ? 'Ativo' : 'Inativo'}
+                            {estaAtivo(user) ? 'Ativo' : 'Inativo'}
                           </span>
                         </td>
                         <td className="px-5 py-3.5 text-right">
                           <button
-                            onClick={() => handleToggleAtivo(user)}
-                            className={`px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer transition-colors ${
-                              user.ativo
+                            onClick={() => solicitarToggleAtivo(user)}
+                            disabled={atualizandoId === user.id || user.id === usuarioLogadoId}
+                            title={user.id === usuarioLogadoId ? 'Você não pode alterar a própria conta' : undefined}
+                            className={`px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                              estaAtivo(user)
                                 ? 'bg-[#FF6954]/10 hover:bg-[#FF6954]/20 text-[#D94F3C] dark:text-[#FF8FA3]'
                                 : 'bg-[#3CD099]/15 hover:bg-[#3CD099]/25 text-[#0E2820] dark:text-foreground'
                             }`}
                           >
-                            {user.ativo ? 'Desativar' : 'Ativar'}
+                            {atualizandoId === user.id
+                              ? 'Atualizando...'
+                              : estaAtivo(user)
+                                ? 'Desativar'
+                                : 'Ativar'}
                           </button>
                         </td>
                       </tr>
@@ -354,7 +394,7 @@ export default function TeamManagement() {
               <input
                 type="password"
                 required
-                placeholder="Mínimo 6 caracteres"
+                placeholder="Mínimo 8 caracteres"
                 value={formData.senha}
                 onChange={(e) => setFormData({ ...formData, senha: e.target.value })}
                 className="w-full px-3 py-2 bg-[#F8F6F0] dark:bg-background border border-[#E3DEC9] dark:border-border rounded-xl text-xs font-medium focus:bg-white dark:focus:bg-card focus:outline-none focus:border-[#009386]"
@@ -389,6 +429,55 @@ export default function TeamManagement() {
               </button>
             </div>
           </form>
+        </div>
+      )}
+
+      {/* Modal de confirmação de desativação */}
+      {usuarioParaConfirmar && (
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-end sm:items-center justify-center z-50 p-0 sm:p-4"
+          onClick={() => setUsuarioParaConfirmar(null)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white dark:bg-card rounded-t-3xl sm:rounded-3xl max-w-sm w-full border border-[#E3DEC9] dark:border-border shadow-2xl p-5 space-y-4"
+          >
+            <div className="flex items-center gap-2.5 border-b border-[#E3DEC9] dark:border-border pb-3">
+              <span className="w-8 h-8 rounded-xl bg-[#FF6954]/10 text-[#D94F3C] dark:text-[#FF8FA3] flex items-center justify-center flex-shrink-0">
+                <UserX size={16} />
+              </span>
+              <div>
+                <h2 className="text-base font-bold text-[#1B2E26] dark:text-foreground">Desativar acesso</h2>
+                <p className="text-[11px] text-[#56635C] dark:text-muted-foreground">
+                  O funcionário perderá o acesso ao sistema.
+                </p>
+              </div>
+            </div>
+
+            <p className="text-xs text-[#56635C] dark:text-muted-foreground">
+              Tem certeza que deseja desativar <b className="text-[#1B2E26] dark:text-foreground">{usuarioParaConfirmar.nome}</b>?
+              Ele continuará cadastrado e poderá ser reativado depois.
+            </p>
+
+            <div className="flex gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => setUsuarioParaConfirmar(null)}
+                disabled={atualizandoId === usuarioParaConfirmar.id}
+                className="flex-1 bg-[#EBE5D3]/60 dark:bg-muted/60 hover:bg-[#EBE5D3] dark:hover:bg-muted py-2.5 rounded-xl font-bold text-xs uppercase cursor-pointer disabled:opacity-60"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={() => executarToggleAtivo(usuarioParaConfirmar)}
+                disabled={atualizandoId === usuarioParaConfirmar.id}
+                className="flex-1 bg-[#FF6954] hover:brightness-95 text-white py-2.5 rounded-xl font-bold text-xs uppercase shadow-sm cursor-pointer disabled:opacity-60"
+              >
+                {atualizandoId === usuarioParaConfirmar.id ? 'Desativando...' : 'Desativar'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
